@@ -7,10 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-//gorm func
+//GormProcFn gorm func
 type GormProcFn func(txn *gorm.DB) error
 
-//Db transaction
+//Transact : db transaction
 func Transact(db *gorm.DB, fnList ...GormProcFn) (err error) {
 	if len(fnList) == 0 {
 		return

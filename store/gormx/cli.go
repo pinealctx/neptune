@@ -86,7 +86,7 @@ func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	return gormDB, err
 }
 
-//获取一个db客户端 --maxOpenConn 最大打开连接数
+//NewGorm 获取一个db客户端 --maxOpenConn 最大打开连接数
 func NewGorm(dsn string, maxOpenConn, maxIdle int, maxLifeTime time.Duration, log bool) (*gorm.DB, error) {
 	var config = &gorm.Config{}
 	if log {
