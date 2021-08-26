@@ -15,7 +15,7 @@ const (
 	//素数
 	DefaultSlotSize = 509
 	//DefaultQInSlotSize default pipe size, total current request can be pipe is 509*1024*8 = 4169728
-	DefaultQInSlotSize = 1024*8
+	DefaultQInSlotSize = 1024 * 8
 )
 
 var (

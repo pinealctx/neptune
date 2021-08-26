@@ -19,14 +19,14 @@ const (
 
 func main() {
 	app := &cli.App{
-		Name:    "hello echo client",
+		Name: "hello echo client",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "url",
 				Usage: "rpc url",
 			},
 			&cli.IntFlag{
-				Name: "c",
+				Name:  "c",
 				Usage: "count",
 				Value: 10000,
 			},
