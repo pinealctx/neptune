@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "github.com/pinealctx/neptune/pipe/grpcexample/pb";
+
+package github.com.pinealctx.neptune.async.toolbox.suit.pb;
+
+message Halo {
+  string msg = 1;
+}
+
+service HelloService {
+  rpc SayHello (Halo) returns (Halo);
+}
