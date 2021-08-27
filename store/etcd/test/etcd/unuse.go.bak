@@ -1,0 +1,230 @@
+package etcd
+
+/*
+
+// watch node
+// ctx -- cancel controller, it's a parent context for watch
+// nodePath -- path
+// timeout -- get dir timeout
+// return first get node content/node watch event/current watch session cancel
+func (c *Client) WatchNode(ctx context.Context,
+	nodePath string, timeout time.Duration) (NodeRet, <-chan NodeEvent, context.CancelFunc) {
+
+	nodePath = path.Join(c.root, nodePath)
+	// Get the current version of the file
+	var gCtx, cancel = context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var nRet = c.Get(gCtx, nodePath)
+	if nRet.Err != nil {
+		// Generic error.
+		return nRet, nil, nil
+	}
+
+	// Create an outer context that will be canceled on return and will cancel watcher.
+	var outCtx, outCancel = context.WithCancel(ctx)
+
+	// Create the Watcher.  We start watching from the response we
+	// got, not from the file original version, as the server may
+	// not have that much history.
+	var watcher = c.eCli.Watch(clientv3.WithRequireLeader(outCtx),
+		nodePath, clientv3.WithRev(nRet.Revision))
+	if watcher == nil {
+		nRet.Err = genErr(nodePath, WatchFail)
+		return nRet, nil, outCancel
+	}
+
+	// Create the notifications channel, send updates to it.
+	var nChan = make(chan NodeEvent, 1)
+	go func() {
+		// loop receive notifications channel
+		nodeLoop(outCtx, nChan, watcher, nodePath)
+	}()
+	return nRet, nChan, outCancel
+}
+
+
+//node watch loop
+func nodeLoop(ctx context.Context,
+	notifyChan chan<- NodeEvent, watcher clientv3.WatchChan, nodePath string) {
+	defer close(notifyChan)
+
+	var version int64
+	for {
+		select {
+		case <-ctx.Done():
+			// This includes context cancellation errors.
+			notifyChan <- NodeEvent{Err: convertErr(nodePath, ctx.Err())}
+			return
+		case wRsp, ok := <-watcher:
+			if !ok {
+				notifyChan <- NodeEvent{Err: genErr(nodePath, WatchClosed)}
+				return
+			}
+			if wRsp.Canceled {
+				// Final notification.
+				notifyChan <- NodeEvent{Err: convertErr(nodePath, wRsp.Err())}
+				return
+			}
+
+			version = wRsp.Header.Revision
+			for _, ev := range wRsp.Events {
+				switch ev.Type {
+				case mvccpb.PUT:
+					notifyChan <- NodeEvent{KV: ev.Kv, Revision: version}
+				case mvccpb.DELETE:
+					// Node is gone, send a final notice.
+					notifyChan <- NodeEvent{Err: genErr(nodePath, NodeNotFound)}
+					return
+				default:
+					notifyChan <- NodeEvent{
+						Err: genErr(nodePath, WatchUnexpected),
+					}
+					return
+				}
+			}
+		}
+
+		//loop for again
+	}
+}
+
+//loop watch node -- if chan closed, which means go routine out
+func (w *Watcher) StartWatchNode() {
+	go w.startWatchNode()
+}
+
+//start watch node
+func (w *Watcher) startWatchNode() {
+	var (
+		nRet   NodeRet
+		cancel context.CancelFunc
+		inited bool
+	)
+
+	//close channel finally
+	defer close(w.nodeChan)
+
+	for {
+		if !inited {
+			inited = true
+		} else {
+			//select ctx done
+			select {
+			case <-w.ctx.Done():
+				return
+			default:
+			}
+			time.Sleep(w.backOff)
+		}
+
+		//check cancel,if not nil,call cancel in case of re-setup watch
+		if cancel != nil {
+			cancel()
+		}
+		//setup watch
+		nRet, w.iNodeChan, cancel = w.cli.WatchNode(w.ctx, w.path, w.timeout)
+		if nRet.Err != nil {
+			ulog.Error("cli.watch.setup.error", zap.String("path", w.path), zap.Error(nRet.Err))
+			continue
+		}
+		if w.iNodeChan == nil {
+			ulog.Error("cli.watch.setup.error.watchKv.nil", zap.String("path", w.path))
+			continue
+		}
+		if cancel == nil {
+			ulog.Error("cli.watch.setup.error.cancel.nil", zap.String("path", w.path))
+			continue
+		}
+
+		select {
+		//put first get
+		case w.nodeChan <- firstNode2Event(w.path, nRet):
+		case <-w.ctx.Done():
+			return
+		}
+
+		if w.procNodeSession() {
+			return
+		}
+	}
+}
+
+//loop node session
+//if ctx.Done, return true, means watch is done.
+//if return false, just quit current session, continue to next session
+func (w *Watcher) procNodeSession() bool {
+	var (
+		nEvent NodeEvent
+		ok     bool
+	)
+	for {
+		select {
+		case nEvent, ok = <-w.iNodeChan:
+			if !ok {
+				//break current for loop, re-setup watch
+				ulog.Error("cli.re-setup.watch", zap.String("path", w.path))
+				return false
+			}
+			if nEvent.Err != nil {
+				//error occur, record it
+				ulog.Error("cli.watch.chan.error", zap.String("path", w.path), zap.Error(nEvent.Err))
+				continue
+			}
+			w.nodeChan <- nEvent
+		case <-w.ctx.Done():
+			return true
+		}
+	}
+}
+
+
+//first get to event
+func firstNode2Event(path string, nRet NodeRet) NodeEvent {
+	return NodeEvent{
+		KV: &mvccpb.KeyValue{
+			Key:   []byte(path),
+			Value: nRet.Data,
+		},
+		Revision: nRet.Revision,
+	}
+}
+
+func watchNode(c *cli.Context) error {
+	var watcher = etcd.NewWatcher(eCli, c.String("key"), time.Second*3, time.Second*3)
+
+	watcher.StartWatchNode()
+	for kv := range watcher.NodeChan() {
+		log.Println("watched:")
+		log.Println("key:",
+			kv.KV.Key, " value:", string(kv.KV.Value), " version:", kv.Revision, " error:", kv.Err)
+		log.Println("")
+	}
+	return nil
+}
+
+
+//node chan
+func (w *Watcher) NodeChan() <-chan NodeEvent {
+	return w.nodeChan
+}
+
+//node event
+type NodeEvent struct {
+	KV       *mvccpb.KeyValue
+	Err      error
+	Revision int64
+}
+
+	//watch channel
+	nodeChan chan NodeEvent
+
+	//input from watcher
+	iNodeChan <-chan NodeEvent
+
+	case "watch":
+		return watchNode(c)
+
+
+		nodeChan: make(chan NodeEvent, ChanBufferSize),
+
+*/
