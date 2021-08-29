@@ -99,3 +99,12 @@ func MapVal2Time(m map[string]interface{}, k string) (time.Time, bool) {
 	}
 	return ToTime(x)
 }
+
+//MapVal2Duration : 将map中的value转换为Duration
+func MapVal2Duration(m map[string]interface{}, k string) (time.Duration, bool) {
+	x, ok := m[k]
+	if !ok {
+		return 0, false
+	}
+	return ToDuration(x)
+}
