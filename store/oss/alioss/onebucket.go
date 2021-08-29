@@ -62,7 +62,7 @@ func (o *OneBucketOss) Get(_ context.Context, key string) ([]byte, error) {
 		var ossErr, ok = err.(aliOss.ServiceError)
 		if ok {
 			if ossErr.StatusCode == http.StatusNotFound && ossErr.Code == "NoSuchKey" {
-				return nil, status.Errorf(codes.NotFound,"oss.key.not.exist:%+v", key)
+				return nil, status.Errorf(codes.NotFound, "oss.key.not.exist:%+v", key)
 			}
 		}
 		return nil, err
