@@ -59,7 +59,7 @@ func (s *SrvRunner) SayHello(ctx context.Context, req *pb.Halo) (*pb.Halo, error
 	}
 	var r, ok = outMsg.(*pb.Halo)
 	if !ok {
-		return nil, pipe.ErrInvalidResult
+		return nil, pipe.ErrInvalidRsp
 	}
 	return r, nil
 }

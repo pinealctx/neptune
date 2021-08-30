@@ -4,57 +4,9 @@ import (
 	"context"
 	"github.com/pinealctx/neptune/ulog"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"sync"
 )
-
-const (
-	//DefaultSlotSize slot size
-	//素数
-	DefaultSlotSize = 509
-	//DefaultQInSlotSize default pipe size, total current request can be pipe is 509*1024*8 = 4169728
-	DefaultQInSlotSize = 1024 * 8
-)
-
-var (
-	//ErrNoMsgHandler -- no message handler
-	ErrNoMsgHandler = status.Error(codes.Unimplemented, "no.msg.handler")
-	//ErrMsgQueueFull -- msg queue is full
-	ErrMsgQueueFull = status.Error(codes.ResourceExhausted, "msg.queue.full")
-	//ErrMsgQueueClosed -- msg queue closed
-	ErrMsgQueueClosed = status.Error(codes.Unavailable, "msg.queue.closed")
-	//ErrInvalidParam -- invalid msg param
-	ErrInvalidParam = status.Error(codes.InvalidArgument, "invalid.input.msg")
-	//ErrInvalidResult -- invalid result
-	ErrInvalidResult = status.Error(codes.Internal, "invalid.output.msg")
-)
-
-//shunt option
-type _ShOption struct {
-	//slot size
-	slotSize int
-	//queue size in each slot
-	qSizeInSlot int
-}
-
-//ShOption shunt option function
-type ShOption func(o *_ShOption)
-
-//WithSlotSize setup slot size
-func WithSlotSize(slotSize int) ShOption {
-	return func(o *_ShOption) {
-		o.slotSize = slotSize
-	}
-}
-
-//WithQSizeInSlot setup queue size in each slot
-func WithQSizeInSlot(qSizeInSlot int) ShOption {
-	return func(o *_ShOption) {
-		o.qSizeInSlot = qSizeInSlot
-	}
-}
 
 //ProcMsgFn function
 type ProcMsgFn func(ctx context.Context, index int, inputMsg proto.Message) (outputMsg proto.Message, err error)
@@ -241,7 +193,7 @@ func (s *Shunt) popLoop(index int) {
 		}
 		msgFn = s.msgHandler.GetFn(msgProc.fnIndex)
 		if msgFn == nil {
-			msgProc.SetOutput(nil, ErrNoMsgHandler)
+			msgProc.SetOutput(nil, ErrNoHandler)
 			continue
 		}
 
@@ -271,23 +223,5 @@ func (s *Shunt) signalDone() {
 
 //normalize slot index
 func (s *Shunt) normalizeSlotIndex(index int) int {
-	if index < 0 {
-		index = -index
-	}
-	index %= s.slotSize
-	return index
-}
-
-//convert msg queue error
-func convertQueueErr(err error) error {
-	if err == nil {
-		return nil
-	}
-	if err == ErrReqQFull {
-		return ErrMsgQueueFull
-	}
-	if err == ErrClosed {
-		return ErrMsgQueueClosed
-	}
-	return err
+	return normalizeSlotIndex(index, s.slotSize)
 }
