@@ -119,9 +119,14 @@ func (c *Cycle) WaitStop(ctx context.Context) error {
 	}
 }
 
+//NormalizeSlotIndex slot index
+func (c *Cycle) NormalizeSlotIndex(index int) int {
+	return normalizeSlotIndex(index, c.slotSize)
+}
+
 //addMsg : add msg
 func (c *Cycle) addMsg(ctx context.Context, slotIndex int, req interface{}) (*GenProc, error) {
-	slotIndex = c.normalizeSlotIndex(slotIndex)
+	slotIndex = c.NormalizeSlotIndex(slotIndex)
 	var proc = NewGenProc(ctx, slotIndex, req)
 	var err = convertQueueErr(c.qs[slotIndex].AddReq(proc))
 	return proc, err
@@ -129,7 +134,7 @@ func (c *Cycle) addMsg(ctx context.Context, slotIndex int, req interface{}) (*Ge
 
 //addPriorMsg : add prior msg
 func (c *Cycle) addPriorMsg(ctx context.Context, slotIndex int, req interface{}) (*GenProc, error) {
-	slotIndex = c.normalizeSlotIndex(slotIndex)
+	slotIndex = c.NormalizeSlotIndex(slotIndex)
 	var proc = NewGenProc(ctx, slotIndex, req)
 	var err = convertQueueErr(c.qs[slotIndex].AddPriorReq(proc))
 	return proc, err
@@ -194,12 +199,7 @@ func (c *Cycle) signalDone() {
 	c.exitChan <- struct{}{}
 }
 
-//normalize slot index
-func (c *Cycle) normalizeSlotIndex(index int) int {
-	return normalizeSlotIndex(index, c.slotSize)
-}
-
-//normalize slot index
+//normalizeSlotIndex slot index
 func normalizeSlotIndex(index int, slotSize int) int {
 	if index < 0 {
 		index = -index
