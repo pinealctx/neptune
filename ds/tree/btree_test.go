@@ -1,7 +1,6 @@
 package tree
 
 import (
-	"github.com/pinealctx/neptune/ds/tree/btree"
 	"testing"
 )
 
@@ -10,7 +9,7 @@ type xCmp struct {
 	y int
 }
 
-func (x *xCmp) Less(v btree.Item) bool {
+func (x *xCmp) Less(v Node) bool {
 	return x.x < v.(*xCmp).x
 }
 
@@ -119,7 +118,7 @@ func testBTreeAscendGtNum(t *testing.T, k int) {
 	testBTreeAscendGtFrom(t, &xCmp{x: k})
 }
 
-func testBTreeAscendGtFrom(t *testing.T, k btree.Item) {
+func testBTreeAscendGtFrom(t *testing.T, k Node) {
 	testBTreeIter(t, testAscendGt, k)
 }
 
@@ -127,11 +126,11 @@ func testBTreeAscendGteNum(t *testing.T, k int) {
 	testBTreeAscendGteFrom(t, &xCmp{x: k})
 }
 
-func testBTreeAscendGteFrom(t *testing.T, k btree.Item) {
+func testBTreeAscendGteFrom(t *testing.T, k Node) {
 	testBTreeIter(t, testAscendGte, k)
 }
 
-func testBTreeIter(t *testing.T, fn _testIterProc, k btree.Item) {
+func testBTreeIter(t *testing.T, fn _testIterProc, k Node) {
 	var bt = NewBTree()
 	for i := 1; i <= 3; i++ {
 		var x = &xCmp{
@@ -148,20 +147,20 @@ func testBTreeIter(t *testing.T, fn _testIterProc, k btree.Item) {
 	}
 }
 
-type _testIterProc func(t *testing.T, b *BTree, k btree.Item, n int)
+type _testIterProc func(t *testing.T, b *BTree, k Node, n int)
 
-func testAscendGt(t *testing.T, b *BTree, k btree.Item, n int) {
+func testAscendGt(t *testing.T, b *BTree, k Node, n int) {
 	testIter(t, k, b.AscendGt, n)
 }
 
-func testAscendGte(t *testing.T, b *BTree, k btree.Item, n int) {
+func testAscendGte(t *testing.T, b *BTree, k Node, n int) {
 	testIter(t, k, b.AscendGte, n)
 }
 
-type _testIterFn func(k btree.Item, filter func(btree.Item) bool, n int) []btree.Item
+type _testIterFn func(k Node, filter func(Node) bool, n int) []Node
 
-func testIter(t *testing.T, k btree.Item, ifn _testIterFn, n int) {
-	var ffn = func(_ btree.Item) bool {
+func testIter(t *testing.T, k Node, ifn _testIterFn, n int) {
+	var ffn = func(_ Node) bool {
 		return true
 	}
 	var ns = ifn(k, ffn, n)

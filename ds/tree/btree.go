@@ -5,17 +5,19 @@ import (
 	"sync"
 )
 
-//IterFn : btree iter function
-type IterFn func(pivot btree.Item, iterator btree.ItemIterator)
+// Node : redirect btree.Item
+type Node = btree.Item
 
 //FilterFn : filter a node value is in condition or not
-type FilterFn func(n btree.Item) bool
+type FilterFn func(n Node) bool
 
+//BTree : wrapped b-tree
 type BTree struct {
-	t *btree.BTree
+	t  *btree.BTree
 	rw *sync.RWMutex
 }
 
+// NewBTree : new
 func NewBTree() *BTree {
 	var b = &BTree{}
 	b.t = btree.New(2)
@@ -23,13 +25,16 @@ func NewBTree() *BTree {
 	return b
 }
 
-func (b *BTree) Insert(v btree.Item) {
+//Insert : insert node to btree
+func (b *BTree) Insert(v Node) {
 	b.rw.Lock()
 	defer b.rw.Unlock()
 	b.t.ReplaceOrInsert(v)
 }
 
-func (b *BTree) Update(oldV btree.Item, newV btree.Item) {
+
+//Update : update old node to given new node.
+func (b *BTree) Update(oldV Node, newV Node) {
 	b.rw.Lock()
 	defer b.rw.Unlock()
 	var e = b.t.Delete(oldV)
@@ -39,48 +44,72 @@ func (b *BTree) Update(oldV btree.Item, newV btree.Item) {
 	b.t.ReplaceOrInsert(newV)
 }
 
-func (b *BTree) UpdateOrInsert(oldV btree.Item, newV btree.Item) {
+//UpdateOrInsert : if ole node exists, update old node to new node, else insert new node to btree.
+func (b *BTree) UpdateOrInsert(oldV Node, newV Node) {
 	b.rw.Lock()
 	defer b.rw.Unlock()
 	b.t.Delete(oldV)
 	b.t.ReplaceOrInsert(newV)
 }
 
-func (b *BTree) Delete(k btree.Item) {
+//Delete : delete node, actually, figure out a node which related node sort fields match.
+func (b *BTree) Delete(k Node) {
 	b.rw.Lock()
 	defer b.rw.Unlock()
 	b.t.Delete(k)
 }
 
-func (b *BTree) Get(k btree.Item) btree.Item {
+func (b *BTree) Get(k Node) Node {
 	b.rw.RLock()
 	defer b.rw.RUnlock()
 	return b.t.Get(k)
 }
 
-func (b *BTree) AscendGte(k btree.Item, filter func(btree.Item) bool, n int) []btree.Item {
-	return b.iter(k, b.t.AscendGreaterOrEqual, filter, n)
+//AscendGte : ascend get nodes(>=k).
+//k : anchor key
+//filter : filter a node
+//n : the max length of nodes to get
+func (b *BTree) AscendGte(k Node, filter FilterFn, n int) []Node {
+	return b.iterWalk(k, b.t.AscendGreaterOrEqual, filter, n)
 }
 
-func (b *BTree) AscendGt(k btree.Item, filter func(btree.Item) bool, n int) []btree.Item {
-	return b.iter(k, b.t.AscendGreater, filter, n)
+//AscendGt : ascend get nodes(>k).
+//k : anchor key
+//filter : filter a node
+//n : the max length of nodes to get
+func (b *BTree) AscendGt(k Node, filter FilterFn, n int) []Node {
+	return b.iterWalk(k, b.t.AscendGreater, filter, n)
 }
 
-func (b *BTree) DescendLte(k btree.Item, filter func(btree.Item) bool, n int) []btree.Item {
-	return b.iter(k, b.t.DescendLessOrEqual, filter, n)
+//DescendLte : descend get nodes(<=k).
+//k : anchor key
+//filter : filter a node
+//n : the max length of nodes to get
+func (b *BTree) DescendLte(k Node, filter FilterFn, n int) []Node {
+	return b.iterWalk(k, b.t.DescendLessOrEqual, filter, n)
 }
 
-func (b *BTree) DescendLt(k btree.Item, filter func(btree.Item) bool, n int) []btree.Item {
-	return b.iter(k, b.t.DescendLess, filter, n)
+//DescendLt : descend get nodes(<k).
+//k : anchor key
+//filter : filter a node
+//n : the max length of nodes to get
+func (b *BTree) DescendLt(k Node, filter FilterFn, n int) []Node {
+	return b.iterWalk(k, b.t.DescendLess, filter, n)
 }
 
-func (b *BTree) iter(k btree.Item, iterFn IterFn, filter FilterFn, n int) []btree.Item {
+//_gBtreeIterWrap : btree iter function, wrap google btree iterator function
+//pivot : anchor key
+//iterator : the iter continue or not function
+type _gBtreeIterWrap func(pivot btree.Item, iterator btree.ItemIterator)
+
+//iterWalk : iter node and gather filtered nodes.
+func (b *BTree) iterWalk(k Node, iterFn _gBtreeIterWrap, filter FilterFn, n int) []Node {
 	if n == 0 {
 		return nil
 	}
-	var ns = make([]btree.Item, 0, n)
+	var ns = make([]Node, 0, n)
 	var c = 0
-	var fn = func(v btree.Item) bool {
+	var fn = func(v Node) bool {
 		if c >= n {
 			return false
 		}

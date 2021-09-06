@@ -11,7 +11,7 @@ type X struct {
 	a int
 }
 
-func (x *X) Less(b btree.Item) bool {
+func (x *X) Less(b Node) bool {
 	return x.a < b.(*X).a
 }
 
@@ -34,7 +34,7 @@ func TestBtreeCmp(t *testing.T) {
 	insertX(t, b, x)
 	t.Log("len after:", b.Len())
 
-	b.Ascend(func(i btree.Item) bool {
+	b.Ascend(func(i Node) bool {
 		t.Logf("out: v:%+v, p:%p\n", i.(*X).a, i.(*X))
 		return true
 	})
@@ -42,7 +42,7 @@ func TestBtreeCmp(t *testing.T) {
 
 type Int int
 
-func (i Int) Less(b btree.Item) bool {
+func (i Int) Less(b Node) bool {
 	return i < b.(Int)
 }
 
@@ -69,7 +69,7 @@ func TestBtreeNoLock(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < count; j++ {
-				b.Ascend(func(_ btree.Item) bool {
+				b.Ascend(func(_ Node) bool {
 					return true
 				})
 			}
@@ -113,7 +113,7 @@ func TestBtreeLock(t *testing.T) {
 			}()
 			for j := 0; j < count; j++ {
 				l.RLock()
-				b.Ascend(func(_ btree.Item) bool {
+				b.Ascend(func(_ Node) bool {
 					return true
 				})
 				l.RUnlock()
@@ -158,7 +158,7 @@ func TestBtreeWLock(t *testing.T) {
 			}()
 			for j := 0; j < count; j++ {
 				l.Lock()
-				b.Ascend(func(_ btree.Item) bool {
+				b.Ascend(func(_ Node) bool {
 					return true
 				})
 				l.Unlock()
@@ -194,7 +194,7 @@ func TestBtreeNoLockRead(t *testing.T) {
 				wg.Done()
 			}()
 			for j := 0; j < count; j++ {
-				b.Ascend(func(_ btree.Item) bool {
+				b.Ascend(func(_ Node) bool {
 					return true
 				})
 			}
@@ -231,7 +231,7 @@ func TestBtreeLockRead(t *testing.T) {
 			}()
 			for j := 0; j < count; j++ {
 				l.RLock()
-				b.Ascend(func(_ btree.Item) bool {
+				b.Ascend(func(_ Node) bool {
 					return true
 				})
 				l.RUnlock()
@@ -258,7 +258,7 @@ func TestBtreeWalk(t *testing.T) {
 	}
 	var t1 = time.Now()
 	for i := 0; i < count; i++ {
-		b.Ascend(func(_ btree.Item) bool {
+		b.Ascend(func(_ Node) bool {
 			return true
 		})
 	}
