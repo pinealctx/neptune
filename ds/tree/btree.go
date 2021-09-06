@@ -32,7 +32,6 @@ func (b *BTree) Insert(v Node) {
 	b.t.ReplaceOrInsert(v)
 }
 
-
 //Update : update old node to given new node.
 func (b *BTree) Update(oldV Node, newV Node) {
 	b.rw.Lock()
