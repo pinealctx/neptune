@@ -66,11 +66,16 @@ type entry struct {
 
 // NewLRUCache creates a new empty cache with the given capacity.
 func NewLRUCache(capacity int64) *LRUCache {
-	return &LRUCache{
-		list:     list.New(),
-		table:    make(map[interface{}]*list.Element),
-		capacity: capacity,
-	}
+	var c = &LRUCache{}
+	c.Init(capacity)
+	return c
+}
+
+//Init : init memory
+func (lru *LRUCache) Init(capacity int64) {
+	lru.list = list.New()
+	lru.table = make(map[interface{}]*list.Element)
+	lru.capacity = capacity
 }
 
 // Get returns a value from the cache, and marks the entry as most

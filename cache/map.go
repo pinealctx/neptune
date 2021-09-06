@@ -11,9 +11,13 @@ type Map struct {
 }
 
 func NewMap() *Map {
-	return &Map{
-		m: make(map[interface{}]interface{}),
-	}
+	var m = &Map{}
+	m.Init()
+	return m
+}
+
+func (m *Map) Init() {
+	m.m = make(map[interface{}]interface{})
 }
 
 func (m *Map) Set(key interface{}, value interface{}) {
