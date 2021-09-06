@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/pinealctx/neptune/pipe"
 	"github.com/pinealctx/neptune/pipe/grpcexample/pb"
+	"github.com/pinealctx/neptune/pipe/shunt"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -21,18 +22,18 @@ type ISlotTransfer interface {
 }
 
 type SrvRunner struct {
-	shunt *pipe.Shunt
+	shunt *shunt.Shunt
 	pb.UnsafeHelloServiceServer
 }
 
-func NewSrvRunner(opts ...pipe.ShOption) *SrvRunner {
+func NewSrvRunner(opts ...pipe.Option) *SrvRunner {
 	var s = &SrvRunner{}
 	s.Init()
 	return s
 }
 
-func (s *SrvRunner) Init(opts ...pipe.ShOption) {
-	s.shunt = pipe.NewShunt(opts...)
+func (s *SrvRunner) Init(opts ...pipe.Option) {
+	s.shunt = shunt.NewShunt(opts...)
 
 	/*Register msg handler*/
 	var slotSayHelloFn = func(ctx context.Context, index int, req proto.Message) (output proto.Message, err error) {

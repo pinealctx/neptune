@@ -1,4 +1,4 @@
-package pipe
+package q
 
 import (
 	"container/list"
@@ -22,26 +22,26 @@ var (
 )
 
 //option for actor queue
-type _QOption struct {
+type _Option struct {
 	ctrlMaxNum int
 	reqMaxNum  int
 }
 
-//QOption option function
-type QOption func(o *_QOption)
+//Option option function
+type Option func(o *_Option)
 
 //WithQCtrlSize setup max queue number of control queue
 //if max is 0, which means no limit
-func WithQCtrlSize(num int) QOption {
-	return func(o *_QOption) {
+func WithQCtrlSize(num int) Option {
+	return func(o *_Option) {
 		o.ctrlMaxNum = num
 	}
 }
 
 //WithQReqSize setup max queue number of request queue
 //if max is 0, which means no limit
-func WithQReqSize(num int) QOption {
-	return func(o *_QOption) {
+func WithQReqSize(num int) Option {
+	return func(o *_Option) {
 		o.reqMaxNum = num
 	}
 }
@@ -75,14 +75,14 @@ type Q struct {
 }
 
 //NewQ new queue
-func NewQ(options ...QOption) *Q {
+func NewQ(options ...Option) *Q {
 	var actorQ = &Q{
 		ctrlList:  list.New(),
 		reqList:   list.New(),
 		stopChan:  make(chan struct{}),
 		clearChan: make(chan struct{}),
 	}
-	var option = &_QOption{}
+	var option = &_Option{}
 	for _, opt := range options {
 		opt(option)
 	}
