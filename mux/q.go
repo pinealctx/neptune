@@ -44,8 +44,8 @@ type Q struct {
 //NewQ new queue
 func NewQ(reqMaxNum int) *Q {
 	var actorQ = &Q{
-		reqList:   list.New(),
-		stopChan:  make(chan struct{}),
+		reqList:  list.New(),
+		stopChan: make(chan struct{}),
 	}
 
 	if reqMaxNum > 0 {
@@ -165,4 +165,3 @@ func (a *Q) IsClosed() bool {
 	defer a.lock.Unlock()
 	return a.closed
 }
-

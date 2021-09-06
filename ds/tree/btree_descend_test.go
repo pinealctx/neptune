@@ -1,7 +1,6 @@
 package tree
 
 import (
-	"github.com/pinealctx/neptune/ds/tree/btree"
 	"testing"
 )
 
@@ -65,7 +64,7 @@ func testBTreeDescendLtNum(t *testing.T, k int) {
 	testBTreeDescendLtFrom(t, &xCmp{x: k})
 }
 
-func testBTreeDescendLtFrom(t *testing.T, k btree.Item) {
+func testBTreeDescendLtFrom(t *testing.T, k Node) {
 	testBTreeIter(t, testDescendLt, k)
 }
 
@@ -73,14 +72,14 @@ func testBTreeDescendLteNum(t *testing.T, k int) {
 	testBTreeDescendLteFrom(t, &xCmp{x: k})
 }
 
-func testBTreeDescendLteFrom(t *testing.T, k btree.Item) {
+func testBTreeDescendLteFrom(t *testing.T, k Node) {
 	testBTreeIter(t, testDescendLte, k)
 }
 
-func testDescendLte(t *testing.T, b *BTree, k btree.Item, n int) {
+func testDescendLte(t *testing.T, b *BTree, k Node, n int) {
 	testIter(t, k, b.DescendLte, n)
 }
 
-func testDescendLt(t *testing.T, b *BTree, k btree.Item, n int) {
+func testDescendLt(t *testing.T, b *BTree, k Node, n int) {
 	testIter(t, k, b.DescendLt, n)
 }
