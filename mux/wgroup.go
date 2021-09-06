@@ -29,24 +29,28 @@ type WorkerGrp struct {
 
 //NewWorkGrp : new work group
 func NewWorkGrp(cg CacheGen, opts ...Option) *WorkerGrp {
-	var o = &_Option{
-		muxSize:  DefaultMuxSize,
-		deepSize: DefaultDeepSize,
-	}
-	for _, opt := range opts {
-		opt(o)
-	}
-	var w = &WorkerGrp{}
-	w.muxSize, w.deepSize = o.muxSize, o.deepSize
-
-	w.wg = &sync.WaitGroup{}
-	w.exitSignal = make(chan struct{}, 1)
-	w.wg.Add(w.muxSize)
-
-	w.ws = make([]*Worker, w.muxSize)
+	var w = buildWorkGrp(opts...)
 	for i := 0; i < w.muxSize; i++ {
 		var ca = cg()
 		w.ws[i] = NewWorker(w.deepSize, w.wg, ca)
+	}
+	return w
+}
+
+//NewWorkGrpWithMapCache : new work group bind with map cache.
+func NewWorkGrpWithMapCache(opts ...Option) *WorkerGrp {
+	var w = buildWorkGrp(opts...)
+	for i := 0; i < w.muxSize; i++ {
+		w.ws[i] = NewWorker(w.deepSize, w.wg, NewFacadeMap())
+	}
+	return w
+}
+
+//NewWorkGrpWithLRU : new work group bind with lru cache.
+func NewWorkGrpWithLRU(lruCap int64, opts ...Option) *WorkerGrp {
+	var w = buildWorkGrp(opts...)
+	for i := 0; i < w.muxSize; i++ {
+		w.ws[i] = NewWorker(w.deepSize, w.wg, NewFacadeLRU(lruCap))
 	}
 	return w
 }
@@ -154,4 +158,24 @@ func (w *WorkerGrp) locHash(k Hashed2Int) int {
 	}
 	hashNum %= w.muxSize
 	return hashNum
+}
+
+//build work group build
+func buildWorkGrp(opts ...Option) *WorkerGrp {
+	var o = &_Option{
+		muxSize:  DefaultMuxSize,
+		deepSize: DefaultDeepSize,
+	}
+	for _, opt := range opts {
+		opt(o)
+	}
+	var w = &WorkerGrp{}
+	w.muxSize, w.deepSize = o.muxSize, o.deepSize
+
+	w.wg = &sync.WaitGroup{}
+	w.exitSignal = make(chan struct{}, 1)
+	w.wg.Add(w.muxSize)
+
+	w.ws = make([]*Worker, w.muxSize)
+	return w
 }

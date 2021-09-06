@@ -13,12 +13,6 @@ var (
 //OpType : op type
 type OpType int
 
-//Hashed2Int : can be hashed to int
-type Hashed2Int interface {
-	//HashedInt : the hashed int
-	HashedInt() int
-}
-
 //CacheFacade : cache facade, could be lru cache, map, or both mixed.
 type CacheFacade interface {
 	//Peek : only useful in lru cache, peek means no update LRU order.
