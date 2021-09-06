@@ -157,7 +157,7 @@ func testAscendGte(t *testing.T, b *BTree, k Node, n int) {
 	testIter(t, k, b.AscendGte, n)
 }
 
-type _testIterFn func(k Node, filter func(Node) bool, n int) []Node
+type _testIterFn func(k Node, filter FilterFn, n int) []Node
 
 func testIter(t *testing.T, k Node, ifn _testIterFn, n int) {
 	var ffn = func(_ Node) bool {
