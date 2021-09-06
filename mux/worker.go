@@ -290,12 +290,13 @@ func (w *Worker) handleMixUpsertThenLoad(c *AsyncC, op *OpMixUpsertThenLoad) {
 		return
 	}
 
-	var v, err = op.upsertFn(c.ctx, op.data, nil)
+	var _, err = op.upsertFn(c.ctx, op.data, nil)
 	if err != nil {
 		//upsert error
 		c.SetR(nil, err)
 		return
 	}
+	var v interface{}
 	v, err = op.loadFn(c.ctx, op.k)
 	if err != nil {
 		//load error

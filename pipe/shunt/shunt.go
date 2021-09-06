@@ -1,7 +1,9 @@
-package pipe
+package shunt
 
 import (
 	"context"
+	"github.com/pinealctx/neptune/pipe"
+	"github.com/pinealctx/neptune/pipe/q"
 	"github.com/pinealctx/neptune/ulog"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -65,7 +67,7 @@ type Shunt struct {
 	qSizeInSlot int
 
 	//multi queues
-	qs []*Q
+	qs []*q.Q
 
 	//msg handler
 	msgHandler *MsgHandler
@@ -80,17 +82,11 @@ type Shunt struct {
 }
 
 //NewShunt : new shunt
-func NewShunt(opts ...ShOption) *Shunt {
+func NewShunt(opts ...pipe.Option) *Shunt {
 	//option
-	var o = &_ShOption{
-		slotSize:    DefaultSlotSize,
-		qSizeInSlot: DefaultQInSlotSize,
-	}
-	for _, opt := range opts {
-		opt(o)
-	}
+	var slotSize, qSize = pipe.GetOption(opts...)
 	//new shunt then init
-	return NewShuntWithSize(o.slotSize, o.qSizeInSlot)
+	return NewShuntWithSize(slotSize, qSize)
 }
 
 //NewShuntWithSize : new shunt with size
@@ -101,9 +97,9 @@ func NewShuntWithSize(slotSize int, qSizeInSlot int) *Shunt {
 	shunt.exitChan = make(chan struct{}, 1)
 	shunt.wg.Add(shunt.slotSize)
 
-	shunt.qs = make([]*Q, shunt.slotSize)
+	shunt.qs = make([]*q.Q, shunt.slotSize)
 	for i := 0; i < shunt.slotSize; i++ {
-		shunt.qs[i] = NewQ(WithQReqSize(shunt.qSizeInSlot))
+		shunt.qs[i] = q.NewQ(q.WithQReqSize(shunt.qSizeInSlot))
 	}
 	shunt.msgHandler = NewMsgHandler()
 	return shunt
@@ -128,7 +124,7 @@ func (s *Shunt) SizeOfQInSlot() int {
 func (s *Shunt) AddMsg(ctx context.Context, slotIndex int, fnIndex int, inputMsg proto.Message) (*MsgProc, error) {
 	slotIndex = s.normalizeSlotIndex(slotIndex)
 	var msgProc = NewMsgProc(ctx, slotIndex, fnIndex, inputMsg)
-	var err = convertQueueErr(s.qs[slotIndex].AddReq(msgProc))
+	var err = pipe.ConvertQueueErr(s.qs[slotIndex].AddReq(msgProc))
 	return msgProc, err
 }
 
@@ -136,7 +132,7 @@ func (s *Shunt) AddMsg(ctx context.Context, slotIndex int, fnIndex int, inputMsg
 func (s *Shunt) AddPriorMsg(ctx context.Context, slotIndex int, fnIndex int, inputMsg proto.Message) (*MsgProc, error) {
 	slotIndex = s.normalizeSlotIndex(slotIndex)
 	var msgProc = NewMsgProc(ctx, slotIndex, fnIndex, inputMsg)
-	var err = convertQueueErr(s.qs[slotIndex].AddPriorReq(msgProc))
+	var err = pipe.ConvertQueueErr(s.qs[slotIndex].AddPriorReq(msgProc))
 	return msgProc, err
 }
 
@@ -193,7 +189,7 @@ func (s *Shunt) popLoop(index int) {
 		}
 		msgFn = s.msgHandler.GetFn(msgProc.fnIndex)
 		if msgFn == nil {
-			msgProc.SetOutput(nil, ErrNoHandler)
+			msgProc.SetOutput(nil, pipe.ErrNoHandler)
 			continue
 		}
 
@@ -223,5 +219,5 @@ func (s *Shunt) signalDone() {
 
 //normalize slot index
 func (s *Shunt) normalizeSlotIndex(index int) int {
-	return normalizeSlotIndex(index, s.slotSize)
+	return pipe.NormalizeSlotIndex(index, s.slotSize)
 }

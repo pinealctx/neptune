@@ -1,7 +1,9 @@
-package pipe
+package cycle
 
 import (
 	"context"
+	"github.com/pinealctx/neptune/pipe"
+	"github.com/pinealctx/neptune/pipe/q"
 	"github.com/pinealctx/neptune/ulog"
 	"go.uber.org/zap"
 	"sync"
@@ -18,7 +20,7 @@ type Cycle struct {
 	qSizeInSlot int
 
 	//multi queues
-	qs []*Q
+	qs []*q.Q
 
 	//queue handler
 	qHandler QHandler
@@ -33,21 +35,15 @@ type Cycle struct {
 }
 
 //NewCycle : new cycle
-func NewCycle(qHandler QHandler, opts ...ShOption) *Cycle {
+func NewCycle(qHandler QHandler, opts ...pipe.Option) *Cycle {
 	//option
-	var o = &_ShOption{
-		slotSize:    DefaultSlotSize,
-		qSizeInSlot: DefaultQInSlotSize,
-	}
-	for _, opt := range opts {
-		opt(o)
-	}
+	var slotSize, qSize = pipe.GetOption(opts...)
 	//new shunt then init
-	return newCycle(qHandler, o.slotSize, o.qSizeInSlot)
+	return newCycle(qHandler, slotSize, qSize)
 }
 
 //NewRunCycle : new cycle and run
-func NewRunCycle(qHandler QHandler, opts ...ShOption) *Cycle {
+func NewRunCycle(qHandler QHandler, opts ...pipe.Option) *Cycle {
 	var c = NewCycle(qHandler, opts...)
 	c.Run()
 	return c
@@ -61,9 +57,9 @@ func newCycle(qHandler QHandler, slotSize int, qSizeInSlot int) *Cycle {
 	c.exitChan = make(chan struct{}, 1)
 	c.wg.Add(c.slotSize)
 
-	c.qs = make([]*Q, c.slotSize)
+	c.qs = make([]*q.Q, c.slotSize)
 	for i := 0; i < c.slotSize; i++ {
-		c.qs[i] = NewQ(WithQReqSize(c.qSizeInSlot))
+		c.qs[i] = q.NewQ(q.WithQReqSize(c.qSizeInSlot))
 	}
 	c.qHandler = qHandler
 	return c
@@ -121,14 +117,14 @@ func (c *Cycle) WaitStop(ctx context.Context) error {
 
 //NormalizeSlotIndex slot index
 func (c *Cycle) NormalizeSlotIndex(index int) int {
-	return normalizeSlotIndex(index, c.slotSize)
+	return pipe.NormalizeSlotIndex(index, c.slotSize)
 }
 
 //addMsg : add msg
 func (c *Cycle) addMsg(ctx context.Context, slotIndex int, req interface{}) (*GenProc, error) {
 	slotIndex = c.NormalizeSlotIndex(slotIndex)
 	var proc = NewGenProc(ctx, slotIndex, req)
-	var err = convertQueueErr(c.qs[slotIndex].AddReq(proc))
+	var err = pipe.ConvertQueueErr(c.qs[slotIndex].AddReq(proc))
 	return proc, err
 }
 
@@ -136,7 +132,7 @@ func (c *Cycle) addMsg(ctx context.Context, slotIndex int, req interface{}) (*Ge
 func (c *Cycle) addPriorMsg(ctx context.Context, slotIndex int, req interface{}) (*GenProc, error) {
 	slotIndex = c.NormalizeSlotIndex(slotIndex)
 	var proc = NewGenProc(ctx, slotIndex, req)
-	var err = convertQueueErr(c.qs[slotIndex].AddPriorReq(proc))
+	var err = pipe.ConvertQueueErr(c.qs[slotIndex].AddPriorReq(proc))
 	return proc, err
 }
 
@@ -170,7 +166,7 @@ func (c *Cycle) popLoop(index int) {
 			return
 		}
 		if c.qHandler == nil {
-			proc.SetRsp(nil, ErrNoHandler)
+			proc.SetRsp(nil, pipe.ErrNoHandler)
 			ulog.Error("msg.proc.module.no.handler")
 			return
 		}
@@ -197,27 +193,4 @@ func (c *Cycle) stop() {
 func (c *Cycle) signalDone() {
 	c.wg.Wait()
 	c.exitChan <- struct{}{}
-}
-
-//normalizeSlotIndex slot index
-func normalizeSlotIndex(index int, slotSize int) int {
-	if index < 0 {
-		index = -index
-	}
-	index %= slotSize
-	return index
-}
-
-//convert msg queue error
-func convertQueueErr(err error) error {
-	if err == nil {
-		return nil
-	}
-	if err == ErrReqQFull {
-		return ErrQueueFull
-	}
-	if err == ErrClosed {
-		return ErrQueueClosed
-	}
-	return err
 }
