@@ -1,4 +1,4 @@
-package raw
+package mline
 
 import (
 	"context"
@@ -9,12 +9,8 @@ import (
 	"sync"
 )
 
-type SlotAble interface {
-	Slot() int
-}
-
-//Mux : multi-queue mux
-type Mux struct {
+//MultiLine : multi-queue handler
+type MultiLine struct {
 	//slot size
 	slotSize int
 	//queue size in each slot
@@ -32,24 +28,17 @@ type Mux struct {
 	stopOnce sync.Once
 }
 
-//NewMux : new mux
-func NewMux(opts ...pipe.Option) *Mux {
+//NewMultiLine : new multi-queue group
+func NewMultiLine(opts ...pipe.Option) *MultiLine {
 	//option
 	var slotSize, qSize = pipe.GetOption(opts...)
 	//new shunt then init
 	return newMux(slotSize, qSize)
 }
 
-//NewMuxRun : new mux and run
-func NewMuxRun(opts ...pipe.Option) *Mux {
-	var c = NewMux(opts...)
-	c.Run()
-	return c
-}
-
 //newMux : new cycle with size
-func newMux(slotSize int, qSizeInSlot int) *Mux {
-	var c = &Mux{}
+func newMux(slotSize int, qSizeInSlot int) *MultiLine {
+	var c = &MultiLine{}
 	c.slotSize, c.qSize = slotSize, qSizeInSlot
 	c.wg = &sync.WaitGroup{}
 	c.exitChan = make(chan struct{}, 1)
@@ -63,31 +52,19 @@ func newMux(slotSize int, qSizeInSlot int) *Mux {
 }
 
 //SlotSize : get slot size
-func (c *Mux) SlotSize() int {
+func (c *MultiLine) SlotSize() int {
 	return c.slotSize
 }
 
 //QSize : get queue size in each slot
-func (c *Mux) QSize() int {
+func (c *MultiLine) QSize() int {
 	return c.qSize
 }
 
-//CallSlot : wrap slot call
-//ctx -- context.Context
-//sIndex -- slot index
-//callCtx -- call context
-func (c *Mux) CallSlot(ctx context.Context, sIndex int, callCtx *SlotCallCtx) (interface{}, error) {
-	var proc, err = c.addSlotCallCtx(ctx, sIndex, callCtx)
-	if err != nil {
-		return nil, err
-	}
-	return proc.R()
-}
-
-//Call : wrap call
+//AsyncCall : wrap call
 //ctx -- context.Context
 //callCtx -- call context
-func (c *Mux) Call(ctx context.Context, callCtx *CallCtx) (interface{}, error) {
+func (c *MultiLine) AsyncCall(ctx context.Context, callCtx *CallCtx) (interface{}, error) {
 	var proc, err = c.addCallCtx(ctx, callCtx)
 	if err != nil {
 		return nil, err
@@ -96,19 +73,19 @@ func (c *Mux) Call(ctx context.Context, callCtx *CallCtx) (interface{}, error) {
 }
 
 //Run : run all queue msg handler
-func (c *Mux) Run() {
+func (c *MultiLine) Run() {
 	for i := 0; i < c.slotSize; i++ {
 		go c.popLoop(i)
 	}
 }
 
 //Stop : stop
-func (c *Mux) Stop() {
+func (c *MultiLine) Stop() {
 	c.stopOnce.Do(c.stop)
 }
 
 //WaitStop : wait stop
-func (c *Mux) WaitStop(ctx context.Context) error {
+func (c *MultiLine) WaitStop(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -117,29 +94,16 @@ func (c *Mux) WaitStop(ctx context.Context) error {
 	}
 }
 
-//NormalizeSlotIndex slot index
-func (c *Mux) NormalizeSlotIndex(index int) int {
-	return pipe.NormalizeSlotIndex(index, c.slotSize)
-}
-
-//addSlotCallCtx : add slot call context
-func (c *Mux) addSlotCallCtx(ctx context.Context, slotIndex int, callCtx *SlotCallCtx) (*AsyncCtx, error) {
-	slotIndex = c.NormalizeSlotIndex(slotIndex)
-	var proc = NewAsyncCtx(ctx, slotIndex, callCtx)
-	var err = pipe.ConvertQueueErr(c.qs[slotIndex].AddReq(proc))
-	return proc, err
-}
-
 //addCallCtx : add call context
-func (c *Mux) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, error) {
-	var slotIndex = c.NormalizeSlotIndex(callCtx.Param.Slot())
-	var proc = NewAsyncCtxM(ctx, slotIndex, callCtx.Call, callCtx.Param)
+func (c *MultiLine) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, error) {
+	var slotIndex = pipe.NormalizeSlotIndex(callCtx.hashIndex, c.slotSize)
+	var proc = newAsyncCtx(ctx, callCtx.call, callCtx.param)
 	var err = pipe.ConvertQueueErr(c.qs[slotIndex].AddReq(proc))
 	return proc, err
 }
 
 //pop msg loop
-func (c *Mux) popLoop(index int) {
+func (c *MultiLine) popLoop(index int) {
 	var (
 		err  error
 		item interface{}
@@ -168,7 +132,7 @@ func (c *Mux) popLoop(index int) {
 			return
 		}
 
-		r, err = ac.call(ac.ctx, ac.sIndex, ac.param)
+		r, err = ac.call(ac.ctx, index, ac.param)
 		if err != nil {
 			ac.SetR(nil, err)
 		} else {
@@ -178,7 +142,7 @@ func (c *Mux) popLoop(index int) {
 }
 
 //stop work
-func (c *Mux) stop() {
+func (c *MultiLine) stop() {
 	for i := 0; i < c.slotSize; i++ {
 		c.qs[i].Close()
 	}
@@ -187,7 +151,7 @@ func (c *Mux) stop() {
 }
 
 //signal all children go routine done
-func (c *Mux) signalDone() {
+func (c *MultiLine) signalDone() {
 	c.wg.Wait()
 	c.exitChan <- struct{}{}
 }
