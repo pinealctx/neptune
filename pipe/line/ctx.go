@@ -2,10 +2,21 @@ package line
 
 import "context"
 
+//CallFn : call function
+type CallFn func(ctx context.Context, req interface{}) (rsp interface{}, err error)
+
 //CallCtx : call context, function and param
 type CallCtx struct {
-	Call  func(ctx context.Context, req interface{}) (rsp interface{}, err error)
+	Call  CallFn
 	Param interface{}
+}
+
+//NewCallCtx : new call context
+func NewCallCtx(call CallFn, param interface{}) *CallCtx {
+	return &CallCtx{
+		Call:  call,
+		Param: param,
+	}
 }
 
 //AsyncR : async call result.
@@ -25,19 +36,18 @@ type AsyncCtx struct {
 	//param -- call param
 	//r -- return param
 	//err - return err if failed
-	call func(ctx context.Context, param interface{}) (r interface{}, err error)
+	call CallFn
 	//call param
 	param interface{}
 	//return chan
 	rChan chan AsyncR
 }
 
-//NewAsyncCtx : new async call context
+//newAsyncCtx : new async call context
 //ctx -- context
 //call -- async call function
 //param -- async call param
-func NewAsyncCtx(ctx context.Context,
-	call func(context.Context, interface{}) (interface{}, error), param interface{}) *AsyncCtx {
+func newAsyncCtx(ctx context.Context, call CallFn, param interface{}) *AsyncCtx {
 	return &AsyncCtx{
 		ctx:   ctx,
 		call:  call,

@@ -93,7 +93,7 @@ func (c *Line) Stop() {
 
 //addCallCtx : add call context
 func (c *Line) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, error) {
-	var proc = NewAsyncCtx(ctx, callCtx.Call, callCtx.Param)
+	var proc = newAsyncCtx(ctx, callCtx.Call, callCtx.Param)
 	var err = pipe.ConvertQueueErr(c.q.AddReq(proc))
 	return proc, err
 }
