@@ -61,6 +61,15 @@ func (c *MultiLine) QSize() int {
 	return c.qSize
 }
 
+//IndexOf : get slot index.
+//将散列值映射成处理数组的index，举例来说，如果以user id作为散列值，则整个处理逻辑会用user id的绝对值对处理数组长度取模，取模后的值就是
+//其在数组中的位置。
+//Input : i -- a slot key number. 此参数就是分片使用的hash值。
+//Output : index of slot.返回此hash值在处理数组中对应的位置。
+func (c *MultiLine) IndexOf(i int) int {
+	return pipe.NormalizeSlotIndex(i, c.slotSize)
+}
+
 //AsyncCall : wrap call
 //ctx -- context.Context
 //callCtx -- call context
