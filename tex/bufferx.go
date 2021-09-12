@@ -333,6 +333,56 @@ func (b *BufferX) WriteI64(v int64) {
 	b.WriteU64(uint64(v))
 }
 
+//ReadVarU64 read variant uint64
+func (b *BufferX) ReadVarU64() (uint64, error) {
+	return binary.ReadUvarint(b.buffer)
+}
+
+//WriteVarU64 write variant uint64
+func (b *BufferX) WriteVarU64(v uint64) {
+	var u64buf [12]byte
+	var n = binary.PutUvarint(u64buf[:], v)
+	b.Write(u64buf[:n])
+}
+
+//ReadVarI64 read variant int64
+func (b *BufferX) ReadVarI64() (int64, error) {
+	return binary.ReadVarint(b.buffer)
+}
+
+//WriteVarI64 write variant int64
+func (b *BufferX) WriteVarI64(v int64) {
+	var i64buf [12]byte
+	var n = binary.PutVarint(i64buf[:], v)
+	b.Write(i64buf[:n])
+}
+
+//ReadVarU32 read variant uint32
+func (b *BufferX) ReadVarU32() (uint32, error) {
+	var v, err = binary.ReadUvarint(b.buffer)
+	return uint32(v), err
+}
+
+//WriteVarU32 write variant uint32
+func (b *BufferX) WriteVarU32(v uint32) {
+	var u64buf [12]byte
+	var n = binary.PutUvarint(u64buf[:], uint64(v))
+	b.Write(u64buf[:n])
+}
+
+//ReadVarI32 read variant int32
+func (b *BufferX) ReadVarI32() (int32, error) {
+	var v, err = binary.ReadVarint(b.buffer)
+	return int32(v), err
+}
+
+//WriteVarI32 write variant int32
+func (b *BufferX) WriteVarI32(v int32) {
+	var i64buf [12]byte
+	var n = binary.PutVarint(i64buf[:], int64(v))
+	b.Write(i64buf[:n])
+}
+
 //ReadF64 read float64
 func (b *BufferX) ReadF64() (float64, error) {
 	var u64, err = b.ReadU64()
