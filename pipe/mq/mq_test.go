@@ -1,4 +1,4 @@
-package q
+package mq
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func TestCondCase2(t *testing.T) {
 }
 
 func TestActorQ_AddCtrl(t *testing.T) {
-	var q = NewQ()
+	var q = NewMQ()
 	_ = q.AddReq(-1)
 	_ = q.AddReq(-2)
 	_ = q.AddReq(-3)
@@ -95,43 +95,43 @@ func TestActorQ_AddCtrl(t *testing.T) {
 }
 
 func TestActorQ_RandomAdd(t *testing.T) {
-	var q = NewQ()
+	var q = NewMQ()
 	testActorQ(q, time.Minute*5, false)
 }
 
 func TestActorQ_RandomAdd_PopAny(t *testing.T) {
-	var q = NewQ()
+	var q = NewMQ()
 	testActorQ(q, time.Minute*5, true)
 }
 
 func TestActorQ_RandomAddWithCtrlMax(t *testing.T) {
-	var q = NewQ(WithQCtrlSize(5))
+	var q = NewMQ(WithQCtrlSize(5))
 	testActorQ(q, time.Minute*5, false)
 }
 
 func TestActorQ_RandomAddWithReqMax(t *testing.T) {
-	var q = NewQ(WithQReqSize(5))
+	var q = NewMQ(WithQReqSize(5))
 	testActorQ(q, time.Minute*5, false)
 }
 
 func TestActorQ_RandomAddWithCtrlReqMax(t *testing.T) {
-	var q = NewQ(WithQReqSize(5), WithQCtrlSize(5))
+	var q = NewMQ(WithQReqSize(5), WithQCtrlSize(5))
 	testActorQ(q, time.Minute*5, true)
 }
 
 func TestActorQ_WaitClose(t *testing.T) {
-	var q = NewQ()
+	var q = NewMQ()
 	testActorNotify(q)
 	_ = q.WaitClose(context.Background())
 }
 
 func TestActorQ_WaitClear(t *testing.T) {
-	var q = NewQ()
+	var q = NewMQ()
 	testActorNotify(q)
 	_ = q.WaitClear(context.Background())
 }
 
-func testActorQ(q *Q, maxWaitTime time.Duration, popAny bool) {
+func testActorQ(q *MQ, maxWaitTime time.Duration, popAny bool) {
 	var startTime = time.Now()
 
 	var waitGrp sync.WaitGroup
@@ -221,7 +221,7 @@ func testActorQ(q *Q, maxWaitTime time.Duration, popAny bool) {
 	waitGrp.Wait()
 }
 
-func testActorNotify(q *Q) {
+func testActorNotify(q *MQ) {
 	var waitGrp sync.WaitGroup
 	waitGrp.Add(3)
 	go func() {
