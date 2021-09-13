@@ -46,7 +46,7 @@ func newMux(slotSize int, qSizeInSlot int) *MultiLine {
 
 	c.qs = make([]*q.Q, c.slotSize)
 	for i := 0; i < c.slotSize; i++ {
-		c.qs[i] = q.NewQ(q.WithQReqSize(c.qSize))
+		c.qs[i] = q.NewQ(q.WithSize(c.qSize))
 	}
 	return c
 }

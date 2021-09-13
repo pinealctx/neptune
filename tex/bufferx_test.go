@@ -12,7 +12,7 @@ func TestBufferX_WriteVarI32(t *testing.T) {
 	var count time.Duration = 1000000
 
 	var t1 = time.Now()
-	for k :=time.Duration(0); k < count; k++ {
+	for k := time.Duration(0); k < count; k++ {
 		i = writeVarI32()
 	}
 	var t2 = time.Now()
@@ -22,7 +22,7 @@ func TestBufferX_WriteVarI32(t *testing.T) {
 }
 
 func writeVarI32() []int {
-	var i32  = []int32{
+	var i32 = []int32{
 		math.MinInt32,
 		math.MinInt16,
 		math.MinInt8,
@@ -36,15 +36,15 @@ func writeVarI32() []int {
 		//8191
 		8191,
 		//1万
-		100*100,
+		100 * 100,
 		//10万
-		10*100*100,
+		10 * 100 * 100,
 		//100万
-		100*100*100,
+		100 * 100 * 100,
 	}
 	var l = len(i32)
 	var s = make([]int, l)
-	for i :=0; i < l; i++ {
+	for i := 0; i < l; i++ {
 		var x = NewSpecBufferX(6)
 		x.WriteVarI32(i32[i])
 		s[i] = x.Len()
@@ -62,7 +62,7 @@ func TestBufferX_WriteI32(t *testing.T) {
 	var count time.Duration = 1000000
 
 	var t1 = time.Now()
-	for k :=time.Duration(0); k < count; k++ {
+	for k := time.Duration(0); k < count; k++ {
 		i = writeI32()
 	}
 	var t2 = time.Now()
@@ -72,7 +72,7 @@ func TestBufferX_WriteI32(t *testing.T) {
 }
 
 func writeI32() []int {
-	var i32  = []int32{
+	var i32 = []int32{
 		math.MinInt32,
 		math.MinInt16,
 		math.MinInt8,
@@ -86,15 +86,15 @@ func writeI32() []int {
 		//8191
 		8191,
 		//1万
-		100*100,
+		100 * 100,
 		//10万
-		10*100*100,
+		10 * 100 * 100,
 		//100万
-		100*100*100,
+		100 * 100 * 100,
 	}
 	var l = len(i32)
 	var s = make([]int, l)
-	for i :=0; i < l; i++ {
+	for i := 0; i < l; i++ {
 		var x = NewSpecBufferX(6)
 		x.WriteI32(i32[i])
 		s[i] = x.Len()

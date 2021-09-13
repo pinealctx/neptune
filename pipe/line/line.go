@@ -55,7 +55,7 @@ func NewLine(wg *sync.WaitGroup, opts ...Option) *Line {
 func newLine(qSize int, wg *sync.WaitGroup) *Line {
 	var c = &Line{}
 	c.qSize = qSize
-	c.q = q.NewQ(q.WithQReqSize(c.qSize))
+	c.q = q.NewQ(q.WithSize(c.qSize))
 	c.wg = wg
 	return c
 }
