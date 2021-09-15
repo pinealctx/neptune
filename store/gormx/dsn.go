@@ -33,3 +33,29 @@ func (d *Dsn) String() string {
 	url = strings.TrimSuffix(url, "&")
 	return url
 }
+
+func (d *Dsn) UseDefault() string {
+	//appendix default options
+	if len(d.Options) == 0 {
+		d.Options = map[string]string{
+			"charset":   "utf8mb4",
+			"parseTime": "True",
+			"loc":       "Local",
+		}
+	} else {
+		var ok bool
+		_, ok = d.Options["charset"]
+		if !ok {
+			d.Options["charset"] = "utf8mb4"
+		}
+		_, ok = d.Options["parseTime"]
+		if !ok {
+			d.Options["parseTime"] = "True"
+		}
+		_, ok = d.Options["loc"]
+		if !ok {
+			d.Options["loc"] = "Local"
+		}
+	}
+	return d.String()
+}
