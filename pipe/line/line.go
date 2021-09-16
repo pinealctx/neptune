@@ -11,6 +11,7 @@ import (
 
 type _Option struct {
 	qSize int
+	name  string
 }
 
 //Option : only qSize option
@@ -20,6 +21,13 @@ type Option func(option *_Option)
 func WithQSize(qSize int) Option {
 	return func(o *_Option) {
 		o.qSize = qSize
+	}
+}
+
+//WithName : setup name
+func WithName(name string) Option {
+	return func(o *_Option) {
+		o.name = name
 	}
 }
 
@@ -38,22 +46,27 @@ type Line struct {
 	startOnce sync.Once
 	//stop once
 	stopOnce sync.Once
+
+	//set a name
+	name string
 }
 
 //NewLine : new async line
 func NewLine(wg *sync.WaitGroup, opts ...Option) *Line {
 	var o = &_Option{
 		qSize: pipe.DefaultQSize,
+		name:  "not-set",
 	}
 	for _, opt := range opts {
 		opt(o)
 	}
-	return newLine(o.qSize, wg)
+	return newLine(o.name, o.qSize, wg)
 }
 
 //newLine : new async line
-func newLine(qSize int, wg *sync.WaitGroup) *Line {
+func newLine(name string, qSize int, wg *sync.WaitGroup) *Line {
 	var c = &Line{}
+	c.name = name
 	c.qSize = qSize
 	c.q = q.NewQ(q.WithSize(c.qSize))
 	c.wg = wg
@@ -113,13 +126,15 @@ func (c *Line) popLoop() {
 
 		item, err = c.q.PopAnyway()
 		if err != nil {
-			ulog.Debug("q.quit.in.line.handler",
+			ulog.Debug("quit.in.line.handler",
+				zap.String("name", c.name),
 				zap.Error(err))
 			return
 		}
 		ac, ok = item.(*AsyncCtx)
 		if !ok {
 			ulog.Error("invalid.async.line.call.context",
+				zap.String("name", c.name),
 				zap.Reflect("context", item))
 			return
 		}
