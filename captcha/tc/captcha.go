@@ -1,17 +1,16 @@
 package tc
 
 import (
+	"errors"
 	"github.com/pinealctx/neptune/ulog"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/captcha/v20190722"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
+	tErr "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-var ErrCaptchaVerify = status.Error(codes.PermissionDenied, "captcha.verify.error")
+var ErrCaptchaVerify = errors.New("captcha.verify.error")
 
 type Captcha struct {
 	cli       *v20190722.Client
@@ -51,16 +50,16 @@ func (c *Captcha) verify(ticket, randstr, userIP string) error {
 	request.AppSecretKey = common.StringPtr(c.appSecret)
 	var response, err = c.cli.DescribeCaptchaResult(request)
 	if err != nil {
-		var sErr, ok = err.(*errors.TencentCloudSDKError)
+		var sErr, ok = err.(*tErr.TencentCloudSDKError)
 		if ok {
-			ulog.Error("Verify.SDK.err", zap.Reflect("sErr", sErr))
+			ulog.Error("verify.SDK.err", zap.Reflect("sErr", sErr))
 			return ErrCaptchaVerify
 		}
-		ulog.Error("Verify.err", zap.Error(err))
+		ulog.Error("verify.err", zap.Error(err))
 		return err
 	}
 	if *response.Response.CaptchaCode != 1 {
-		ulog.Error("Verify.fail", zap.Reflect("response", response.Response))
+		ulog.Error("verify.fail", zap.Reflect("response", response.Response))
 		return ErrCaptchaVerify
 	}
 	return nil
@@ -75,16 +74,16 @@ func (c *Captcha) verifyMini(ticket, userIP string) error {
 	request.AppSecretKey = common.StringPtr(c.appSecret)
 	var response, err = c.cli.DescribeCaptchaMiniResult(request)
 	if err != nil {
-		var sErr, ok = err.(*errors.TencentCloudSDKError)
+		var sErr, ok = err.(*tErr.TencentCloudSDKError)
 		if ok {
-			ulog.Error("VerifyMini.SDK.err", zap.Reflect("sErr", sErr))
+			ulog.Error("verifyMini.SDK.err", zap.Reflect("sErr", sErr))
 			return ErrCaptchaVerify
 		}
-		ulog.Error("VerifyMini.err", zap.Error(err))
+		ulog.Error("verifyMini.err", zap.Error(err))
 		return err
 	}
 	if *response.Response.CaptchaCode != 1 {
-		ulog.Error("VerifyMini.fail", zap.Reflect("response", response.Response))
+		ulog.Error("verifyMini.fail", zap.Reflect("response", response.Response))
 		return ErrCaptchaVerify
 	}
 	return nil
