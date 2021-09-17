@@ -33,31 +33,43 @@ func (b *BTree) Insert(v Node) {
 }
 
 //Update : update old node to given new node.
-func (b *BTree) Update(oldV Node, newV Node) {
+//If old node not exist, the newV could not be updated.
+//Return : if old node not exist, return false, else return true.
+func (b *BTree) Update(oldV Node, newV Node) bool {
 	b.rw.Lock()
 	defer b.rw.Unlock()
 	var e = b.t.Delete(oldV)
 	if e == nil {
-		return
+		return false
 	}
 	b.t.ReplaceOrInsert(newV)
+	return true
 }
 
 //UpdateOrInsert : if ole node exists, update old node to new node, else insert new node to btree.
-func (b *BTree) UpdateOrInsert(oldV Node, newV Node) {
+//The new node will always be inserted or replaced.
+//Return : bool
+//If ole node not exist, return false, it indicates that ole node not found but new node be inserted.
+//Else return ture.
+func (b *BTree) UpdateOrInsert(oldV Node, newV Node) bool {
 	b.rw.Lock()
 	defer b.rw.Unlock()
-	b.t.Delete(oldV)
+	var e = b.t.Delete(oldV)
 	b.t.ReplaceOrInsert(newV)
+	return e != nil
 }
 
 //Delete : delete node, actually, figure out a node which related node sort fields match.
-func (b *BTree) Delete(k Node) {
+//Return : bool
+//If deleted node exist, return true, else return false
+func (b *BTree) Delete(k Node) bool {
 	b.rw.Lock()
 	defer b.rw.Unlock()
-	b.t.Delete(k)
+	var e = b.t.Delete(k)
+	return e != nil
 }
 
+//Get : get node by key
 func (b *BTree) Get(k Node) Node {
 	b.rw.RLock()
 	defer b.rw.RUnlock()
