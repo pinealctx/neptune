@@ -3,6 +3,7 @@ package tex
 import (
 	"encoding/binary"
 	"errors"
+	"github.com/pinealctx/neptune/tex/pkg"
 	"math"
 )
 
@@ -94,7 +95,7 @@ type IBufferX interface {
 
 //BufferX buffer implement
 type BufferX struct {
-	buffer *Buffer
+	buffer *pkg.Buffer
 }
 
 //Len : buffer len
@@ -394,28 +395,28 @@ func (b *BufferX) WriteF64(v float64) {
 	b.WriteU64(math.Float64bits(v))
 }
 
-//NewBufferXFrom new buffer from an exist bytes
-//as packer
-func NewBufferXFrom(data []byte) *BufferX {
-	var buffer = NewBuffer(data)
+//NewReadableBuffer new buffer from existed bytes to read.
+//Use existed bytes to fill buffer, the buffer is always used as read stream.
+func NewReadableBuffer(data []byte) *BufferX {
+	var buffer = pkg.NewBuffer(data)
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX
 }
 
-//NewBufferX new buffer with a default size
+//NewBuffer new buffer with a default size
 //as unpack
-func NewBufferX() *BufferX {
+func NewBuffer() *BufferX {
 	var data = make([]byte, defaultByteBuff)
-	var buffer = NewBuffer(data)
+	var buffer = pkg.NewBuffer(data)
 	buffer.Reset()
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX
 }
 
-//NewSpecBufferX new small
-func NewSpecBufferX(n int) *BufferX {
-	var data = make([]byte, n)
-	var buffer = NewBuffer(data)
+//NewSizedBuffer : new buffer with specific size
+func NewSizedBuffer(size int) *BufferX {
+	var data = make([]byte, size)
+	var buffer = pkg.NewBuffer(data)
 	buffer.Reset()
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX
