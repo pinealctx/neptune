@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package pkg
+package tex
 
 // Simple byte buffer for marshaling data.
 
@@ -427,4 +427,13 @@ func NewBuffer(buf []byte) *Buffer { return &Buffer{buf: buf} }
 // sufficient to initialize a Buffer.
 func NewBufferString(s string) *Buffer {
 	return &Buffer{buf: []byte(s)}
+}
+
+// NewSizedBuffer create size buff, the reset, which means that write the buffer is
+// from first position.
+func NewSizedBuffer(size int) *Buffer {
+	var buf = make([]byte, size)
+	var b = &Buffer{buf: buf}
+	b.Reset()
+	return b
 }

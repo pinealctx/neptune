@@ -45,7 +45,7 @@ func writeVarI32() []int {
 	var l = len(i32)
 	var s = make([]int, l)
 	for i := 0; i < l; i++ {
-		var x = NewSizedBuffer(6)
+		var x = NewSizedBufferX(6)
 		x.WriteVarI32(i32[i])
 		s[i] = x.Len()
 		var r, _ = x.ReadVarI32()
@@ -95,7 +95,7 @@ func writeI32() []int {
 	var l = len(i32)
 	var s = make([]int, l)
 	for i := 0; i < l; i++ {
-		var x = NewSizedBuffer(6)
+		var x = NewSizedBufferX(6)
 		x.WriteI32(i32[i])
 		s[i] = x.Len()
 		var r, _ = x.ReadI32()
