@@ -1,78 +1,123 @@
-// Package snowflake provides a very simple Twitter snowflake generator and parser.
 package snowflake
 
 import (
-	"encoding/base64"
-	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/pinealctx/neptune/tex"
 	"strconv"
 	"sync"
 	"time"
 )
 
+/*
+典型的雪花算法的信息布局
+最高位b0   ---->  最低位b63
+[b0]      [b1 ---- b41]    [b42 --- b51]     [b52 --- b63]
+b0: 作为符号位，不用，设为0。
+b1 -- b41: 41位毫秒时间戳，可用69年。
+b42 -- b51: 10位节点信息，可设置1024个节点。
+b52 - b63: 同一毫秒时的步长(为4096)，在同一毫秒产生ID时，通过增加步长来产生不同ID，
+意味着1秒内可以产生4096000个ID，应付大部分场景足够了。
+
+按实际情况，可以适当做些调整与变化:
+1. 有些场景下节点信息放在最低位可能更合理，此时，整个结构就变成了
+[b0]      [b1 ---- b41]    [b42 --- b53]     [b54 --- b63]
+设为0      毫秒时间戳         步长信息           节点信息
+2. 如果需要的节点数不用那么多，可以将节省下来的位数给时间戳用。
+例如如果只支持256个节点，则毫秒数可以支持的时间则变为69*4 = 276年
+3. 为了方便使用，将节点位数可以简化成3种制式:
+Node1024 -- 支持1024个节点，时间戳支持为69年
+Node512 -- 支持512个节点，时间戳支持为138年
+Node256 -- 支持256个节点，时间戳支持为276年
+同时，将节点信息存放位置也简化成2种制式:
+NodeAtLowest:
+true -- 节点信息放在最低位
+false -- 步长信息放在最低位
+*/
+
 var (
-	// Epoch is set to the twitter snowflake epoch of 2021-01-01 08:00:00 +0800 CST in milliseconds
-	// You may customize this to set a different epoch for your application.
-	Epoch int64 = 1609459200000
+	//全局的创世的毫秒时间戳
+	_epoch int64 = 1609430400000
+	//全局的node bits
+	_nodeBits uint8 = 10
+	//全局的n节点是否放在最低位
+	_nodeAtLowest = false
 
-	// NodeBits holds the number of bits to use for Node
-	// Remember, you have a total 22 bits to share between Node/Step
-	NodeBits uint8 = 10
-
-	// StepBits holds the number of bits to use for Step
-	// Remember, you have a total 22 bits to share between Node/Step
-	StepBits uint8 = 12
-
-	// : the below four variables will be removed in a future release.
-	mu        sync.Mutex
-	nodeMax   int64 = -1 ^ (-1 << NodeBits)
-	nodeMask        = nodeMax << StepBits
-	stepMask  int64 = -1 ^ (-1 << StepBits)
-	timeShift       = NodeBits + StepBits
-	nodeShift       = StepBits
+	timeLoc, _ = time.LoadLocation("Asia/Shanghai")
 )
 
-const encodeBase32Map = "ybndrfg8ejkmcpqxot1uwisza345h769"
+const (
+	//StepBits 步长永远设置为12 bits
+	StepBits uint8 = 12
 
-var decodeBase32Map [256]byte
+	Node1024 NodeBitsMode = 10
+	Node512  NodeBitsMode = 9
+	Node256  NodeBitsMode = 8
 
-const encodeBase58Map = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+	//SDivMs 1 second = 1000 ms
+	SDivMs = 1000
+	//MsDivNs 1 ms = 1000000 ns
+	MsDivNs = 1000000
 
-var decodeBase58Map [256]byte
+	//TimeStrLen convert id to time style string, its length is fixed 24
+	TimeStrLen = 24
+)
 
-// A JSONSyntaxError is returned from UnmarshalJSON if an invalid ID is provided.
-type JSONSyntaxError struct{ original []byte }
+type NodeBitsMode uint8
 
-func (j JSONSyntaxError) Error() string {
-	return fmt.Sprintf("invalid snowflake ID %q", string(j.original))
+//_Option : snowflake option
+type _Option struct {
+	//创世的毫秒时间戳，假如以2021年开始时间为创世时间，则需要保证后面ID生成的过程中，不会出现早于2021年的系统时间
+	epoch int64
+	//节点位数
+	nodeBits uint8
+	//节点是否放在最低位
+	nodeAtLowest bool
 }
 
-// ErrInvalidBase58 is returned by ParseBase58 when given an invalid []byte
-var ErrInvalidBase58 = errors.New("invalid base58")
+type Option func(o *_Option)
 
-// ErrInvalidBase32 is returned by ParseBase32 when given an invalid []byte
-var ErrInvalidBase32 = errors.New("invalid base32")
+//UseEpoch : 设置创世时间
+func UseEpoch(t time.Time) Option {
+	return func(o *_Option) {
+		o.epoch = t.UnixNano() / int64(time.Millisecond)
+	}
+}
 
-// Create maps for decoding Base58/Base32.
-// This speeds up the process tremendously.
-func init() {
+//UseNodeMode : 设置节点位数模式
+func UseNodeMode(m NodeBitsMode) Option {
+	return func(o *_Option) {
+		switch m {
+		case Node256:
+		case Node512:
+		default:
+			m = Node1024
+		}
+		o.nodeBits = uint8(m)
+	}
+}
 
-	for i := 0; i < len(encodeBase58Map); i++ {
-		decodeBase58Map[i] = 0xFF
+//NodeAtLowest : 设置节点位数模式
+func NodeAtLowest() Option {
+	return func(o *_Option) {
+		o.nodeAtLowest = true
+	}
+}
+
+//Setup setup snowflake
+func Setup(opts ...Option) {
+	var o = &_Option{
+		epoch:        _epoch,
+		nodeBits:     _nodeBits,
+		nodeAtLowest: _nodeAtLowest,
 	}
 
-	for i := 0; i < len(encodeBase58Map); i++ {
-		decodeBase58Map[encodeBase58Map[i]] = byte(i)
+	for _, opt := range opts {
+		opt(o)
 	}
-
-	for i := 0; i < len(encodeBase32Map); i++ {
-		decodeBase32Map[i] = 0xFF
-	}
-
-	for i := 0; i < len(encodeBase32Map); i++ {
-		decodeBase32Map[encodeBase32Map[i]] = byte(i)
-	}
+	_epoch = o.epoch
+	_nodeBits = o.nodeBits
+	_nodeAtLowest = o.nodeAtLowest
 }
 
 // A Node struct holds the basic information needed for a snowflake generator
@@ -83,67 +128,37 @@ type Node struct {
 	time  int64
 	node  int64
 	step  int64
-
-	nodeMax   int64
-	nodeMask  int64
-	stepMask  int64
-	timeShift uint8
-	nodeShift uint8
 }
 
-// An ID is a custom type used for a snowflake ID.  This is used so we can
-// attach methods onto the ID.
-type ID int64
-
 // NewNode returns a new snowflake node that can be used to generate snowflake
-// IDs
 func NewNode(node int64) (*Node, error) {
-
-	// re-calc in case custom NodeBits or StepBits were set
-	// DEPRECATED: the below block will be removed in a future release.
-	mu.Lock()
-	nodeMax = -1 ^ (-1 << NodeBits)
-	nodeMask = nodeMax << StepBits
-	stepMask = -1 ^ (-1 << StepBits)
-	timeShift = NodeBits + StepBits
-	nodeShift = StepBits
-	mu.Unlock()
-
-	n := Node{}
-	n.node = node
-	n.nodeMax = -1 ^ (-1 << NodeBits)
-	n.nodeMask = n.nodeMax << StepBits
-	n.stepMask = -1 ^ (-1 << StepBits)
-	n.timeShift = NodeBits + StepBits
-	n.nodeShift = StepBits
-
-	if n.node < 0 || n.node > n.nodeMax {
-		return nil, errors.New("Node number must be between 0 and " + strconv.FormatInt(n.nodeMax, 10))
+	var nodeMax int64 = (1 << _nodeBits) - 1
+	if node < 0 || node > nodeMax {
+		return nil, errors.New("Node number must be between 0 and " + strconv.FormatInt(nodeMax, 10))
 	}
-
+	var n = &Node{}
+	n.node = node
 	var curTime = time.Now()
 	// add time.Duration to curTime to make sure we use the monotonic clock if available
-	n.epoch = curTime.Add(time.Unix(Epoch/1000, (Epoch%1000)*1000000).Sub(curTime))
-
-	return &n, nil
+	n.epoch = curTime.Add(time.Unix(_epoch/SDivMs, (_epoch%SDivMs)*MsDivNs).Sub(curTime))
+	return n, nil
 }
 
 // Generate creates and returns a unique snowflake ID
 // To help guarantee uniqueness
 // - Make sure your system is keeping accurate system time
 // - Make sure you never have multiple nodes running with the same node ID
-func (n *Node) Generate() ID {
-
+func (n *Node) Generate() int64 {
 	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	now := time.Since(n.epoch).Nanoseconds() / 1000000
-
+	var stepMax int64 = (1 << StepBits) - 1
+	var now = time.Since(n.epoch).Nanoseconds() / MsDivNs
 	if now == n.time {
-		n.step = (n.step + 1) & n.stepMask
-
+		n.step = (n.step + 1) & stepMax
 		if n.step == 0 {
 			for now <= n.time {
-				now = time.Since(n.epoch).Nanoseconds() / 1000000
+				now = time.Since(n.epoch).Nanoseconds() / MsDivNs
 			}
 		}
 	} else {
@@ -151,215 +166,118 @@ func (n *Node) Generate() ID {
 	}
 
 	n.time = now
-
-	r := ID((now)<<n.timeShift |
-		(n.node << n.nodeShift) |
-		(n.step),
-	)
-
-	n.mu.Unlock()
+	var timeShift, nodeShift, stepShift = figureShift()
+	var r = now<<timeShift | n.node<<nodeShift | n.step<<stepShift
 	return r
 }
 
-// Int64 returns an int64 of the snowflake ID
-func (f ID) Int64() int64 {
-	return int64(f)
+// IDParse figure out time/node/step from id
+// Return : ms timestamp, node, step
+func IDParse(id int64) (timeMs, node, step int64) {
+	var nodeMax int64 = (1 << _nodeBits) - 1
+	var stepMax int64 = (1 << StepBits) - 1
+	var timeShift, nodeShift, stepShift = figureShift()
+
+	timeMs = (id >> timeShift) + _epoch
+	node = (id >> nodeShift) & nodeMax
+	step = (id >> stepShift) & stepMax
+	return timeMs, node, step
 }
 
-// ParseInt64 converts an int64 into a snowflake ID
-func ParseInt64(id int64) ID {
-	return ID(id)
+// IDParseEx figure out time/node/step from id
+// Return : time.Time, node, step
+func IDParseEx(id int64) (t time.Time, node, step int64) {
+	var ts int64
+	ts, node, step = IDParse(id)
+	t = time.Unix(ts/SDivMs, (ts%SDivMs)*MsDivNs).In(timeLoc)
+	return t, node, step
 }
 
-// String returns a string of the snowflake ID
-func (f ID) String() string {
-	return strconv.FormatInt(int64(f), 10)
+// TimeRange figure out a specific time min and max id
+// The calculation is based on second
+func TimeRange(t time.Time) (min, max int64) {
+	var timeShift = _nodeBits + StepBits
+	var ts = t.Unix()
+	var timeMs = ts * SDivMs
+	timeMs <<= timeShift
+	min = timeMs
+	var reMax int64 = (1 << timeShift) - 1
+	max = timeMs | reMax
+	return min, max
 }
 
-// ParseString converts a string into a snowflake ID
-func ParseString(id string) (ID, error) {
-	i, err := strconv.ParseInt(id, 10, 64)
-	return ID(i), err
-
+// CnStyle
+// A weird implement for chinese style
+// 总共长度24
+// 17位时间- 20210901 003859 000
+// 7位NODE+STEP
+func CnStyle(id int64) string {
+	var timeShift = _nodeBits + StepBits
+	var ms = (id >> timeShift) + _epoch
+	var t = time.Unix(ms/SDivMs, (ms%SDivMs)*MsDivNs).In(timeLoc)
+	var buf = tex.NewSizedBuffer(TimeStrLen)
+	var mask int64 = (1 << timeShift) - 1
+	var left = id & mask
+	_, _ = buf.WriteString(fmt.Sprintf("%04d", t.Year()))
+	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Month()))
+	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Day()))
+	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Hour()))
+	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Minute()))
+	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Second()))
+	_, _ = buf.WriteString(fmt.Sprintf("%03d", t.Nanosecond()/MsDivNs))
+	_, _ = buf.WriteString(fmt.Sprintf("%07d", left))
+	return buf.String()
 }
 
-// Base2 returns a string base2 of the snowflake ID
-func (f ID) Base2() string {
-	return strconv.FormatInt(int64(f), 2)
-}
-
-// ParseBase2 converts a Base2 string into a snowflake ID
-func ParseBase2(id string) (ID, error) {
-	i, err := strconv.ParseInt(id, 2, 64)
-	return ID(i), err
-}
-
-// Base32 uses the z-base-32 character set but encodes and decodes similar
-// to base58, allowing it to create an even smaller result string.
-// caution: There are many different base32 implementations so becareful when
-// doing any interoperation.
-func (f ID) Base32() string {
-
-	if f < 32 {
-		return string(encodeBase32Map[f])
+// FromChStyle from string to int64
+func FromChStyle(v string) (int64, error) {
+	var l = len(v)
+	if l != TimeStrLen {
+		return 0, fmt.Errorf("unspported.id.cn.len:%d", l)
 	}
-
-	b := make([]byte, 0, 12)
-	for f >= 32 {
-		b = append(b, encodeBase32Map[f%32])
-		f /= 32
-	}
-	b = append(b, encodeBase32Map[f])
-
-	for x, y := 0, len(b)-1; x < y; x, y = x+1, y-1 {
-		b[x], b[y] = b[y], b[x]
-	}
-
-	return string(b)
-}
-
-// ParseBase32 parses a base32 []byte into a snowflake ID
-// caution: There are many different base32 implementations so becareful when
-// doing any interoperation.
-func ParseBase32(b []byte) (ID, error) {
-
-	var id int64
-
-	for i := range b {
-		if decodeBase32Map[b[i]] == 0xFF {
-			return -1, ErrInvalidBase32
-		}
-		id = id*32 + int64(decodeBase32Map[b[i]])
-	}
-
-	return ID(id), nil
-}
-
-// Base36 returns a base36 string of the snowflake ID
-func (f ID) Base36() string {
-	return strconv.FormatInt(int64(f), 36)
-}
-
-// ParseBase36 converts a Base36 string into a snowflake ID
-func ParseBase36(id string) (ID, error) {
-	i, err := strconv.ParseInt(id, 36, 64)
-	return ID(i), err
-}
-
-// Base58 returns a base58 string of the snowflake ID
-func (f ID) Base58() string {
-
-	if f < 58 {
-		return string(encodeBase58Map[f])
-	}
-
-	b := make([]byte, 0, 11)
-	for f >= 58 {
-		b = append(b, encodeBase58Map[f%58])
-		f /= 58
-	}
-	b = append(b, encodeBase58Map[f])
-
-	for x, y := 0, len(b)-1; x < y; x, y = x+1, y-1 {
-		b[x], b[y] = b[y], b[x]
-	}
-
-	return string(b)
-}
-
-// ParseBase58 parses a base58 []byte into a snowflake ID
-func ParseBase58(b []byte) (ID, error) {
-
-	var id int64
-
-	for i := range b {
-		if decodeBase58Map[b[i]] == 0xFF {
-			return -1, ErrInvalidBase58
-		}
-		id = id*58 + int64(decodeBase58Map[b[i]])
-	}
-
-	return ID(id), nil
-}
-
-// Base64 returns a base64 string of the snowflake ID
-func (f ID) Base64() string {
-	return base64.StdEncoding.EncodeToString(f.Bytes())
-}
-
-// ParseBase64 converts a base64 string into a snowflake ID
-func ParseBase64(id string) (ID, error) {
-	b, err := base64.StdEncoding.DecodeString(id)
+	var (
+		year int
+		es   [5]int
+		ms   int
+		left int
+		err  error
+	)
+	year, err = strconv.Atoi(v[:4])
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
-	return ParseBytes(b)
-
-}
-
-// Bytes returns a byte slice of the snowflake ID
-func (f ID) Bytes() []byte {
-	return []byte(f.String())
-}
-
-// ParseBytes converts a byte slice into a snowflake ID
-func ParseBytes(id []byte) (ID, error) {
-	i, err := strconv.ParseInt(string(id), 10, 64)
-	return ID(i), err
-}
-
-// IntBytes returns an array of bytes of the snowflake ID, encoded as a
-// big endian integer.
-func (f ID) IntBytes() [8]byte {
-	var b [8]byte
-	binary.BigEndian.PutUint64(b[:], uint64(f))
-	return b
-}
-
-// ParseIntBytes converts an array of bytes encoded as big endian integer as
-// a snowflake ID
-func ParseIntBytes(id [8]byte) ID {
-	return ID(int64(binary.BigEndian.Uint64(id[:])))
-}
-
-// Time returns an int64 unix timestamp in milliseconds of the snowflake ID time
-// caution: the below function will be removed in a future release.
-func (f ID) Time() int64 {
-	return (int64(f) >> timeShift) + Epoch
-}
-
-// Node returns an int64 of the snowflake ID node number
-// caution: the below function will be removed in a future release.
-func (f ID) Node() int64 {
-	return int64(f) & nodeMask >> nodeShift
-}
-
-// Step returns an int64 of the snowflake step (or sequence) number
-// caution: the below function will be removed in a future release.
-func (f ID) Step() int64 {
-	return int64(f) & stepMask
-}
-
-// MarshalJSON returns a json byte array string of the snowflake ID.
-func (f ID) MarshalJSON() ([]byte, error) {
-	buff := make([]byte, 0, 22)
-	buff = append(buff, '"')
-	buff = strconv.AppendInt(buff, int64(f), 10)
-	buff = append(buff, '"')
-	return buff, nil
-}
-
-// UnmarshalJSON converts a json byte array of a snowflake ID into an ID type.
-func (f *ID) UnmarshalJSON(b []byte) error {
-	if len(b) < 3 || b[0] != '"' || b[len(b)-1] != '"' {
-		return JSONSyntaxError{b}
+	for i := 0; i < 5; i++ {
+		es[i], err = strconv.Atoi(v[4+i*2 : 4+(i+1)*2])
+		if err != nil {
+			return 0, err
+		}
 	}
-
-	i, err := strconv.ParseInt(string(b[1:len(b)-1]), 10, 64)
+	ms, err = strconv.Atoi(v[14:17])
 	if err != nil {
-		return err
+		return 0, err
 	}
+	left, err = strconv.Atoi(v[17:])
+	if err != nil {
+		return 0, err
+	}
+	var t = time.Date(year, time.Month(es[0]), es[1], es[2], es[3], es[4], ms*MsDivNs, timeLoc)
+	var ns = t.UnixNano()
+	var tms = ns/MsDivNs - _epoch
+	var timeShift = _nodeBits + StepBits
+	var id = tms << timeShift
+	id |= int64(left)
+	return id, nil
+}
 
-	*f = ID(i)
-	return nil
+// figureShift : calculate time shift, node shift, step shift.
+func figureShift() (timeShift, nodeShift, stepShift uint8) {
+	timeShift = _nodeBits + StepBits
+	if _nodeAtLowest {
+		nodeShift = 0
+		stepShift = _nodeBits
+	} else {
+		stepShift = 0
+		nodeShift = StepBits
+	}
+	return timeShift, nodeShift, stepShift
 }
