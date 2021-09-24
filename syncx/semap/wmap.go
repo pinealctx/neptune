@@ -2,32 +2,47 @@ package semap
 
 import (
 	"context"
+	"github.com/pinealctx/neptune/remap"
 )
 
 //WideSemMap use SemMap array as wide map
 type WideSemMap struct {
 	ms       []*SemMap
 	calKeyFn func(key interface{}) int
+	rehash   *remap.ReMap
 }
 
 //NewWideSemMap new wide semaphore map
-func NewWideSemMap(size int, rwRatio int) SemMapper {
-	return newWideSemMap(size, rwRatio, SimpleIndex)
+func NewWideSemMap(opts ...Option) SemMapper {
+	var o = RangeOption(opts...)
+	return newWideSemMap(o.size, o.rwRatio, false, o.prime)
 }
 
 //NewWideXHashSemMap new wide semaphore map
-func NewWideXHashSemMap(size int, rwRatio int) SemMapper {
-	return newWideSemMap(size, rwRatio, XHashIndex)
+func NewWideXHashSemMap(opts ...Option) SemMapper {
+	var o = RangeOption(opts...)
+	return newWideSemMap(o.size, o.rwRatio, true, o.prime)
 }
 
 //newWideSemMap new wide semaphore map
-func newWideSemMap(size int, rwRatio int, fn func(key interface{}) int) SemMapper {
+func newWideSemMap(size int, rwRatio int, useXHash bool, prime uint64) SemMapper {
 	var w = &WideSemMap{}
-	w.ms = make([]*SemMap, numbs)
-	for i := uint64(0); i < numbs; i++ {
-		w.ms[i] = newSemMap(size, rwRatio)
+	if prime > 0 {
+		w.rehash = remap.NewReMap(remap.WithPrime(prime))
+	} else {
+		w.rehash = remap.NewReMap()
 	}
-	w.calKeyFn = fn
+	var numbs = w.rehash.Numbs()
+	w.ms = make([]*SemMap, numbs)
+	var pSize = size/int(numbs) + 1
+	for i := uint64(0); i < numbs; i++ {
+		w.ms[i] = newSemMap(pSize, rwRatio)
+	}
+	if useXHash {
+		w.calKeyFn = w.rehash.XHashIndex
+	} else {
+		w.calKeyFn = w.rehash.SimpleIndex
+	}
 	return w
 }
 

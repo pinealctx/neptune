@@ -1,4 +1,4 @@
-package semap
+package remap
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 func TestUint64Split(t *testing.T) {
 	var x uint64 = math.MaxUint64
 	t.Log(x)
+	var numbs = DefaultPrime
 	var y = x / numbs
 	for i := uint64(0); i < numbs; i++ {
 		fmt.Printf("%+v,\n", y*(uint64(i)+1))
@@ -36,10 +37,11 @@ func TestHashKey(t *testing.T) {
 }
 
 func TestSearchIndex(t *testing.T) {
-	var vs = make([]uint64, len(nps))
-	copy(vs, nps)
+	var r = NewReMap()
+	var vs = make([]uint64, len(r.nps))
+	copy(vs, r.nps)
 	for i := 0; i < len(vs); i++ {
-		var v = SearchIndex(vs[i])
+		var v = r.SearchIndex(vs[i])
 		if v != i {
 			panic(i)
 		}
@@ -48,7 +50,7 @@ func TestSearchIndex(t *testing.T) {
 	t.Log("")
 	t.Log("")
 	for i := 0; i < len(vs); i++ {
-		var v = SearchIndex(vs[i] - 1)
+		var v = r.SearchIndex(vs[i] - 1)
 		if v != i {
 			panic(i)
 		}
@@ -57,30 +59,31 @@ func TestSearchIndex(t *testing.T) {
 	t.Log("")
 	t.Log("")
 	for i := 0; i < len(vs); i++ {
-		var v = SearchIndex(vs[i] + 1)
-		if v != (i+1)%int(numbs) {
+		var v = r.SearchIndex(vs[i] + 1)
+		if v != (i+1)%int(r.numbs) {
 			panic(i)
 		}
 		t.Log(v)
 	}
 
-	t.Log(SearchIndex(0))
+	t.Log(r.SearchIndex(0))
 	var y uint64 = 0xFFFFFFFFFFFFFFFF
 	t.Log(y)
-	t.Log(SearchIndex(y))
+	t.Log(r.SearchIndex(y))
 }
 
 func TestSearchIndexSite(t *testing.T) {
+	var r = NewReMap()
 	var m = make(map[int]int)
 	for i := int32(1000010); i < int32(1000010+1000); i++ {
-		var x = XHashIndex(i)
+		var x = r.XHashIndex(i)
 		m[x]++
 	}
 	t.Log(m)
 
 	m = make(map[int]int)
 	for i := int32(10000); i < int32(10000+1000); i++ {
-		var x = XHashIndex(i)
+		var x = r.XHashIndex(i)
 		m[x]++
 	}
 	t.Log(m)
@@ -88,28 +91,28 @@ func TestSearchIndexSite(t *testing.T) {
 	var node, _ = snowflake.NewNode(0)
 	m = make(map[int]int)
 	for i := 0; i < 1000; i++ {
-		var x = XHashIndex(node.Generate())
+		var x = r.XHashIndex(node.Generate())
 		m[x]++
 	}
 	t.Log(m)
 
 	m = make(map[int]int)
 	for i := int32(1000010); i < int32(1000010+1000); i++ {
-		var x = SimpleIndex(i)
+		var x = r.SimpleIndex(i)
 		m[x]++
 	}
 	t.Log(m)
 
 	m = make(map[int]int)
 	for i := int32(10000); i < int32(10000+1000); i++ {
-		var x = SimpleIndex(i)
+		var x = r.SimpleIndex(i)
 		m[x]++
 	}
 	t.Log(m)
 
 	m = make(map[int]int)
 	for i := 0; i < 1000; i++ {
-		var x = SimpleIndex(node.Generate())
+		var x = r.SimpleIndex(node.Generate())
 		m[x]++
 	}
 	t.Log(m)

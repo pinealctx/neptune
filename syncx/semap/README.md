@@ -99,20 +99,23 @@ SemMapper的三种实现
 //NewWideXHashSemMap : 创建多个Map组成的容器，
 //其中在对key做映射时，对key做xxhash运算然后用求的的uint64值来计算它应该分布在多个Map中的哪个区间。
 
-//func NewSemMap(size int, rwRatio int) SemMapper
-//func NewWideSemMap(size int, rwRatio int) SemMapper
-//func NewWideXHashSemMap(size int, rwRatio int) SemMapper
+//func NewSemMap(opts ...Option) SemMapper
+//func NewWideSemMap(opts ...Option) SemMapper
+//func NewWideXHashSemMap(opts ...Option) SemMapper
 
-//这三个函数参数都一样，size表示Map的容量，如果Map中的键超过了此容量，在释放锁的时候，会尝试着去删除此键。
-//rwRatio表示读写比，简单来说，如果我们设定为10，则表示在没有写操作的情况，一个控制器可以同时进入10个读操作。
+//这三个函数参数都一样，WithSize表示Map的容量，如果Map中的键超过了此容量，在释放锁的时候，会尝试着去删除此键。
+//WithRwRatio表示读写比，简单来说，如果我们设定为10，则表示在没有写操作的情况，一个控制器可以同时进入10个读操作。
 //如果写操作进入，读操作不能进入，如果已经有读操作了，则写操作也不能进入，与读写锁类似。
+//WithPrime在Map分组时才有效，通过传入一个素数来决定将Map分为多少组，这个值最好传入素数。
 
 //新建一个Map组成的容器，容量1000，每个控制器可以同时进入10个读操作。
-var m1 = NewSemMap(1000, 10)
+var m1 = NewSemMap(WithSize(1000), WithRwRatio(10))
 //新建一个多Map组成的容器，容量3000，每个控制器可以同时进入5个读操作。
-var m2 = NewWideSemMap(3000, 5)
+//WithPrime表示对此Map组共分了7组。
+var m2 = NewWideSemMap(WithSize(3000), WithRwRatio(5), WithPrime(7))
 //新建一个多Map组成的容器，容量10000，每个控制器可以同时进入50个读操作。
-var m3 = NewWideSemMap(10000, 50)
+//分组的确定由xxhash算法确定，其中Map缺省分了73组。
+var m3 = NewWideXHashSemMap(WithSize(10000), WithRwRatio(50))
 ```
 
 ### **关于Mutex和channel应该知道的**

@@ -13,16 +13,16 @@ import (
 const maxSleep = 1 * time.Millisecond
 
 func TestWeighted(t *testing.T) {
-	testWeighted(t, NewSemMap(1, 1))
+	testWeighted(t, NewSemMap(WithSize(1), WithRwRatio(1)))
 }
 
 func TestWeightedPanic(t *testing.T) {
-	sem := NewSemMap(1, 5)
+	sem := NewSemMap(WithSize(1), WithRwRatio(5))
 	testWeightedPanic(t, sem)
 }
 
 func TestLock(t *testing.T) {
-	var sem = NewSemMap(2, 5)
+	var sem = NewSemMap(WithSize(2), WithRwRatio(5))
 	testLock(sem)
 }
 

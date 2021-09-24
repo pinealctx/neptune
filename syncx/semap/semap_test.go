@@ -11,7 +11,11 @@ import (
 )
 
 func Test1KLock(t *testing.T) {
-	var s = NewSemMap(2000000, 10)
+	var opts = []Option{
+		WithSize(2000000),
+		WithRwRatio(10),
+	}
+	var s = NewSemMap(opts...)
 	var count = 100000
 	var wg sync.WaitGroup
 	wg.Add(10)
@@ -69,11 +73,11 @@ func Test100KLockXHash(t *testing.T) {
 }
 
 func TestNotAcquired(t *testing.T) {
-	var sem = NewSemMap(100, 5)
+	var sem = NewSemMap(WithSize(100), WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
-	sem = NewWideSemMap(100, 5)
+	sem = NewWideSemMap(WithSize(100), WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
-	sem = NewWideXHashSemMap(100, 5)
+	sem = NewWideXHashSemMap(WithSize(100), WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
 }
 
@@ -124,66 +128,63 @@ func testNotAcquired(sem SemMapper, rc int, wc int) {
 }
 
 func test100KLockRcWc(t *testing.T, size int, rwRation int, rc int, wc int) {
-	var sem = NewSemMap(size, rwRation)
+	var opts = []Option{
+		WithSize(size),
+		WithRwRatio(rwRation),
+	}
+
+	var sem = NewSemMap(opts...)
 	test100KLock(t, "one", sem, rc, wc)
 
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(opts...)
 	test100KLock(t, "73", sem, rc, wc)
 
-	SetupPrime(7)
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(append(opts, WithPrime(7))...)
 	test100KLock(t, "7", sem, rc, wc)
 
-	SetupPrime(13)
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(append(opts, WithPrime(13))...)
 	test100KLock(t, "13", sem, rc, wc)
 
-	SetupPrime(31)
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(append(opts, WithPrime(31))...)
 	test100KLock(t, "31", sem, rc, wc)
 
-	SetupPrime(211)
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(append(opts, WithPrime(211))...)
 	test100KLock(t, "211", sem, rc, wc)
 
-	SetupPrime(251)
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(append(opts, WithPrime(251))...)
 	test100KLock(t, "251", sem, rc, wc)
 
-	SetupPrime(509)
-	sem = NewWideSemMap(size, rwRation)
+	sem = NewWideSemMap(append(opts, WithPrime(509))...)
 	test100KLock(t, "509", sem, rc, wc)
 }
 
 func test100KXHashLockRcWc(t *testing.T, size int, rwRation int, rc int, wc int) {
-	var sem = NewSemMap(size, rwRation)
+	var opts = []Option{
+		WithSize(size),
+		WithRwRatio(rwRation),
+	}
+	var sem = NewSemMap(opts...)
 	test100KLock(t, "one", sem, rc, wc)
 
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(opts...)
 	test100KLock(t, "73", sem, rc, wc)
 
-	SetupPrime(7)
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(append(opts, WithPrime(7))...)
 	test100KLock(t, "7", sem, rc, wc)
 
-	SetupPrime(13)
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(append(opts, WithPrime(13))...)
 	test100KLock(t, "13", sem, rc, wc)
 
-	SetupPrime(31)
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(append(opts, WithPrime(31))...)
 	test100KLock(t, "31", sem, rc, wc)
 
-	SetupPrime(211)
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(append(opts, WithPrime(211))...)
 	test100KLock(t, "211", sem, rc, wc)
 
-	SetupPrime(251)
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(append(opts, WithPrime(251))...)
 	test100KLock(t, "251", sem, rc, wc)
 
-	SetupPrime(509)
-	sem = NewWideXHashSemMap(size, rwRation)
+	sem = NewWideXHashSemMap(append(opts, WithPrime(509))...)
 	test100KLock(t, "509", sem, rc, wc)
 }
 
