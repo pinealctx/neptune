@@ -26,8 +26,9 @@ type SemMap struct {
 }
 
 //NewSemMap new semaphore map
-func NewSemMap(size int, rwRatio int) SemMapper {
-	return newSemMap(size, rwRatio)
+func NewSemMap(opts ...Option) SemMapper {
+	var o = RangeOption(opts...)
+	return newSemMap(o.size, o.rwRatio)
 }
 
 //newSemMap new semaphore map

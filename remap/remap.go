@@ -1,10 +1,10 @@
-package semap
+package remap
 
 import (
 	"encoding/binary"
 	"fmt"
 	"github.com/cespare/xxhash/v2"
-	"hash/crc32"
+	"math"
 	"reflect"
 	"sort"
 )
@@ -15,8 +15,43 @@ type Bs interface {
 	ToBytes() []byte
 }
 
+//HitGroup an interface can convert self to a fixed uint64 which can target a group id
+type HitGroup interface {
+	//Hit convert self to a specific uint64 value
+	Hit() uint64
+}
+
+//ReMap remap meta info
+type ReMap struct {
+	numbs uint64   //切分的份数,取素数
+	nps   []uint64 //切分uint64为211份,从小到大排列
+}
+
+//NewReMap : new remap instance
+func NewReMap(opts ...Option) *ReMap {
+	var r = &ReMap{}
+	var o = &_Option{prime: DefaultPrime}
+	for _, opt := range opts {
+		opt(o)
+	}
+	r.numbs = o.prime
+	var x uint64 = math.MaxUint64
+	var y = x / r.numbs
+	r.nps = make([]uint64, r.numbs)
+	for i := uint64(0); i < r.numbs; i++ {
+		r.nps[i] = y * (uint64(i) + 1)
+	}
+	r.nps[r.numbs-1] = math.MaxUint64
+	return r
+}
+
+//Numbs 获取切分份数
+func (r *ReMap) Numbs() uint64 {
+	return r.numbs
+}
+
 //SimpleIndex figure simple index
-func SimpleIndex(i interface{}) int {
+func (r *ReMap) SimpleIndex(i interface{}) int {
 	var it uint64
 	switch v := i.(type) {
 	case byte:
@@ -39,21 +74,23 @@ func SimpleIndex(i interface{}) int {
 		it = uint64(v)
 	case uint:
 		it = uint64(v)
+	case HitGroup:
+		it = v.Hit()
 	default:
-		return XHashIndex(i)
+		return r.XHashIndex(i)
 	}
-	return int(it % numbs)
+	return int(it % r.numbs)
 }
 
 //XHashIndex figure xhash index
-func XHashIndex(i interface{}) int {
-	return SearchIndex(XXHash(i))
+func (r *ReMap) XHashIndex(i interface{}) int {
+	return r.SearchIndex(XXHash(i))
 }
 
 //SearchIndex search uint64 index
-func SearchIndex(x uint64) int {
-	var i = SearchUInt64s(nps, x)
-	if i < 0 || i >= int(numbs) {
+func (r *ReMap) SearchIndex(x uint64) int {
+	var i = SearchUInt64s(r.nps, x)
+	if i < 0 || i >= int(r.numbs) {
 		return 0
 	}
 	return i
@@ -114,10 +151,7 @@ func ToBytes(i interface{}) []byte {
 		binary.LittleEndian.PutUint64(buf[:], uint64(v))
 		return buf[:]
 	case string:
-		var crc = crc32.ChecksumIEEE([]byte(v))
-		var buf [4]byte
-		binary.LittleEndian.PutUint32(buf[:], crc)
-		return buf[:]
+		return []byte(v)
 	case []byte:
 		return v
 	case Bs:
