@@ -9,13 +9,13 @@ type WideMap struct {
 	rehash   *remap.ReMap
 }
 
-//NeWideMap new wide Map
-func NeWideMap(capacity int64, opts ...remap.Option) MapFacade {
+//NewWideMap new wide Map
+func NewWideMap(opts ...remap.Option) MapFacade {
 	return newWideMap(false, opts...)
 }
 
 //NewWideXHashMap new wide Map use xxhash as group
-func NewWideXHashMap(capacity int64, opts ...remap.Option) MapFacade {
+func NewWideXHashMap(opts ...remap.Option) MapFacade {
 	return newWideMap(true, opts...)
 }
 
