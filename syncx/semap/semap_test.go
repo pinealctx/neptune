@@ -11,11 +11,7 @@ import (
 )
 
 func Test1KLock(t *testing.T) {
-	var opts = []Option{
-		WithSize(2000000),
-		WithRwRatio(10),
-	}
-	var s = NewSemMap(opts...)
+	var s = NewSemMap(WithRwRatio(10))
 	var count = 100000
 	var wg sync.WaitGroup
 	wg.Add(10)
@@ -51,33 +47,33 @@ func Test1KLock(t *testing.T) {
 }
 
 func Test100KLockWide(t *testing.T) {
-	test100KLockRcWc(t, 2000000, 100, 50, 10)
+	test100KLockRcWc(t, 100, 50, 10)
 	t.Log("")
-	test100KLockRcWc(t, 2000000, 10, 9, 1)
+	test100KLockRcWc(t, 10, 9, 1)
 	t.Log("")
 
-	test100KLockRcWc(t, 20000, 100, 50, 10)
+	test100KLockRcWc(t, 100, 50, 10)
 	t.Log("")
-	test100KLockRcWc(t, 20000, 10, 9, 1)
+	test100KLockRcWc(t, 10, 9, 1)
 }
 
 func Test100KLockXHash(t *testing.T) {
-	test100KXHashLockRcWc(t, 2000000, 100, 50, 10)
+	test100KXHashLockRcWc(t, 100, 50, 10)
 	t.Log("")
-	test100KXHashLockRcWc(t, 2000000, 10, 9, 1)
+	test100KXHashLockRcWc(t, 10, 9, 1)
 	t.Log("")
 
-	test100KXHashLockRcWc(t, 20000, 100, 50, 10)
+	test100KXHashLockRcWc(t, 100, 50, 10)
 	t.Log("")
-	test100KXHashLockRcWc(t, 20000, 10, 9, 1)
+	test100KXHashLockRcWc(t, 10, 9, 1)
 }
 
 func TestNotAcquired(t *testing.T) {
-	var sem = NewSemMap(WithSize(100), WithRwRatio(5))
+	var sem = NewSemMap(WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
-	sem = NewWideSemMap(WithSize(100), WithRwRatio(5))
+	sem = NewWideSemMap(WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
-	sem = NewWideXHashSemMap(WithSize(100), WithRwRatio(5))
+	sem = NewWideXHashSemMap(WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
 }
 
@@ -127,9 +123,8 @@ func testNotAcquired(sem SemMapper, rc int, wc int) {
 	sem.ReleaseWrite("key", w)
 }
 
-func test100KLockRcWc(t *testing.T, size int, rwRation int, rc int, wc int) {
+func test100KLockRcWc(t *testing.T, rwRation int, rc int, wc int) {
 	var opts = []Option{
-		WithSize(size),
 		WithRwRatio(rwRation),
 	}
 
@@ -158,9 +153,8 @@ func test100KLockRcWc(t *testing.T, size int, rwRation int, rc int, wc int) {
 	test100KLock(t, "509", sem, rc, wc)
 }
 
-func test100KXHashLockRcWc(t *testing.T, size int, rwRation int, rc int, wc int) {
+func test100KXHashLockRcWc(t *testing.T, rwRation int, rc int, wc int) {
 	var opts = []Option{
-		WithSize(size),
 		WithRwRatio(rwRation),
 	}
 	var sem = NewSemMap(opts...)

@@ -21,25 +21,21 @@ type SemMapper interface {
 type SemMap struct {
 	m       map[interface{}]*Weighted
 	mux     *sync.Mutex
-	keySize int
 	rwRatio int
 }
 
 //NewSemMap new semaphore map
 func NewSemMap(opts ...Option) SemMapper {
 	var o = RangeOption(opts...)
-	return newSemMap(o.size, o.rwRatio)
+	return newSemMap(o.rwRatio)
 }
 
 //newSemMap new semaphore map
-//size : key size, if count of element in map > key size,
-//when release semaphore, SemMap will try to recycle the element(delete it from map).
 //rwRatio : read/write ratio, for example, if it's 10, means that 10 read go routine can enter at same time.
 //if one write go routine enters, no read go routine can enter.
-func newSemMap(size int, rwRatio int) *SemMap {
+func newSemMap(rwRatio int) *SemMap {
 	var m = &SemMap{}
 	m.mux = &sync.Mutex{}
-	m.keySize = size
 	m.m = make(map[interface{}]*Weighted)
 	m.rwRatio = rwRatio
 	return m
@@ -91,14 +87,8 @@ func (s *SemMap) release(key interface{}, w *Weighted, n int) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	var empty = w.release(n)
-	if empty && (len(s.m) > s.keySize) {
+	if empty {
 		delete(s.m, key)
 		return
 	}
-	/*if empty && (len(s.m) > s.keySize/2) {
-		var r = random.RandomI64()
-		if r % 2 == 0 {
-			delete(s.m, key)
-		}
-	}*/
 }

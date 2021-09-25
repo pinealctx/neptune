@@ -15,17 +15,17 @@ type WideSemMap struct {
 //NewWideSemMap new wide semaphore map
 func NewWideSemMap(opts ...Option) SemMapper {
 	var o = RangeOption(opts...)
-	return newWideSemMap(o.size, o.rwRatio, false, o.prime)
+	return newWideSemMap(o.rwRatio, o.prime, false)
 }
 
 //NewWideXHashSemMap new wide semaphore map
 func NewWideXHashSemMap(opts ...Option) SemMapper {
 	var o = RangeOption(opts...)
-	return newWideSemMap(o.size, o.rwRatio, true, o.prime)
+	return newWideSemMap(o.rwRatio, o.prime, true)
 }
 
 //newWideSemMap new wide semaphore map
-func newWideSemMap(size int, rwRatio int, useXHash bool, prime uint64) SemMapper {
+func newWideSemMap(rwRatio int, prime uint64, useXHash bool) SemMapper {
 	var w = &WideSemMap{}
 	if prime > 0 {
 		w.rehash = remap.NewReMap(remap.WithPrime(prime))
@@ -34,9 +34,8 @@ func newWideSemMap(size int, rwRatio int, useXHash bool, prime uint64) SemMapper
 	}
 	var numbs = w.rehash.Numbs()
 	w.ms = make([]*SemMap, numbs)
-	var pSize = size/int(numbs) + 1
 	for i := uint64(0); i < numbs; i++ {
-		w.ms[i] = newSemMap(pSize, rwRatio)
+		w.ms[i] = newSemMap(rwRatio)
 	}
 	if useXHash {
 		w.calKeyFn = w.rehash.XHashIndex
