@@ -77,7 +77,7 @@ func (b U32BitTips) RGetNAsU32(n int) []uint32 {
 		eIterN int
 	)
 
-	for i := l-1; i >= 0; i-- {
+	for i := l - 1; i >= 0; i-- {
 		if iterN >= n {
 			break
 		}

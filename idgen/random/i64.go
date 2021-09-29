@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+//RandomI64 random generate int64, rand seed is current nano timestamp
 func RandomI64() int64 {
 	/* #nosec */
 	s := rand.NewSource(time.Now().UnixNano())
@@ -17,6 +18,8 @@ func RandomI64() int64 {
 	return r.Int63()
 }
 
+//SecRandomI64 random generate int64, read data from linux /dev/urandom
+//actually, it's almost a random id
 func SecRandomI64() int64 {
 	var buf [8]byte
 	var _, err = io.ReadFull(cRand.Reader, buf[:])

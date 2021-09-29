@@ -2,8 +2,8 @@ package line
 
 import (
 	"context"
-	"github.com/pinealctx/neptune/pipe"
-	"github.com/pinealctx/neptune/pipe/q"
+	"github.com/pinealctx/neptune/syncx/pipe"
+	"github.com/pinealctx/neptune/syncx/pipe/q"
 	"github.com/pinealctx/neptune/ulog"
 	"go.uber.org/zap"
 	"sync"

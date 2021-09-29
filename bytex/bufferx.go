@@ -1,6 +1,7 @@
-package tex
+package bytex
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"math"
@@ -94,7 +95,7 @@ type IBufferX interface {
 
 //BufferX buffer implement
 type BufferX struct {
-	buffer *Buffer
+	buffer *bytes.Buffer
 }
 
 //Len : buffer len
@@ -147,7 +148,8 @@ func (b *BufferX) Write(p []byte) {
 
 //ReWrite buffer
 func (b *BufferX) ReWrite(pos int, p []byte) {
-	b.buffer.ReWrite(pos, p)
+	var buf = b.buffer.Bytes()
+	copy(buf[pos:], p)
 }
 
 //ReadLimitString read limit size string
@@ -397,7 +399,7 @@ func (b *BufferX) WriteF64(v float64) {
 //NewReadableBufferX new buffer from existed bytes to read.
 //Use existed bytes to fill buffer, the buffer is always used as read stream.
 func NewReadableBufferX(data []byte) *BufferX {
-	var buffer = NewBuffer(data)
+	var buffer = bytes.NewBuffer(data)
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX
 }
@@ -406,7 +408,7 @@ func NewReadableBufferX(data []byte) *BufferX {
 //as unpack
 func NewBufferX() *BufferX {
 	var data = make([]byte, defaultByteBuff)
-	var buffer = NewBuffer(data)
+	var buffer = bytes.NewBuffer(data)
 	buffer.Reset()
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX
@@ -415,7 +417,7 @@ func NewBufferX() *BufferX {
 //NewSizedBufferX : new buffer with specific size
 func NewSizedBufferX(size int) *BufferX {
 	var data = make([]byte, size)
-	var buffer = NewBuffer(data)
+	var buffer = bytes.NewBuffer(data)
 	buffer.Reset()
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX

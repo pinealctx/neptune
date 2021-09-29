@@ -1,4 +1,4 @@
-package tex
+package bytex
 
 import (
 	"encoding/binary"

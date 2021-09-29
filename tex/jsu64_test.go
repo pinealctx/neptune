@@ -2,6 +2,7 @@ package tex
 
 import (
 	"encoding/json"
+	"github.com/pinealctx/neptune/jsonx"
 	"testing"
 )
 
@@ -15,18 +16,18 @@ func TestUInt64Json_MarshalJSON(t *testing.T) {
 		`a`: int64(9223372036854775806),
 		`b`: JsUInt64(9223372036854775806),
 	}
-	s, err := JSONMarshal(x)
+	s, err := jsonx.JSONMarshal(x)
 	t.Log(string(s))
 	t.Log(err)
 
-	err = JSONUnmarshal(s, &x)
+	err = jsonx.JSONUnmarshal(s, &x)
 	t.Log(`x1 is `, x)
 
 	s, err = json.Marshal(x)
 	t.Log(string(s))
 	t.Log(err)
 
-	err = JSONUnmarshal(s, &x)
+	err = jsonx.JSONUnmarshal(s, &x)
 	t.Log(`x2 is `, x)
 
 	var y = TX{
@@ -36,17 +37,17 @@ func TestUInt64Json_MarshalJSON(t *testing.T) {
 	t.Log(string(s))
 	t.Log(err)
 
-	err = JSONUnmarshal(s, &y)
+	err = jsonx.JSONUnmarshal(s, &y)
 	t.Log(`y1 is `, y)
 
-	err = JSONUnmarshal(s, &x)
+	err = jsonx.JSONUnmarshal(s, &x)
 	t.Log(`x1 is `, x)
 
-	s, err = JSONMarshal(y)
+	s, err = jsonx.JSONMarshal(y)
 	t.Log(string(s))
 	t.Log(err)
 
-	err = JSONUnmarshal(s, &x)
+	err = jsonx.JSONUnmarshal(s, &x)
 	t.Log(`x2 is `, x)
 
 }
@@ -54,7 +55,7 @@ func TestUInt64Json_MarshalJSON(t *testing.T) {
 func Test_JsUInt64UnmarshalJSON1(t *testing.T) {
 	var j = `{"b":"12121212"}`
 	var s TX
-	var err = JSONUnmarshal([]byte(j), &s)
+	var err = jsonx.JSONUnmarshal([]byte(j), &s)
 	if err != nil {
 		t.Log(err)
 		return
@@ -65,7 +66,7 @@ func Test_JsUInt64UnmarshalJSON1(t *testing.T) {
 func Test_JsUInt64UnmarshalJSON2(t *testing.T) {
 	var j = `{"b":"-12121212"}`
 	var s TX
-	var err = JSONUnmarshal([]byte(j), &s)
+	var err = jsonx.JSONUnmarshal([]byte(j), &s)
 	if err != nil {
 		t.Log(err)
 		return

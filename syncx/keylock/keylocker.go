@@ -1,0 +1,92 @@
+package keylock
+
+import (
+	"sync"
+)
+
+//wrap read/write locker
+type wrapLocker struct {
+	rwLocker   sync.RWMutex
+	readCount  int
+	writeCount int
+}
+
+//KeyLocker global locker based on key
+type KeyLocker struct {
+	lockMap map[interface{}]*wrapLocker
+	locker  sync.Mutex
+}
+
+//NewKeyLocker new key locker
+func NewKeyLocker() *KeyLocker {
+	return &KeyLocker{
+		lockMap: make(map[interface{}]*wrapLocker),
+	}
+}
+
+//Lock write lock
+func (d *KeyLocker) Lock(key interface{}) {
+	var (
+		wrLocker *wrapLocker
+		ok       bool
+	)
+	d.locker.Lock()
+	wrLocker, ok = d.lockMap[key]
+	if !ok {
+		wrLocker = &wrapLocker{}
+		d.lockMap[key] = wrLocker
+	}
+	wrLocker.writeCount++
+	d.locker.Unlock()
+	wrLocker.rwLocker.Lock()
+}
+
+//Unlock write unlock
+func (d *KeyLocker) Unlock(key interface{}) {
+	var (
+		wrLocker *wrapLocker
+	)
+	d.locker.Lock()
+	wrLocker = d.lockMap[key]
+	wrLocker.rwLocker.Unlock()
+	wrLocker.writeCount--
+	d.tryFree(key, wrLocker)
+	d.locker.Unlock()
+}
+
+//RLock read lock
+func (d *KeyLocker) RLock(key interface{}) {
+	var (
+		wrLocker *wrapLocker
+		ok       bool
+	)
+	d.locker.Lock()
+	wrLocker, ok = d.lockMap[key]
+	if !ok {
+		wrLocker = &wrapLocker{}
+		d.lockMap[key] = wrLocker
+	}
+	wrLocker.readCount++
+	d.locker.Unlock()
+	wrLocker.rwLocker.RLock()
+}
+
+//RULock read unlock
+func (d *KeyLocker) RULock(key interface{}) {
+	var (
+		wrLocker *wrapLocker
+	)
+	d.locker.Lock()
+	wrLocker = d.lockMap[key]
+	wrLocker.rwLocker.RUnlock()
+	wrLocker.readCount--
+	d.tryFree(key, wrLocker)
+	d.locker.Unlock()
+}
+
+//try to free a key locker from map
+func (d *KeyLocker) tryFree(key interface{}, wrapLocker *wrapLocker) {
+	if wrapLocker.readCount == 0 && wrapLocker.writeCount == 0 {
+		delete(d.lockMap, key)
+	}
+}

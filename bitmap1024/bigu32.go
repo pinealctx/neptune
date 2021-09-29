@@ -18,7 +18,7 @@ const (
 type BigU32s []*BigU32
 
 //Reverse : clone and reverse bit
-func (b BigU32s) Reverse() BigU32s{
+func (b BigU32s) Reverse() BigU32s {
 	var l = len(b)
 	if l == 0 {
 		return nil
@@ -121,7 +121,7 @@ func NewBigU32FromI64(i64 int64) (*BigU32, error) {
 }
 
 //Reverse : reverse bit
-func (b *BigU32) Reverse() *BigU32{
+func (b *BigU32) Reverse() *BigU32 {
 	return &BigU32{
 		Start: b.Start,
 		B1024: b.B1024.Reverse(),

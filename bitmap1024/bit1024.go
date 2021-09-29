@@ -159,7 +159,7 @@ func (b Bit1024) Unmarshal(buf []byte) error {
 }
 
 //Equal : equal other
-func(b Bit1024) Equal(c Bit1024) bool {
+func (b Bit1024) Equal(c Bit1024) bool {
 	for i := 0; i < L16; i++ {
 		if b[i] != c[i] {
 			return false
@@ -347,7 +347,6 @@ func (b Bit1024) RIterAsU32(s []uint32, pos int, add uint32, n int) int {
 	}
 	return iterN
 }
-
 
 //IterAsI16 : iterate bitmap
 //input: s -- an int32 array, add -- added number, n -- iter count

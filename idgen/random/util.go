@@ -14,7 +14,7 @@ import (
 
 type Intn func(n int) int
 
-//生成随机字符串
+//GenNonceStr 生成随机字符串
 func GenNonceStr(baseStr string, length int) string {
 	//随机数种子设置
 	/* #nosec */
@@ -25,7 +25,7 @@ func GenNonceStr(baseStr string, length int) string {
 	return genNonceStr(baseStr, length, r.Intn)
 }
 
-//Security rand
+//SecGenNonceStr Security rand
 func SecGenNonceStr(baseStr string, length int) string {
 	//随机数种子设置
 	var buf [8]byte

@@ -1,4 +1,4 @@
-package tex
+package compress
 
 import (
 	"github.com/golang/snappy"
@@ -12,11 +12,11 @@ var (
 type _Snappy struct {
 }
 
-func (s *_Snappy) Compress(src []byte) ([]byte, error) {
+func (s *_Snappy) Compress(src []byte) []byte {
 	if len(src) == 0 {
-		return nil, nil
+		return nil
 	}
-	return snappy.Encode(nil, src), nil
+	return snappy.Encode(nil, src)
 }
 
 func (s *_Snappy) DeCompress(src []byte) ([]byte, error) {
@@ -26,10 +26,10 @@ func (s *_Snappy) DeCompress(src []byte) ([]byte, error) {
 	return snappy.Decode(nil, src)
 }
 
-func (s *_Snappy) CompressWithPrefix(src []byte, prefix []byte) ([]byte, error) {
+func (s *_Snappy) CompressWithPrefix(src []byte, prefix []byte) []byte {
 	var srcSize = len(src)
 	if srcSize == 0 {
-		return prefix, nil
+		return prefix
 	}
 	var prefixSize = len(prefix)
 	if prefixSize == 0 {
@@ -43,11 +43,11 @@ func (s *_Snappy) CompressWithPrefix(src []byte, prefix []byte) ([]byte, error) 
 	var actualSize = prefixSize + encSize
 	if totalSize >= actualSize {
 		//enough
-		return totalBuf[:actualSize], nil
+		return totalBuf[:actualSize]
 	} else {
 		var extendBuf = make([]byte, actualSize)
 		copy(extendBuf[:prefixSize], prefix)
 		copy(extendBuf[prefixSize:], encBuf)
-		return extendBuf, nil
+		return extendBuf
 	}
 }

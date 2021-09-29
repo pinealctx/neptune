@@ -1,7 +1,8 @@
-package tex
+package jsonx
 
 import (
 	"github.com/json-iterator/go"
+	"github.com/pinealctx/neptune/compress"
 	"io/ioutil"
 )
 
@@ -66,7 +67,7 @@ func fastUnmarshalSnappy(data []byte, v interface{}) error {
 		return nil
 	}
 	if CompressType(data[0]) == CompressSnappy {
-		var buf, err = Snappy.DeCompress(data[1:])
+		var buf, err = compress.Snappy.DeCompress(data[1:])
 		if err != nil {
 			return err
 		}
@@ -80,7 +81,7 @@ func fastUnmarshalSnappy(data []byte, v interface{}) error {
 func compressJSON(buf []byte) []byte {
 	var bufSize = len(buf)
 	if bufSize > CompressThreshHold {
-		var compressBuf, _ = Snappy.CompressWithPrefix(buf, []byte{byte(CompressSnappy)})
+		var compressBuf = compress.Snappy.CompressWithPrefix(buf, []byte{byte(CompressSnappy)})
 		if len(compressBuf) > bufSize {
 			return buf
 		}

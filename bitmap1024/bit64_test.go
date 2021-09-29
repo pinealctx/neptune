@@ -55,7 +55,6 @@ func TestBit64_Iter(t *testing.T) {
 	a.IterAsI64(x, 0, 0, 30)
 	t.Log(x)
 	x = make([]int64, 0, 30)
-	a.RIterAsI64(x, 0, 0,30)
+	a.RIterAsI64(x, 0, 0, 30)
 	t.Log(x)
 }
-

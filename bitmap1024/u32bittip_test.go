@@ -53,4 +53,3 @@ func TestNewU32BitTipIter(t *testing.T) {
 	t.Log("len:", len(r), "cap:", cap(r))
 	t.Log(r)
 }
-
