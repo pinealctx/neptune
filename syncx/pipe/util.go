@@ -1,7 +1,7 @@
 package pipe
 
 import (
-	"github.com/pinealctx/neptune/pipe/q"
+	"github.com/pinealctx/neptune/syncx/pipe/q"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

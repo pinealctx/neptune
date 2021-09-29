@@ -1,4 +1,4 @@
-package tex
+package jsonx
 
 import (
 	"testing"
