@@ -1,6 +1,9 @@
 package bitmap1024
 
-import "testing"
+import (
+	"math/bits"
+	"testing"
+)
 
 func TestBit64_Set(t *testing.T) {
 	var x Bit64
@@ -9,12 +12,15 @@ func TestBit64_Set(t *testing.T) {
 	t.Log("len:", x.Len())
 	t.Log("full:", x.Full())
 
+	t.Logf("%064b", x)
+	t.Log("leading 0:", bits.Len64(uint64(x)))
 	for i := byte(0); i < 64; i++ {
 		x.Set(i)
 		t.Logf("%064b", x)
 		t.Log("len:", x.Len())
 		t.Log("NLen:", x.NLen())
 		t.Log("full:", x.Full())
+		t.Log("leading 0:", bits.Len64(uint64(x)))
 	}
 
 	for i := byte(0); i < 64; i++ {
