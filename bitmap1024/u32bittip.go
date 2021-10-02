@@ -149,17 +149,17 @@ func (b *U32BitTip) SetU32(u32 uint32) error {
 	return nil
 }
 
-//GetNAsI64 : iterate bitmap
+//GetNAsU32 : iterate bitmap
 //input: n -- iter count
 //return: actually iter list
-func (b *U32BitTip) GetNAsI64(n int) []uint32 {
+func (b *U32BitTip) GetNAsU32(n int) []uint32 {
 	return b.getNAsU32(n, false)
 }
 
-//RGetNAsI64 : reverse iterate bitmap
+//RGetNAsU32 : reverse iterate bitmap
 //input: n -- iter count
 //return: actually iter list
-func (b *U32BitTip) RGetNAsI64(n int) []uint32 {
+func (b *U32BitTip) RGetNAsU32(n int) []uint32 {
 	return b.getNAsU32(n, true)
 }
 

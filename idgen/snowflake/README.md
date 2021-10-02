@@ -39,12 +39,12 @@
 
 ```go
     //在NewNode时使用了单调时间
-	var curTime = time.Now()
-	// add time.Duration to curTime to make sure we use the monotonic clock if available
-	n.epoch = curTime.Add(time.Unix(_epoch/SDivMs, (_epoch%SDivMs)*MsDivNs).Sub(curTime))
+    var curTime = time.Now()
+    // add time.Duration to curTime to make sure we use the monotonic clock if available
+    n.epoch = curTime.Add(time.Unix(_epoch/SDivMs, (_epoch%SDivMs)*MsDivNs).Sub(curTime))
 ```
 
 ```go
     //在生成ID时同样使用了单调时间计算，而不是简单粗暴把时间戳进行加减运算
-	var now = time.Since(n.epoch).Nanoseconds() / MsDivNs
+    var now = time.Since(n.epoch).Nanoseconds() / MsDivNs
 ```

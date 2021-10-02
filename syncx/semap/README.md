@@ -54,14 +54,14 @@ semap包实现了三种方式的同步(串行化)容器，这三种容器实际�
 ```go
 //SemMapper define interface to Acquire/Release semaphore map container
 type SemMapper interface {
-	//AcquireRead acquire for read
-	AcquireRead(ctx context.Context, key interface{}) (*Weighted, error)
-	//ReleaseRead release read lock
-	ReleaseRead(key interface{}, w *Weighted)
-	//AcquireWrite acquire for write
-	AcquireWrite(ctx context.Context, key interface{}) (*Weighted, error)
-	//ReleaseWrite release write lock
-	ReleaseWrite(key interface{}, w *Weighted)
+    //AcquireRead acquire for read
+    AcquireRead(ctx context.Context, key interface{}) (*Weighted, error)
+    //ReleaseRead release read lock
+    ReleaseRead(key interface{}, w *Weighted)
+    //AcquireWrite acquire for write
+    AcquireWrite(ctx context.Context, key interface{}) (*Weighted, error)
+    //ReleaseWrite release write lock
+    ReleaseWrite(key interface{}, w *Weighted)
 }
 //接口SemMapper主要有4种方法
 //AcquireRead传入一个key获取读锁，如果在没有获取到锁式就发生ctx超时(假如传入的是WithTime的context)或ctx被取消，则返回错误。
@@ -75,11 +75,11 @@ type SemMapper interface {
 
 ```go
 func getUser(ctx context.Context, sem SemMapper, userID int32) (*UserInfo, error){
-	//以userID为key获取读锁
-	var w, err = sem.AcquireRead(ctx, userID)
-	if err != nil {
-		//获取读锁失败后直接返回，不需要释放读锁
-		return nil, err
+    //以userID为key获取读锁
+    var w, err = sem.AcquireRead(ctx, userID)
+    if err != nil {
+        //获取读锁失败后直接返回，不需要释放读锁 
+        return nil, err
     }
     //记住这里一定要释放读锁，使用defer最好
     defer sem.ReleaseRead(userID, w)
@@ -90,11 +90,11 @@ func getUser(ctx context.Context, sem SemMapper, userID int32) (*UserInfo, error
 
 ```go
 func setUser(ctx context.Context, sem SemMapper, userInfo *UserInfo) error {
-	//以userID为key获取写锁
-	var w, err = sem.AcquireWrite(ctx, userInfo.ID)
-	if err != nil {
-		//获取写锁失败后直接返回，不需要释放写锁
-		return nil, err
+    //以userID为key获取写锁 
+    var w, err = sem.AcquireWrite(ctx, userInfo.ID)
+    if err != nil {
+        //获取写锁失败后直接返回，不需要释放写锁
+        return nil, err
     }
     //记住这里一定要释放写锁，使用defer最好
     defer sem.ReleaseWrite(userInfo.ID, w)
