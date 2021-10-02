@@ -108,3 +108,35 @@ func MapVal2Duration(m map[string]interface{}, k string) (time.Duration, bool) {
 	}
 	return ToDuration(x)
 }
+
+//MapMerge : merge map
+//Input: base -- map[string]interface{}, diff -- map[string]interface{}
+func MapMerge(base map[string]interface{}, diff map[string]interface{}) {
+	var (
+		src interface{}
+		mc  map[string]interface{}
+		ok  bool
+	)
+	for k, v := range diff {
+		src, ok = base[k]
+		if !ok || src == nil {
+			base[k] = v
+			continue
+		}
+		mc, ok = src.(map[string]interface{})
+		if !ok || mc == nil {
+			base[k] = v
+			continue
+		}
+
+		switch val := v.(type) {
+		case map[string]interface{}:
+			if val == nil {
+				continue
+			}
+			MapMerge(mc, val)
+		default:
+			base[k] = val
+		}
+	}
+}
