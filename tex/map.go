@@ -110,8 +110,26 @@ func MapVal2Duration(m map[string]interface{}, k string) (time.Duration, bool) {
 }
 
 //MapMerge : merge map
-//Input: base -- map[string]interface{}, diff -- map[string]interface{}
-func MapMerge(base map[string]interface{}, diff map[string]interface{}) {
+//merge diff to base, return a new cloned map.
+func MapMerge(base map[string]interface{}, diff map[string]interface{}) map[string]interface{} {
+	var c = MapClone(base)
+	mapMerge(c, diff)
+	return c
+}
+
+//MapClone : clone a new map from old
+//Attention: deeply clone only support map[string]interface{}, can not deeply clone pointer or other pointer like type.
+//只支持值为map[string]interface{}类型的深度克隆，不支持类似指针类型或切片类型的深度克隆
+func MapClone(base map[string]interface{}) map[string]interface{} {
+	var c = make(map[string]interface{})
+	mapCopy(base, c)
+	return c
+}
+
+//mapMerge : merge map
+//base -- map[string]interface{}, cannot be nil, if nil will panic
+//diff -- map[string]interface{}
+func mapMerge(base map[string]interface{}, diff map[string]interface{}) {
 	var (
 		src interface{}
 		mc  map[string]interface{}
@@ -134,9 +152,29 @@ func MapMerge(base map[string]interface{}, diff map[string]interface{}) {
 			if val == nil {
 				continue
 			}
-			MapMerge(mc, val)
+			mapMerge(mc, val)
 		default:
 			base[k] = val
+		}
+	}
+}
+
+//mapCopy : clone map
+//input -- input map to clone.
+//clone -- cloned map, clone map must be empty map but not nil.
+func mapCopy(input map[string]interface{}, clone map[string]interface{}) {
+	var (
+		mc map[string]interface{}
+		ok bool
+	)
+	for k, v := range input {
+		mc, ok = v.(map[string]interface{})
+		if ok {
+			var nc = make(map[string]interface{})
+			mapCopy(mc, nc)
+			clone[k] = nc
+		} else {
+			clone[k] = v
 		}
 	}
 }
