@@ -77,3 +77,56 @@ func TestNode_GenerateB(t *testing.T) {
 	var d = t2.Sub(t1)
 	t.Log("use time:", d, "average:", d/dc)
 }
+
+func TestTimeIDRange(t *testing.T) {
+	var node, err = NewNode(0)
+	if err != nil {
+		panic(err)
+	}
+	var id = node.Generate()
+	var now = time.Now()
+	t.Log(now)
+	var ts = now.UnixNano()
+	t.Logf("%064b\n", ts)
+	t.Logf("%064b\n", ts/MsDivNs)
+	var min, max = TimeIDRange(now)
+	t.Logf("%064b\n", id)
+	t.Logf("%064b\n", min)
+	t.Logf("%064b\n", max)
+
+	var ms, n1, step1 = IDParse(id)
+	t.Logf("%064b\n", ms)
+	t.Logf("%064b\n", n1)
+	t.Logf("%064b\n", step1)
+
+	var t2, n2, s2 = IDParseEx(id)
+	t.Log(t2, n2, s2)
+
+	t2, n2, s2 = IDParseEx(min)
+	t.Log(t2, n2, s2)
+	t2, n2, s2 = IDParseEx(max)
+	t.Log(t2, n2, s2)
+
+	var timeShift = _nodeBits + StepBits
+	var reMax int64 = (1 << timeShift) - 1
+	t.Logf("%064b\n", reMax)
+}
+
+func TestTimeBetweenID(t *testing.T) {
+	var node, err = NewNode(0)
+	if err != nil {
+		panic(err)
+	}
+	var id = node.Generate()
+	var now = time.Now()
+	t.Log(now)
+	t.Logf("%064b\n", id)
+	var min, max = TimeBetweenID(now, now.Add(time.Second*10))
+	t.Logf("%064b\n", min)
+	t.Logf("%064b\n", max)
+
+	var t2, n2, s2 = IDParseEx(min)
+	t.Log(t2, n2, s2)
+	t2, n2, s2 = IDParseEx(max)
+	t.Log(t2, n2, s2)
+}

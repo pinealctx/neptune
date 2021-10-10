@@ -193,16 +193,30 @@ func IDParseEx(id int64) (t time.Time, node, step int64) {
 	return t, node, step
 }
 
-// TimeRange figure out a specific time min and max id
+// TimeIDRange figure out a specific time min and max id
 // The calculation is based on second
-func TimeRange(t time.Time) (min, max int64) {
+func TimeIDRange(t time.Time) (min, max int64) {
 	var timeShift = _nodeBits + StepBits
 	var ts = t.Unix()
-	var timeMs = ts * SDivMs
+	var timeMs = ts*SDivMs - _epoch
 	timeMs <<= timeShift
 	min = timeMs
 	var reMax int64 = (1 << timeShift) - 1
 	max = timeMs | reMax
+	return min, max
+}
+
+// TimeBetweenID figure out a specific [after time, before time]
+// The calculation is based on second
+func TimeBetweenID(begin time.Time, end time.Time) (min, max int64) {
+	var timeShift = _nodeBits + StepBits
+	var beginTs = begin.Unix()
+	var beginMs = beginTs*SDivMs - _epoch
+	min = beginMs << timeShift
+	var reMax int64 = (1 << timeShift) - 1
+	var endTs = end.Unix()
+	var endMs = endTs*SDivMs - _epoch
+	max = (endMs << timeShift) | reMax
 	return min, max
 }
 
