@@ -1,11 +1,13 @@
 package tex
 
 import (
+	"bytes"
 	"errors"
 	"strconv"
 )
 
 var (
+	jsonBrace         = []byte(`""`)
 	ErrInvalidInt64Js = errors.New(`int64 invalid string`)
 )
 
@@ -29,7 +31,15 @@ func (i JsInt64) MarshalJSON() ([]byte, error) {
 //unmarshal json
 func (i *JsInt64) UnmarshalJSON(b []byte) error {
 	lb := len(b)
-	if lb <= 2 {
+	if lb < 2 {
+		return ErrInvalidInt64Js
+	}
+
+	if lb == 2 {
+		if bytes.Equal(b, jsonBrace) {
+			*i = 0
+			return nil
+		}
 		return ErrInvalidInt64Js
 	}
 
