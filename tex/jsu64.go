@@ -1,6 +1,7 @@
 package tex
 
 import (
+	"bytes"
 	"errors"
 	"strconv"
 )
@@ -31,6 +32,14 @@ func (i *JsUInt64) UnmarshalJSON(b []byte) error {
 	lb := len(b)
 	if lb <= 2 {
 		return ErrInvalidUInt64Js
+	}
+
+	if lb == 2 {
+		if bytes.Equal(b, jsonBrace) {
+			*i = 0
+			return nil
+		}
+		return ErrInvalidInt64Js
 	}
 
 	strBuf := string(b[1 : lb-1])
