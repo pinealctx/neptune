@@ -29,7 +29,7 @@ func TestSetup(t *testing.T) {
 }
 
 func TestNode_Generate(t *testing.T) {
-	var node, err = NewNode(1)
+	var node, err = NewMonoNode(1)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +51,7 @@ func TestNode_Generate(t *testing.T) {
 }
 
 func TestNode_GenerateB(t *testing.T) {
-	var node, err = NewNode(0)
+	var node, err = NewMonoNode(0)
 	if err != nil {
 		panic(err)
 	}
@@ -79,7 +79,7 @@ func TestNode_GenerateB(t *testing.T) {
 }
 
 func TestTimeIDRange(t *testing.T) {
-	var node, err = NewNode(0)
+	var node, err = NewMonoNode(0)
 	if err != nil {
 		panic(err)
 	}
@@ -113,7 +113,7 @@ func TestTimeIDRange(t *testing.T) {
 }
 
 func TestTimeBetweenID(t *testing.T) {
-	var node, err = NewNode(0)
+	var node, err = NewMonoNode(0)
 	if err != nil {
 		panic(err)
 	}

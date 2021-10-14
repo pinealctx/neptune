@@ -48,3 +48,33 @@
     //在生成ID时同样使用了单调时间计算，而不是简单粗暴把时间戳进行加减运算
     var now = time.Since(n.epoch).Nanoseconds() / MsDivNs
 ```
+
+### monotonic计时的精度问题
+
+monotonic精度取决于计算机的时钟硬件，短期计时没有问题，但如果运行很长时间，则误差会放大，有时我们需要制造雪花ID，但同时此ID又能反映出时间，如果用monotonic的方式，则会导致如果想从ID中倒推时间会有很大的误差。
+
+### 两种不同的雪花算法
+
+- 都实现了接口
+
+```go
+//Node : generate id interface
+type Node interface {
+	Generate() int64
+}
+```
+
+- 使用monotonic计时的雪花算法，此雪花算法不会有ID回退问题，但如果用它产生的ID来推导时间的话，会有精度问题。
+
+```go
+var node, err = NewMonoNode(your_spec_node_id)
+//...
+```
+
+- 推荐的改良雪花算法，产生ID后会记录最近一次的毫秒时间和step，如果下次获取的绝对时间小于或等于记录的毫秒时间(小于意味着时间回退)，则先增加步数，如果步数溢出，再增加毫秒时间值。这样做的好处是，保证ID单调递增的同时，用绝对时间来保证产生的ID在推导时间的时候不会有太大的偏差，时间同步服务启动的情况下，回拨时间最多也就在100毫秒以内。  
+ 与NewMonoNode不一样的是，此方法支持传入一个最近最大的ID来保证服务重启时刚好遇到时间回调导致产生ID与重启前服务产生的ID不单调增长。此id常常为启动时通过读取数据库中的某个最大ID值。
+
+```go
+var node, err = NewNode(your_spec_node_id, last_id)
+//...
+```
