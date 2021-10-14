@@ -88,7 +88,7 @@ func TestSearchIndexSite(t *testing.T) {
 	}
 	t.Log(m)
 
-	var node, _ = snowflake.NewNode(0)
+	var node, _ = snowflake.NewMonoNode(0)
 	m = make(map[int]int)
 	for i := 0; i < 1000; i++ {
 		var x = r.XHashIndex(node.Generate())

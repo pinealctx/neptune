@@ -1,11 +1,9 @@
 package snowflake
 
 import (
-	"errors"
 	"fmt"
 	"github.com/pinealctx/neptune/tex"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -63,6 +61,12 @@ const (
 	TimeStrLen = 24
 )
 
+//Node : generate id interface
+type Node interface {
+	Generate() int64
+}
+
+//NodeBitsMode node bit mode
 type NodeBitsMode uint8
 
 //_Option : snowflake option
@@ -120,67 +124,24 @@ func Setup(opts ...Option) {
 	_nodeAtLowest = o.nodeAtLowest
 }
 
-// A Node struct holds the basic information needed for a snowflake generator
-// node
-type Node struct {
-	mu    sync.Mutex
-	epoch time.Time
-	time  int64
-	node  int64
-	step  int64
-}
-
-// NewNode returns a new snowflake node that can be used to generate snowflake
-func NewNode(node int64) (*Node, error) {
+// IDFields figure out time/node/step from id
+// Return : ms timestamp, node, step
+func IDFields(id int64) (timeF, node, step int64) {
 	var nodeMax int64 = (1 << _nodeBits) - 1
-	if node < 0 || node > nodeMax {
-		return nil, errors.New("Node number must be between 0 and " + strconv.FormatInt(nodeMax, 10))
-	}
-	var n = &Node{}
-	n.node = node
-	var curTime = time.Now()
-	// add time.Duration to curTime to make sure we use the monotonic clock if available
-	n.epoch = curTime.Add(time.Unix(_epoch/SDivMs, (_epoch%SDivMs)*MsDivNs).Sub(curTime))
-	return n, nil
-}
-
-// Generate creates and returns a unique snowflake ID
-// To help guarantee uniqueness
-// - Make sure your system is keeping accurate system time
-// - Make sure you never have multiple nodes running with the same node ID
-func (n *Node) Generate() int64 {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	var stepMax int64 = (1 << StepBits) - 1
-	var now = time.Since(n.epoch).Nanoseconds() / MsDivNs
-	if now == n.time {
-		n.step = (n.step + 1) & stepMax
-		if n.step == 0 {
-			for now <= n.time {
-				now = time.Since(n.epoch).Nanoseconds() / MsDivNs
-			}
-		}
-	} else {
-		n.step = 0
-	}
-
-	n.time = now
 	var timeShift, nodeShift, stepShift = figureShift()
-	var r = now<<timeShift | n.node<<nodeShift | n.step<<stepShift
-	return r
+
+	timeF = id >> timeShift
+	node = (id >> nodeShift) & nodeMax
+	step = (id >> stepShift) & stepMax
+	return timeF, node, step
 }
 
 // IDParse figure out time/node/step from id
 // Return : ms timestamp, node, step
 func IDParse(id int64) (timeMs, node, step int64) {
-	var nodeMax int64 = (1 << _nodeBits) - 1
-	var stepMax int64 = (1 << StepBits) - 1
-	var timeShift, nodeShift, stepShift = figureShift()
-
-	timeMs = (id >> timeShift) + _epoch
-	node = (id >> nodeShift) & nodeMax
-	step = (id >> stepShift) & stepMax
+	timeMs, node, step = IDFields(id)
+	timeMs += _epoch
 	return timeMs, node, step
 }
 
@@ -210,12 +171,12 @@ func TimeIDRange(t time.Time) (min, max int64) {
 // The calculation is based on second
 func TimeBetweenID(begin time.Time, end time.Time) (min, max int64) {
 	var timeShift = _nodeBits + StepBits
-	var beginTs = begin.Unix()
-	var beginMs = beginTs*SDivMs - _epoch
+	var beginTS = begin.Unix()
+	var beginMs = beginTS*SDivMs - _epoch
 	min = beginMs << timeShift
 	var reMax int64 = (1 << timeShift) - 1
-	var endTs = end.Unix()
-	var endMs = endTs*SDivMs - _epoch
+	var endTS = end.Unix()
+	var endMs = endTS*SDivMs - _epoch
 	max = (endMs << timeShift) | reMax
 	return min, max
 }
