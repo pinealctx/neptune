@@ -61,6 +61,10 @@ go内置的bytes.Buffer功能很丰富，但它更多面向的是bytes这样的�
 扩展了一些基本类型
 [文档](./tex/README.md)
 
+## timex
+时间相关的包
+[文档](./timex/README.md)
+
 ## ulog
 封装了uber的一个日志库
 [文档](./ulog/README.md)
