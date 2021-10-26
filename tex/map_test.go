@@ -1,6 +1,8 @@
 package tex
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestMapClone(t *testing.T) {
 	var m1 = make(map[string]interface{})

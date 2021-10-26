@@ -25,6 +25,7 @@ require (
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/gorm v1.21.14
 	github.com/cespare/xxhash/v2 v2.1.2
+	github.com/vmihailenco/msgpack/v5 v5.3.4
 )
 
 go 1.15

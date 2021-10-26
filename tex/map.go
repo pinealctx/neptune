@@ -82,7 +82,7 @@ func MapVal2Bytes(m map[string]interface{}, k string) []byte {
 	return ToBytes(x)
 }
 
-//MapVal2StringList : 将map中的value转换为string list
+/*//MapVal2StringList : 将map中的value转换为string list
 func MapVal2StringList(m map[string]interface{}, k string) []string {
 	x, ok := m[k]
 	if !ok {
@@ -90,6 +90,7 @@ func MapVal2StringList(m map[string]interface{}, k string) []string {
 	}
 	return ToStringList(x)
 }
+*/
 
 //MapVal2Time : 将map中的value转换为time
 func MapVal2Time(m map[string]interface{}, k string) (time.Time, bool) {
