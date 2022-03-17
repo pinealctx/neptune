@@ -45,6 +45,10 @@ go内置的bytes.Buffer功能很丰富，但它更多面向的是bytes这样的�
 用于将健值分组的一个工具包
 [文档](./remap/README.md)
 
+## stcp
+封装TCP Server
+[文档](./stcp/README.md)
+
 ## store
 封装了一些数据中间件客户端代码
 [文档](./store/README.md)
