@@ -81,6 +81,7 @@ func (s *Session) loopSend() {
 		bs    []byte
 		ok    bool
 	)
+	defer s.recovery()
 	defer s.quit()
 
 	for {
@@ -103,6 +104,7 @@ func (s *Session) loopSend() {
 
 //loop receive
 func (s *Session) loopReceive() {
+	defer s.recovery()
 	defer s.quit()
 
 	for {
@@ -132,15 +134,6 @@ func (s *Session) send(buf []byte) error {
 
 //quit :
 func (s *Session) quit() {
-	defer func() {
-		var r = recover()
-		if r != nil {
-			//has panic
-			s.b.Logger().Error("session.panic", zap.Any("panic", r),
-				zap.Stack("stack"))
-		}
-	}()
-
 	s.exitOnce.Do(func() {
 		s.b.count.Dec()
 		s.sendQ.Close()
@@ -154,27 +147,14 @@ func (s *Session) quit() {
 	})
 }
 
-//invalidQuit : never call this one, it's just for test
-func (s *Session) invalidQuit() {
-	s.exitOnce.Do(func() {
-		defer func() {
-			var r = recover()
-			if r != nil {
-				//has panic
-				s.b.Logger().Error("session.panic", zap.Any("panic", r),
-					zap.Stack("stack"))
-			}
-		}()
-
-		s.b.count.Dec()
-		s.sendQ.Close()
-		if s.conn != nil {
-			var err = s.conn.Close()
-			if err != nil {
-				s.b.Logger().Error("on.session.quit.close.conn", zap.Error(err))
-			}
-		}
-	})
+//recovery :
+func (s *Session) recovery() {
+	var r = recover()
+	if r != nil {
+		//has panic
+		s.b.Logger().Error("session.panic", zap.Any("panic", r),
+			zap.Stack("stack"))
+	}
 }
 
 //log send/read error

@@ -14,11 +14,13 @@ func TestSession_Recover(t *testing.T) {
 	var s = NewSession(b, nil)
 	go func() {
 		defer wg.Done()
+		defer s.recovery()
 		defer s.quit()
 		panic("go routine 1 panic")
 	}()
 	go func() {
 		defer wg.Done()
+		defer s.recovery()
 		defer s.quit()
 		panic("go routine 2 panic")
 	}()
