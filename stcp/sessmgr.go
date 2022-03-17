@@ -7,11 +7,12 @@ import (
 	"time"
 )
 
-//IMsgReader message handler
-//消息读取接口
-type IMsgReader interface {
+//ISession session handler
+type ISession interface {
 	//Read : read
 	Read(s *Session) error
+	//OnExit : on exit -- for notify
+	OnExit(s *Session)
 }
 
 //SessionMgr :
@@ -20,11 +21,11 @@ type SessionMgr struct {
 	logger       *ulog.Logger
 	writeTimeout time.Duration
 	readTimeout  time.Duration
-	rh           IMsgReader
+	rh           ISession
 }
 
 //NewSessionMgr :
-func NewSessionMgr(rh IMsgReader, opts ...MOption) *SessionMgr {
+func NewSessionMgr(rh ISession, opts ...MOption) *SessionMgr {
 	var cnf = defaultSessMgrOpt()
 	for _, opt := range opts {
 		opt(cnf)
