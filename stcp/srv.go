@@ -39,7 +39,7 @@ func NewTCPSrv(address string, ch IConnMgr) *Server {
 }
 
 //NewTCPSrvX : use a simple IConnMgr
-func NewTCPSrvX(address string, rh IMsgReader, opts ...MOption) *Server {
+func NewTCPSrvX(address string, rh ISession, opts ...MOption) *Server {
 	var ch = NewSessionMgr(rh, opts...)
 	return NewTCPSrv(address, ch)
 }

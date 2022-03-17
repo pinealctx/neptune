@@ -52,6 +52,11 @@ func (s *Session) Start() {
 	})
 }
 
+//CloseSQ : close send msg queue
+func (s *Session) CloseSQ() {
+	s.sendQ.Close()
+}
+
 //Set :
 func (s *Session) Set(v interface{}) {
 	s.value.Store(v)
@@ -135,9 +140,9 @@ func (s *Session) send(buf []byte) error {
 //quit :
 func (s *Session) quit() {
 	s.exitOnce.Do(func() {
+		s.b.rh.OnExit(s)
 		s.b.count.Dec()
 		s.sendQ.Close()
-
 		if s.conn != nil {
 			var err = s.conn.Close()
 			if err != nil {
