@@ -11,10 +11,12 @@ import (
 	"time"
 )
 
-//ISessInfo : 做调试用的信息
-type ISessInfo interface {
+//ISessDebug : 做调试用的信息
+type ISessDebug interface {
 	//KeyOut 可打印的关键信息
 	KeyOut() zapcore.ObjectMarshaler
+	//All Debug info
+	All() zapcore.ObjectMarshaler
 }
 
 //Session session
@@ -67,6 +69,16 @@ func (s *Session) Get() interface{} {
 	return s.value.Load()
 }
 
+//KeyOut : for uber log
+func (s *Session) KeyOut() zap.Field {
+	return s.debugInfo(false)
+}
+
+//AllInfo : for uber log
+func (s *Session) AllInfo() zap.Field {
+	return s.debugInfo(true)
+}
+
 //Send : send bytes, put bytes to queue, not send directly
 func (s *Session) Send(bs []byte) error {
 	return s.sendQ.AddReq(bs)
@@ -76,6 +88,26 @@ func (s *Session) Send(bs []byte) error {
 func (s *Session) Read(bs []byte) error {
 	var _, err = io.ReadFull(s.conn, bs)
 	return err
+}
+
+//session info for uber log
+func (s *Session) debugInfo(all bool) zap.Field {
+	var info = s.value.Load()
+	if info == nil {
+		return zap.Bool("sessionInfo.value.empty", true)
+	}
+	var sessInfo, ok = info.(ISessDebug)
+	if ok {
+		if sessInfo == nil {
+			return zap.Bool("sessionInfo.value.empty", false)
+		}
+		if all {
+			return zap.Object("sessionInfo.All", sessInfo.All())
+		}
+		return zap.Object("sessionInfo", sessInfo.KeyOut())
+	} else {
+		return zap.Any("unknown.sessionInfo", info)
+	}
 }
 
 //loop send
@@ -165,16 +197,6 @@ func (s *Session) recovery() {
 //log send/read error
 func (s *Session) loggerSendReadErr(msg string, err error) {
 	if s.b.Logger().Level() >= zapcore.WarnLevel {
-		var info = s.Get()
-		var sessInfo, ok = info.(ISessInfo)
-		if ok {
-			s.b.Logger().Warn(msg,
-				zap.Error(err),
-				zap.Object("sessionInfo", sessInfo.KeyOut()))
-		} else {
-			s.b.Logger().Warn(msg,
-				zap.Error(err),
-				zap.Any("unknown.sessionInfo", info))
-		}
+		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut())
 	}
 }
