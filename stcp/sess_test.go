@@ -7,6 +7,15 @@ import (
 	"testing"
 )
 
+func TestSession_RemoteAddr(t *testing.T) {
+	var s = NewSession(nil, nil)
+	t.Log(s.RemoteAddr())
+	t.Log(s.RemoteInfo())
+	ulog.Error("addr", s.RemoteInfo())
+	ulog.Error("sess", s.KeyOut())
+	ulog.Error("sess", s.AllInfo())
+}
+
 func TestSession_Recover(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)

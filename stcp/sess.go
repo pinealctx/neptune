@@ -30,6 +30,8 @@ type Session struct {
 	//发送q
 	//queue -- actually the queue is bytes
 	sendQ *q.Q
+	//remote addr
+	remoteAddr atomic.String
 	//start once
 	startOnce sync.Once
 	//exit once
@@ -69,6 +71,27 @@ func (s *Session) Get() interface{} {
 	return s.value.Load()
 }
 
+//SetRemoteAddr :
+func (s *Session) SetRemoteAddr(addr string) {
+	s.remoteAddr.Store(addr)
+}
+
+//RemoteAddr :
+func (s *Session) RemoteAddr() string {
+	var rd = s.remoteAddr.Load()
+	if rd == "" {
+		if s.conn == nil {
+			return ""
+		}
+		var ra = s.conn.RemoteAddr()
+		if ra == nil {
+			return ""
+		}
+		return ra.String()
+	}
+	return rd
+}
+
 //KeyOut : for uber log
 func (s *Session) KeyOut() zap.Field {
 	return s.debugInfo(false)
@@ -77,6 +100,11 @@ func (s *Session) KeyOut() zap.Field {
 //AllInfo : for uber log
 func (s *Session) AllInfo() zap.Field {
 	return s.debugInfo(true)
+}
+
+//RemoteInfo : for uber log
+func (s *Session) RemoteInfo() zap.Field {
+	return zap.String("session.Addr", s.RemoteAddr())
 }
 
 //Send : send bytes, put bytes to queue, not send directly
@@ -124,7 +152,7 @@ func (s *Session) loopSend() {
 	for {
 		qItem, err = s.sendQ.PopAnyway()
 		if err != nil {
-			s.b.Logger().Debug("quit.in.send.q", zap.Error(err))
+			s.b.Logger().Debug("quit.in.send.q", zap.Error(err), s.KeyOut())
 		}
 		bs, ok = qItem.([]byte)
 		if !ok || len(bs) == 0 {
@@ -147,7 +175,7 @@ func (s *Session) loopReceive() {
 	for {
 		var err = s.conn.SetReadDeadline(time.Now().Add(s.b.readTimeout))
 		if err != nil {
-			s.b.Logger().Error("set.read.conn.deadline", zap.Error(err))
+			s.b.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteInfo())
 			return
 		}
 		err = s.b.rh.Read(s)
@@ -162,7 +190,7 @@ func (s *Session) loopReceive() {
 func (s *Session) send(buf []byte) error {
 	var err = s.conn.SetWriteDeadline(time.Now().Add(s.b.writeTimeout))
 	if err != nil {
-		s.b.Logger().Error("set.write.conn.deadline", zap.Error(err))
+		s.b.Logger().Error("set.write.conn.deadline", zap.Error(err), s.RemoteInfo())
 		return err
 	}
 	_, err = s.conn.Write(buf)
@@ -178,7 +206,7 @@ func (s *Session) quit() {
 		if s.conn != nil {
 			var err = s.conn.Close()
 			if err != nil {
-				s.b.Logger().Error("on.session.quit.close.conn", zap.Error(err))
+				s.b.Logger().Error("on.session.quit.close.conn", zap.Error(err), s.RemoteInfo())
 			}
 		}
 	})
@@ -197,6 +225,6 @@ func (s *Session) recovery() {
 //log send/read error
 func (s *Session) loggerSendReadErr(msg string, err error) {
 	if s.b.Logger().Level() >= zapcore.WarnLevel {
-		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut())
+		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut(), s.RemoteInfo())
 	}
 }
