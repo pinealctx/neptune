@@ -94,12 +94,12 @@ func (s *Session) RemoteAddr() string {
 
 //KeyOut : for uber log
 func (s *Session) KeyOut() zap.Field {
-	return s.debugInfo(false)
+	return absSessionInfo(s.value, false)
 }
 
 //AllInfo : for uber log
 func (s *Session) AllInfo() zap.Field {
-	return s.debugInfo(true)
+	return absSessionInfo(s.value, true)
 }
 
 //RemoteInfo : for uber log
@@ -116,26 +116,6 @@ func (s *Session) Send(bs []byte) error {
 func (s *Session) Read(bs []byte) error {
 	var _, err = io.ReadFull(s.conn, bs)
 	return err
-}
-
-//session info for uber log
-func (s *Session) debugInfo(all bool) zap.Field {
-	var info = s.value.Load()
-	if info == nil {
-		return zap.Bool("sessionInfo.value.empty", true)
-	}
-	var sessInfo, ok = info.(ISessDebug)
-	if ok {
-		if sessInfo == nil {
-			return zap.Bool("sessionInfo.value.empty", false)
-		}
-		if all {
-			return zap.Object("sessionInfo.All", sessInfo.All())
-		}
-		return zap.Object("sessionInfo", sessInfo.KeyOut())
-	} else {
-		return zap.Any("unknown.sessionInfo", info)
-	}
 }
 
 //loop send
@@ -226,5 +206,25 @@ func (s *Session) recovery() {
 func (s *Session) loggerSendReadErr(msg string, err error) {
 	if s.b.Logger().Level() >= zapcore.WarnLevel {
 		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut(), s.RemoteInfo())
+	}
+}
+
+//abs session info to debug info
+func absSessionInfo(value atomic.Value, all bool) zap.Field {
+	var info = value.Load()
+	if info == nil {
+		return zap.Bool("sessionInfo.value.empty", true)
+	}
+	var sessInfo, ok = info.(ISessDebug)
+	if ok {
+		if sessInfo == nil {
+			return zap.Bool("sessionInfo.value.empty", false)
+		}
+		if all {
+			return zap.Object("sessionInfo.All", sessInfo.All())
+		}
+		return zap.Object("sessionInfo", sessInfo.KeyOut())
+	} else {
+		return zap.Any("unknown.sessionInfo", info)
 	}
 }

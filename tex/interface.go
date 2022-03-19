@@ -221,6 +221,8 @@ func ToInt32(v interface{}) int32 {
 	case string:
 		/* #nosec */
 		iiv, _ := strconv.Atoi(val)
+		/* #nosec */
+		//WTF, convert int to uint32, it works.
 		iv = int32(iiv)
 	default:
 		iv = 0
