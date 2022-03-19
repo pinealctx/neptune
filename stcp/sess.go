@@ -2,6 +2,7 @@ package stcp
 
 import (
 	"github.com/pinealctx/neptune/syncx/pipe/q"
+	"github.com/pinealctx/neptune/ulog"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -116,6 +117,11 @@ func (s *Session) Send(bs []byte) error {
 func (s *Session) Read(bs []byte) error {
 	var _, err = io.ReadFull(s.conn, bs)
 	return err
+}
+
+//Logger : get logger
+func (s *Session) Logger() *ulog.Logger {
+	return s.b.Logger()
 }
 
 //loop send
