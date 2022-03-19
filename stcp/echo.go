@@ -87,13 +87,23 @@ func (s *Echo) RemoteInfo() zap.Field {
 
 //Send : send bytes, put bytes to queue, not send directly
 func (s *Echo) Send(bs []byte) error {
-	var _, err = s.conn.Write(bs)
+	var err = s.conn.SetWriteDeadline(time.Now().Add(s.b.writeTimeout))
+	if err != nil {
+		s.Logger().Error("set.write.conn.deadline", zap.Error(err), s.RemoteInfo())
+		return err
+	}
+	_, err = s.conn.Write(bs)
 	return err
 }
 
 //Read : read specific bytes
 func (s *Echo) Read(bs []byte) error {
-	var _, err = io.ReadFull(s.conn, bs)
+	var err = s.conn.SetReadDeadline(time.Now().Add(s.b.readTimeout))
+	if err != nil {
+		s.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteInfo())
+		return err
+	}
+	_, err = io.ReadFull(s.conn, bs)
 	return err
 }
 
