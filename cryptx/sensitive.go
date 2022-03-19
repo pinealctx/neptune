@@ -9,9 +9,14 @@ import (
 	"errors"
 )
 
-var _DefaultEncrytor *SenInfoEncryptor
+const (
+	/* #nosec */
+	_DefaultPw = "86c7d13317c7e8993656b7e093ee67a789350e0545bc073ca9dde341c98b1363"
+)
 
-const _DefaultPw = "86c7d13317c7e8993656b7e093ee67a789350e0545bc073ca9dde341c98b1363"
+var (
+	_DefaultEncrytor *SenInfoEncryptor
+)
 
 func init() {
 	var err error
@@ -21,18 +26,32 @@ func init() {
 	}
 }
 
+//InitSenKey init sensitive key
+func InitSenKey(pw string) error {
+	var et, err = NewFromStrKey(pw)
+	if err != nil {
+		return err
+	}
+	_DefaultEncrytor = et
+	return nil
+}
+
+//EncryptSenInfo encrypt
 func EncryptSenInfo(info string) string {
 	return _DefaultEncrytor.Encrypt(info)
 }
 
+//DecryptSenInfo decrypt
 func DecryptSenInfo(encInfo string) (string, error) {
 	return _DefaultEncrytor.Decrypt(encInfo)
 }
 
+//SenInfoEncryptor encryptor
 type SenInfoEncryptor struct {
 	cipher cipher.AEAD
 }
 
+//NewFromStrKey new from string
 func NewFromStrKey(keyStr string) (*SenInfoEncryptor, error) {
 	key, err := hex.DecodeString(keyStr)
 	if err != nil {
@@ -41,6 +60,7 @@ func NewFromStrKey(keyStr string) (*SenInfoEncryptor, error) {
 	return NewSenInfoEncryptor(key)
 }
 
+//NewSenInfoEncryptor new from bytes
 func NewSenInfoEncryptor(key []byte) (*SenInfoEncryptor, error) {
 
 	if len(key) != 32 {
@@ -62,6 +82,7 @@ func NewSenInfoEncryptor(key []byte) (*SenInfoEncryptor, error) {
 
 }
 
+//Encrypt encrypt
 func (p *SenInfoEncryptor) Encrypt(info string) string {
 	// 对于同一个key，nonce要求唯一，但我们这里的应用场景是加密一些配置文件里面的敏感信息，数量比较小，随机冲突的几率几乎没有
 	// 即使冲突了，问题也不大
@@ -74,6 +95,7 @@ func (p *SenInfoEncryptor) Encrypt(info string) string {
 	return base64.URLEncoding.EncodeToString(buf)
 }
 
+//Decrypt decrypt
 func (p *SenInfoEncryptor) Decrypt(encInfo string) (string, error) {
 	buf, err := base64.URLEncoding.DecodeString(encInfo)
 	if err != nil {
