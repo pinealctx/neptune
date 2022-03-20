@@ -18,6 +18,8 @@ type Echo struct {
 	value atomic.Value
 	//base handler
 	b *EchoMgr
+	//remote addr
+	remoteAddr atomic.String
 	//start once
 	startOnce sync.Once
 }
@@ -38,15 +40,10 @@ func (s *Echo) Start() {
 	})
 }
 
-//DecRefCount : when Echo session is disposed, this function should be called to decrease connection counter
+//ReleaseRef : when Echo session is disposed, this function should be called to decrease connection counter
 //减少引用计数
-func (s *Echo) DecRefCount() {
+func (s *Echo) ReleaseRef() {
 	s.b.count.Dec()
-}
-
-//CloseConn close conn
-func (s *Echo) CloseConn() error {
-	return s.conn.Close()
 }
 
 //Set :
@@ -59,31 +56,14 @@ func (s *Echo) Get() interface{} {
 	return s.value.Load()
 }
 
+//SetRemoteAddr :
+func (s *Echo) SetRemoteAddr(addr string) {
+	s.remoteAddr.Store(addr)
+}
+
 //RemoteAddr :
 func (s *Echo) RemoteAddr() string {
-	if s.conn == nil {
-		return ""
-	}
-	var ra = s.conn.RemoteAddr()
-	if ra == nil {
-		return ""
-	}
-	return ra.String()
-}
-
-//KeyOut : for uber log
-func (s *Echo) KeyOut() zap.Field {
-	return absSessionInfo(s.value, false)
-}
-
-//AllInfo : for uber log
-func (s *Echo) AllInfo() zap.Field {
-	return absSessionInfo(s.value, true)
-}
-
-//RemoteInfo : for uber log
-func (s *Echo) RemoteInfo() zap.Field {
-	return zap.String("session.Addr", s.RemoteAddr())
+	return absRemoteAddr(s.remoteAddr, s.conn)
 }
 
 //Send : send bytes, put bytes to queue, not send directly
@@ -108,9 +88,33 @@ func (s *Echo) Read(bs []byte) error {
 	return err
 }
 
+//Close : close session
+//just close connection
+func (s *Echo) Close() {
+	var err = s.conn.Close()
+	if err != nil {
+		s.Logger().Error("close.conn", zap.Error(err), s.RemoteInfo())
+	}
+}
+
 //Logger : get logger
 func (s *Echo) Logger() *ulog.Logger {
 	return s.b.Logger()
+}
+
+//RemoteInfo : for uber log
+func (s *Echo) RemoteInfo() zap.Field {
+	return zap.String("session.Addr", s.RemoteAddr())
+}
+
+//AllInfo : for uber log
+func (s *Echo) AllInfo() zap.Field {
+	return absSessionInfo(s.value, true)
+}
+
+//KeyOut : for uber log
+func (s *Echo) KeyOut() zap.Field {
+	return absSessionInfo(s.value, false)
 }
 
 //IEcho echo handler
