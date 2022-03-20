@@ -139,6 +139,7 @@ func (s *Session) loopSend() {
 		qItem, err = s.sendQ.PopAnyway()
 		if err != nil {
 			s.b.Logger().Debug("quit.in.send.q", zap.Error(err), s.KeyOut())
+			return
 		}
 		bs, ok = qItem.([]byte)
 		if !ok || len(bs) == 0 {
