@@ -20,8 +20,6 @@ type Echo struct {
 	b *EchoMgr
 	//start once
 	startOnce sync.Once
-	//exit once
-	exitOnce sync.Once
 }
 
 //NewEcho :
@@ -40,12 +38,15 @@ func (s *Echo) Start() {
 	})
 }
 
-//ReleaseCount : when Echo session is disposed, this function should be called to decrease connection counter
+//DecRefCount : when Echo session is disposed, this function should be called to decrease connection counter
 //减少引用计数
-func (s *Echo) ReleaseCount() {
-	s.exitOnce.Do(func() {
-		s.b.count.Dec()
-	})
+func (s *Echo) DecRefCount() {
+	s.b.count.Dec()
+}
+
+//CloseConn close conn
+func (s *Echo) CloseConn() error {
+	return s.conn.Close()
 }
 
 //Set :
