@@ -12,6 +12,32 @@ import (
 	"time"
 )
 
+//NetIO : net io
+type NetIO interface {
+	//Set set session related value
+	Set(v interface{})
+	//Get get session related value
+	Get() interface{}
+	//SetRemoteAddr :
+	SetRemoteAddr(addr string)
+	//RemoteAddr :
+	RemoteAddr() string
+	//Send : send bytes
+	Send(bs []byte) error
+	//Read : read specific bytes
+	Read(bs []byte) error
+	//Close : close session
+	Close()
+	//Logger : get uber logger
+	Logger() *ulog.Logger
+	//RemoteInfo : for uber log
+	RemoteInfo() zap.Field
+	//AllInfo : for uber log, all info
+	AllInfo() zap.Field
+	//KeyOut : for uber log, key info
+	KeyOut() zap.Field
+}
+
 //ISessDebug : 做调试用的信息
 type ISessDebug interface {
 	//KeyOut 可打印的关键信息
@@ -57,11 +83,6 @@ func (s *Session) Start() {
 	})
 }
 
-//CloseSQ : close send msg queue
-func (s *Session) CloseSQ() {
-	s.sendQ.Close()
-}
-
 //Set :
 func (s *Session) Set(v interface{}) {
 	s.value.Store(v)
@@ -79,33 +100,7 @@ func (s *Session) SetRemoteAddr(addr string) {
 
 //RemoteAddr :
 func (s *Session) RemoteAddr() string {
-	var rd = s.remoteAddr.Load()
-	if rd == "" {
-		if s.conn == nil {
-			return ""
-		}
-		var ra = s.conn.RemoteAddr()
-		if ra == nil {
-			return ""
-		}
-		return ra.String()
-	}
-	return rd
-}
-
-//KeyOut : for uber log
-func (s *Session) KeyOut() zap.Field {
-	return absSessionInfo(s.value, false)
-}
-
-//AllInfo : for uber log
-func (s *Session) AllInfo() zap.Field {
-	return absSessionInfo(s.value, true)
-}
-
-//RemoteInfo : for uber log
-func (s *Session) RemoteInfo() zap.Field {
-	return zap.String("session.Addr", s.RemoteAddr())
+	return absRemoteAddr(s.remoteAddr, s.conn)
 }
 
 //Send : send bytes, put bytes to queue, not send directly
@@ -119,9 +114,30 @@ func (s *Session) Read(bs []byte) error {
 	return err
 }
 
+//Close : close session
+//use close send msg queue to exit loop read/write go routine
+func (s *Session) Close() {
+	s.sendQ.Close()
+}
+
 //Logger : get logger
 func (s *Session) Logger() *ulog.Logger {
 	return s.b.Logger()
+}
+
+//RemoteInfo : for uber log
+func (s *Session) RemoteInfo() zap.Field {
+	return zap.String("session.Addr", s.RemoteAddr())
+}
+
+//AllInfo : for uber log
+func (s *Session) AllInfo() zap.Field {
+	return absSessionInfo(s.value, true)
+}
+
+//KeyOut : for uber log
+func (s *Session) KeyOut() zap.Field {
+	return absSessionInfo(s.value, false)
 }
 
 //loop send
@@ -193,7 +209,7 @@ func (s *Session) quit() {
 		if s.conn != nil {
 			var err = s.conn.Close()
 			if err != nil {
-				s.b.Logger().Error("on.session.quit.close.conn", zap.Error(err), s.RemoteInfo())
+				s.b.Logger().Error("close.conn", zap.Error(err), s.RemoteInfo())
 			}
 		}
 	})
@@ -214,6 +230,22 @@ func (s *Session) loggerSendReadErr(msg string, err error) {
 	if s.b.Logger().Level() >= zapcore.WarnLevel {
 		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut(), s.RemoteInfo())
 	}
+}
+
+//abs remote address
+func absRemoteAddr(rdAddr atomic.String, conn net.Conn) string {
+	var rd = rdAddr.Load()
+	if rd == "" {
+		if conn == nil {
+			return ""
+		}
+		var ra = conn.RemoteAddr()
+		if ra == nil {
+			return ""
+		}
+		return ra.String()
+	}
+	return rd
 }
 
 //abs session info to debug info
