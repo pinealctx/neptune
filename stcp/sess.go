@@ -30,20 +30,16 @@ type NetIO interface {
 	Close()
 	//Logger : get uber logger
 	Logger() *ulog.Logger
-	//RemoteInfo : for uber log
-	RemoteInfo() zap.Field
-	//AllInfo : for uber log, all info
-	AllInfo() zap.Field
-	//KeyOut : for uber log, key info
-	KeyOut() zap.Field
+	//RemoteZap : for uber log
+	RemoteZap() zap.Field
+	//KeyZaps : for uber log, key info
+	KeyZaps(ext ...zap.Field) []zap.Field
 }
 
-//ISessDebug : 做调试用的信息
-type ISessDebug interface {
-	//KeyOut 可打印的关键信息
-	KeyOut() zapcore.ObjectMarshaler
-	//All Debug info
-	All() zapcore.ObjectMarshaler
+//IKeyZap : 做调试用的信息
+type IKeyZap interface {
+	//KeyZaps : for uber log, key info
+	KeyZaps(ext ...zap.Field) []zap.Field
 }
 
 //Session session
@@ -125,19 +121,14 @@ func (s *Session) Logger() *ulog.Logger {
 	return s.b.Logger()
 }
 
-//RemoteInfo : for uber log
-func (s *Session) RemoteInfo() zap.Field {
+//RemoteZap : for uber log
+func (s *Session) RemoteZap() zap.Field {
 	return zap.String("session.Addr", s.RemoteAddr())
 }
 
-//AllInfo : for uber log
-func (s *Session) AllInfo() zap.Field {
-	return absSessionInfo(s.value, true)
-}
-
-//KeyOut : for uber log
-func (s *Session) KeyOut() zap.Field {
-	return absSessionInfo(s.value, false)
+//KeyZaps : for uber log
+func (s *Session) KeyZaps(ext ...zap.Field) []zap.Field {
+	return absSessionInfo(s.value, ext...)
 }
 
 //loop send
@@ -154,7 +145,7 @@ func (s *Session) loopSend() {
 	for {
 		qItem, err = s.sendQ.PopAnyway()
 		if err != nil {
-			s.b.Logger().Debug("quit.in.send.q", zap.Error(err), s.KeyOut())
+			s.b.Logger().Debug("quit.in.send.q", s.KeyZaps(zap.Error(err))...)
 			return
 		}
 		bs, ok = qItem.([]byte)
@@ -178,7 +169,7 @@ func (s *Session) loopReceive() {
 	for {
 		var err = s.conn.SetReadDeadline(time.Now().Add(s.b.readTimeout))
 		if err != nil {
-			s.b.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteInfo())
+			s.b.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteZap())
 			return
 		}
 		err = s.b.rh.Read(s)
@@ -193,7 +184,7 @@ func (s *Session) loopReceive() {
 func (s *Session) send(buf []byte) error {
 	var err = s.conn.SetWriteDeadline(time.Now().Add(s.b.writeTimeout))
 	if err != nil {
-		s.b.Logger().Error("set.write.conn.deadline", zap.Error(err), s.RemoteInfo())
+		s.b.Logger().Error("set.write.conn.deadline", zap.Error(err), s.RemoteZap())
 		return err
 	}
 	_, err = s.conn.Write(buf)
@@ -209,7 +200,7 @@ func (s *Session) quit() {
 		if s.conn != nil {
 			var err = s.conn.Close()
 			if err != nil {
-				s.b.Logger().Error("close.conn", zap.Error(err), s.RemoteInfo())
+				s.b.Logger().Error("close.conn", zap.Error(err), s.RemoteZap())
 			}
 		}
 	})
@@ -228,7 +219,7 @@ func (s *Session) recovery() {
 //log send/read error
 func (s *Session) loggerSendReadErr(msg string, err error) {
 	if s.b.Logger().Level() <= zapcore.WarnLevel {
-		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut(), s.RemoteInfo())
+		s.b.Logger().Warn(msg, s.KeyZaps(zap.Error(err), s.RemoteZap())...)
 	}
 }
 
@@ -249,21 +240,23 @@ func absRemoteAddr(rdAddr atomic.String, conn net.Conn) string {
 }
 
 //abs session info to debug info
-func absSessionInfo(value atomic.Value, all bool) zap.Field {
+func absSessionInfo(value atomic.Value, ext ...zap.Field) []zap.Field {
 	var info = value.Load()
+
 	if info == nil {
-		return zap.Bool("sessionInfo.value.empty", true)
+		return ext
 	}
-	var sessInfo, ok = info.(ISessDebug)
+	var sessInfo, ok = info.(IKeyZap)
 	if ok {
 		if sessInfo == nil {
-			return zap.Bool("sessionInfo.value.empty", false)
+			return ext
 		}
-		if all {
-			return zap.Object("sessionInfo.All", sessInfo.All())
-		}
-		return zap.Object("sessionInfo", sessInfo.KeyOut())
+		return sessInfo.KeyZaps(ext...)
 	} else {
-		return zap.Any("unknown.sessionInfo", info)
+		var l = len(ext)
+		var c = make([]zap.Field, l+1)
+		c[0] = zap.Any("unknown.sessionInfo", info)
+		copy(c[1:], ext)
+		return c
 	}
 }

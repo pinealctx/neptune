@@ -70,7 +70,7 @@ func (s *Echo) RemoteAddr() string {
 func (s *Echo) Send(bs []byte) error {
 	var err = s.conn.SetWriteDeadline(time.Now().Add(s.b.writeTimeout))
 	if err != nil {
-		s.Logger().Error("set.write.conn.deadline", zap.Error(err), s.RemoteInfo())
+		s.Logger().Error("set.write.conn.deadline", zap.Error(err), s.RemoteZap())
 		return err
 	}
 	_, err = s.conn.Write(bs)
@@ -81,7 +81,7 @@ func (s *Echo) Send(bs []byte) error {
 func (s *Echo) Read(bs []byte) error {
 	var err = s.conn.SetReadDeadline(time.Now().Add(s.b.readTimeout))
 	if err != nil {
-		s.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteInfo())
+		s.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteZap())
 		return err
 	}
 	_, err = io.ReadFull(s.conn, bs)
@@ -93,7 +93,7 @@ func (s *Echo) Read(bs []byte) error {
 func (s *Echo) Close() {
 	var err = s.conn.Close()
 	if err != nil {
-		s.Logger().Error("close.conn", zap.Error(err), s.RemoteInfo())
+		s.Logger().Error("close.conn", zap.Error(err), s.RemoteZap())
 	}
 }
 
@@ -102,19 +102,14 @@ func (s *Echo) Logger() *ulog.Logger {
 	return s.b.Logger()
 }
 
-//RemoteInfo : for uber log
-func (s *Echo) RemoteInfo() zap.Field {
+//RemoteZap : for uber log
+func (s *Echo) RemoteZap() zap.Field {
 	return zap.String("session.Addr", s.RemoteAddr())
 }
 
-//AllInfo : for uber log
-func (s *Echo) AllInfo() zap.Field {
-	return absSessionInfo(s.value, true)
-}
-
-//KeyOut : for uber log
-func (s *Echo) KeyOut() zap.Field {
-	return absSessionInfo(s.value, false)
+//KeyZaps : for uber log
+func (s *Echo) KeyZaps(ext ...zap.Field) []zap.Field {
+	return absSessionInfo(s.value, ext...)
 }
 
 //IEcho echo handler
