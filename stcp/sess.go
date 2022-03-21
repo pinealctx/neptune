@@ -227,7 +227,7 @@ func (s *Session) recovery() {
 
 //log send/read error
 func (s *Session) loggerSendReadErr(msg string, err error) {
-	if s.b.Logger().Level() >= zapcore.WarnLevel {
+	if s.b.Logger().Level() <= zapcore.WarnLevel {
 		s.b.Logger().Warn(msg, zap.Error(err), s.KeyOut(), s.RemoteInfo())
 	}
 }
