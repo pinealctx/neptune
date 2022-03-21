@@ -10,10 +10,9 @@ import (
 func TestSession_RemoteAddr(t *testing.T) {
 	var s = NewSession(nil, nil)
 	t.Log(s.RemoteAddr())
-	t.Log(s.RemoteInfo())
-	ulog.Error("addr", s.RemoteInfo())
-	ulog.Error("sess", s.KeyOut())
-	ulog.Error("sess", s.AllInfo())
+	t.Log(s.RemoteZap())
+	ulog.Error("addr", s.RemoteZap())
+	ulog.Error("sess", s.KeyZaps()...)
 }
 
 func TestSession_Recover(t *testing.T) {
