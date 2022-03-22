@@ -43,13 +43,18 @@ type IKeyZap interface {
 }
 
 //Session session
+//SessionMgr的handler作为缺省的handler
+//rh作为自己独立的handler
+//优先使用rh，如果rh为空，使用SessionMgr
 type Session struct {
 	//连接
 	conn net.Conn
-	//所带字段
-	value atomic.Value
+	//rh
+	rh ISession
 	//base handler
 	b *SessionMgr
+	//所带字段
+	value atomic.Value
 	//发送q
 	//queue -- actually the queue is bytes
 	sendQ *q.Q
@@ -77,6 +82,11 @@ func (s *Session) Start() {
 		go s.loopSend()
 		go s.loopReceive()
 	})
+}
+
+//UpdateHandler : update handler
+func (s *Session) UpdateHandler(rh ISession) {
+	s.rh = rh
 }
 
 //Set :
@@ -172,7 +182,11 @@ func (s *Session) loopReceive() {
 			s.b.Logger().Error("set.read.conn.deadline", zap.Error(err), s.RemoteZap())
 			return
 		}
-		err = s.b.rh.Read(s)
+		if s.rh != nil {
+			err = s.rh.Read(s)
+		} else {
+			err = s.b.rh.Read(s)
+		}
 		if err != nil {
 			s.loggerSendReadErr("connection.read.fail", err)
 			return
@@ -194,7 +208,11 @@ func (s *Session) send(buf []byte) error {
 //quit :
 func (s *Session) quit() {
 	s.exitOnce.Do(func() {
-		s.b.rh.OnExit(s)
+		if s.rh != nil {
+			s.rh.OnExit(s)
+		} else {
+			s.b.rh.OnExit(s)
+		}
 		s.b.count.Dec()
 		s.sendQ.Close()
 		if s.conn != nil {
