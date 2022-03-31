@@ -28,7 +28,7 @@ type smsModule interface {
 	SendCode(areaCode, phone, code string) error
 }
 
-type cacheModule interface {
+type CacheModule interface {
 	Get(key interface{}) (v interface{}, ok bool)
 	Peek(key interface{}) (v interface{}, ok bool)
 	Set(key interface{}, value interface{})
@@ -38,7 +38,7 @@ type simpleCache struct {
 	lru *cache.LRUCache
 }
 
-func NewSimpleCache(c int64) cacheModule {
+func NewSimpleCache(c int64) CacheModule {
 	return &simpleCache{lru: cache.NewLRUCache(c)}
 }
 
@@ -65,10 +65,10 @@ type VCLogic interface {
 type sender struct {
 	*Config
 	sms    smsModule
-	cacheM cacheModule
+	cacheM CacheModule
 }
 
-func NewSimpleLogic(config *Config, sms smsModule, cacheM cacheModule) VCLogic {
+func NewSimpleLogic(config *Config, sms smsModule, cacheM CacheModule) VCLogic {
 	return &sender{
 		Config: config,
 		cacheM: NewSimpleCache(config.CacheSize),
