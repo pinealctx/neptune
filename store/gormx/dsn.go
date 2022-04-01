@@ -2,7 +2,6 @@ package gormx
 
 import (
 	"fmt"
-	"github.com/pinealctx/neptune/cryptx"
 	"strings"
 )
 
@@ -13,12 +12,6 @@ type Dsn struct {
 	Host     string            `json:"host" toml:"host"`
 	Schema   string            `json:"schema" toml:"schema"`
 	Options  map[string]string `json:"options" toml:"options"`
-}
-
-func (d *Dsn) Decrypt() error {
-	var err error
-	d.Password, err = cryptx.DecryptSenInfo(d.Password)
-	return err
 }
 
 func (d *Dsn) String() string {

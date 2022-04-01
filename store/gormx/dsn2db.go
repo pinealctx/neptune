@@ -12,10 +12,6 @@ func Dsn2DB(dsnURL string, withLog bool) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = dsn.Decrypt()
-	if err != nil {
-		return nil, err
-	}
 
 	if withLog {
 		return New(dsn.String(), WithLog())

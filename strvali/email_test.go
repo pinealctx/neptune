@@ -16,7 +16,7 @@ func TestIsValidEmail(t *testing.T) {
 		{
 			name: "qq",
 			args: args{
-				"2218982471@qq.com",
+				"xxxxx@qq.com",
 			},
 			want: true,
 		},
