@@ -24,10 +24,11 @@ func (e EntryList) Len() int {
 	return len(e)
 }
 
+// Less 根据less从小到大排列，排在前面的先Pop（也就是优先级更高）
 func (e EntryList) Less(i, j int) bool {
 	pi := e[i].entry.GetPriority()
 	pj := e[j].entry.GetPriority()
-	// 晚入队的，优先级更高
+	// 同样的优先级，早入队的，优先级更高
 	if pi == pj {
 		return e[i].seq < e[j].seq
 	} else {
