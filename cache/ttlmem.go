@@ -2,6 +2,7 @@ package cache
 
 import (
 	"container/list"
+	"context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"math"
@@ -9,21 +10,30 @@ import (
 	"time"
 )
 
+type TTLCache interface {
+	// Set key value into ttl cache.
+	Set(ctx context.Context, key string, value []byte, fns ...SetOptFn) error
+	// Get value by key from ttl cache.
+	Get(ctx context.Context, key string, fns ...GetOptFn) ([]byte, error)
+	// Remove value by key.
+	Remove(ctx context.Context, key string) error
+	// Clear cache.
+	Clear(ctx context.Context)
+}
+
 var (
 	// ErrTTLKeyExists When key exists will return this error.
 	ErrTTLKeyExists = status.Error(codes.AlreadyExists, "ttl.key.exists")
 	// ErrTTLKeyNotFound When key not found will return this error.
 	ErrTTLKeyNotFound = status.Error(codes.NotFound, "ttl.key.not.found")
-	// ErrTTLKeyTimeout When key timeout will return this error.
-	ErrTTLKeyTimeout = status.Error(codes.Unavailable, "ttl.key.timeout")
 
 	// now Gen now unix timestamp
 	now = func() int64 { return time.Now().Unix() }
 )
 
 type ttlNode struct {
-	key      interface{}
-	value    interface{}
+	key      string
+	value    []byte
 	deadline int64
 }
 
@@ -48,7 +58,6 @@ func WithMustNotExist() SetOptFn {
 
 type getOption struct {
 	removeAfterGet bool
-	update         bool
 }
 
 type GetOptFn func(*getOption)
@@ -59,85 +68,59 @@ func WithRemoveAfterGet() GetOptFn {
 	}
 }
 
-func WithUpdate() GetOptFn {
-	return func(option *getOption) {
-		option.update = true
-	}
-}
-
-type TTLCache interface {
-	// Set key value into ttl cache.
-	Set(key, value interface{}, fns ...SetOptFn) error
-	// Get value by key from ttl cache.
-	Get(key interface{}, fns ...GetOptFn) (interface{}, error)
-	// Remove value by key.
-	Remove(key interface{})
-	// Clear cache.
-	Clear()
-	// Len get ttl cache length.
-	Len() (hashLen, listLen int)
-}
-
-type ttlCache struct {
+type ttlMemCache struct {
 	size    int
 	ttl     int64
 	eleList *list.List
-	eleHash map[interface{}]*list.Element
+	eleHash map[string]*list.Element
 	sync.RWMutex
 }
 
-// NewTTLCache New ttl cache
-func NewTTLCache(size int, ttl int64) TTLCache {
-	return &ttlCache{
+// NewTTLMemCache New ttl cache
+func NewTTLMemCache(size int, ttl int64) TTLCache {
+	return &ttlMemCache{
 		size:    size,
 		ttl:     ttl,
 		eleList: list.New(),
-		eleHash: make(map[interface{}]*list.Element),
+		eleHash: make(map[string]*list.Element),
 	}
 }
 
 // Set key value to list.
-func (t *ttlCache) Set(key, value interface{}, fns ...SetOptFn) error {
+func (t *ttlMemCache) Set(_ context.Context, key string, value []byte, fns ...SetOptFn) error {
 	t.Lock()
 	defer t.Unlock()
 	return t.set(key, value, fns...)
 }
 
 // Get value by key from list.
-func (t *ttlCache) Get(key interface{}, fns ...GetOptFn) (interface{}, error) {
+func (t *ttlMemCache) Get(_ context.Context, key string, fns ...GetOptFn) ([]byte, error) {
 	t.Lock()
 	defer t.Unlock()
 	return t.get(key, fns...)
 }
 
 // Remove key value from list.
-func (t *ttlCache) Remove(key interface{}) {
+func (t *ttlMemCache) Remove(_ context.Context, key string) error {
 	t.Lock()
 	defer t.Unlock()
 	var ele, ok = t.eleHash[key]
 	if ok {
 		t.remove(ele, ele.Value.(*ttlNode))
 	}
+	return nil
 }
 
 // Clear cache.
-func (t *ttlCache) Clear() {
+func (t *ttlMemCache) Clear(_ context.Context) {
 	t.Lock()
 	defer t.Unlock()
-	t.eleHash = make(map[interface{}]*list.Element)
+	t.eleHash = make(map[string]*list.Element)
 	t.eleList.Init()
 }
 
-// Len get hash and list length.
-func (t *ttlCache) Len() (hashLen, listLen int) {
-	t.RLock()
-	defer t.RUnlock()
-	hashLen, listLen = len(t.eleHash), t.eleList.Len()
-	return
-}
-
 // remove Remove element.
-func (t *ttlCache) remove(ele *list.Element, node *ttlNode) {
+func (t *ttlMemCache) remove(ele *list.Element, node *ttlNode) {
 	if ele != nil {
 		t.eleList.Remove(ele)
 		delete(t.eleHash, node.key)
@@ -145,7 +128,7 @@ func (t *ttlCache) remove(ele *list.Element, node *ttlNode) {
 }
 
 // removeTail Remove tail element.
-func (t *ttlCache) removeTail() *ttlNode {
+func (t *ttlMemCache) removeTail() *ttlNode {
 	var ele = t.eleList.Back()
 	if ele == nil {
 		return nil
@@ -156,7 +139,7 @@ func (t *ttlCache) removeTail() *ttlNode {
 }
 
 // set key value to list.
-func (t *ttlCache) set(key, value interface{}, fns ...SetOptFn) error {
+func (t *ttlMemCache) set(key string, value []byte, fns ...SetOptFn) error {
 	var o = &setOption{ttl: t.ttl}
 	for _, fn := range fns {
 		fn(o)
@@ -182,12 +165,11 @@ func (t *ttlCache) set(key, value interface{}, fns ...SetOptFn) error {
 }
 
 // get Fetch value by key.
-func (t *ttlCache) get(key interface{}, fns ...GetOptFn) (interface{}, error) {
+func (t *ttlMemCache) get(key string, fns ...GetOptFn) ([]byte, error) {
 	var o = &getOption{}
 	for _, fn := range fns {
 		fn(o)
 	}
-
 	var ele, ok = t.eleHash[key]
 	if !ok {
 		return nil, ErrTTLKeyNotFound
@@ -195,20 +177,18 @@ func (t *ttlCache) get(key interface{}, fns ...GetOptFn) (interface{}, error) {
 	var node = ele.Value.(*ttlNode)
 	if now() > node.deadline {
 		t.remove(ele, node)
-		return node.value, ErrTTLKeyTimeout
+		return node.value, ErrTTLKeyNotFound
 	}
 	if o.removeAfterGet {
 		t.remove(ele, node)
 		return node.value, nil
 	}
-	if o.update {
-		t.eleList.MoveToFront(ele)
-	}
+	t.eleList.MoveToFront(ele)
 	return node.value, nil
 }
 
 func deadline(ttl int64) int64 {
-	if ttl < 0 {
+	if ttl <= 0 {
 		return math.MaxInt64
 	}
 	return now() + ttl
