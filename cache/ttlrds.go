@@ -39,12 +39,16 @@ func (t *ttlRdsCache) Set(ctx context.Context, key string, value []byte, fns ...
 		}
 		return nil
 	}
-	var _, err = t.cmd.Set(ctx, key, value, time.Duration(o.ttl)).Result()
+	var ex = time.Duration(o.ttl)
+	if o.keepTTL {
+		ex = redis.KeepTTL
+	}
+	var _, err = t.cmd.Set(ctx, key, value, ex).Result()
 	return err
 }
 
 func (t *ttlRdsCache) Get(ctx context.Context, key string, fns ...GetOptFn) ([]byte, error) {
-	var o = &getOption{}
+	var o = &getOption{ttl: t.ttl}
 	for _, fn := range fns {
 		fn(o)
 	}
@@ -59,6 +63,12 @@ func (t *ttlRdsCache) Get(ctx context.Context, key string, fns ...GetOptFn) ([]b
 			return nil, ErrTTLKeyNotFound
 		}
 		return nil, err
+	}
+	if o.updateTTL {
+		err = t.cmd.Expire(ctx, key, time.Duration(o.ttl)).Err()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return v, nil
 }

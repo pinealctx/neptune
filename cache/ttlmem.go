@@ -40,6 +40,7 @@ type ttlNode struct {
 type setOption struct {
 	ttl          int64
 	mustNotExist bool
+	keepTTL      bool
 }
 
 type SetOptFn func(*setOption)
@@ -56,8 +57,16 @@ func WithMustNotExist() SetOptFn {
 	}
 }
 
+func WithKeepTTL() SetOptFn {
+	return func(option *setOption) {
+		option.keepTTL = true
+	}
+}
+
 type getOption struct {
+	ttl            int64
 	removeAfterGet bool
+	updateTTL      bool
 }
 
 type GetOptFn func(*getOption)
@@ -65,6 +74,15 @@ type GetOptFn func(*getOption)
 func WithRemoveAfterGet() GetOptFn {
 	return func(option *getOption) {
 		option.removeAfterGet = true
+	}
+}
+
+func WithUpdateTTL(ttl int64) GetOptFn {
+	return func(option *getOption) {
+		option.updateTTL = true
+		if ttl != 0 {
+			option.ttl = ttl
+		}
 	}
 }
 
@@ -152,7 +170,9 @@ func (t *ttlMemCache) set(key string, value []byte, fns ...SetOptFn) error {
 		t.eleList.MoveToFront(ele)
 		var node = ele.Value.(*ttlNode)
 		node.value = value
-		node.deadline = deadline(o.ttl)
+		if !o.keepTTL {
+			node.deadline = deadline(o.ttl)
+		}
 		return nil
 	}
 	var node = &ttlNode{key: key, value: value, deadline: deadline(o.ttl)}
@@ -166,7 +186,7 @@ func (t *ttlMemCache) set(key string, value []byte, fns ...SetOptFn) error {
 
 // get Fetch value by key.
 func (t *ttlMemCache) get(key string, fns ...GetOptFn) ([]byte, error) {
-	var o = &getOption{}
+	var o = &getOption{ttl: t.ttl}
 	for _, fn := range fns {
 		fn(o)
 	}
@@ -182,6 +202,9 @@ func (t *ttlMemCache) get(key string, fns ...GetOptFn) ([]byte, error) {
 	if o.removeAfterGet {
 		t.remove(ele, node)
 		return node.value, nil
+	}
+	if o.updateTTL {
+		node.deadline = deadline(o.ttl)
 	}
 	t.eleList.MoveToFront(ele)
 	return node.value, nil
