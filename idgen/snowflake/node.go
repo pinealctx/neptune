@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -28,7 +27,6 @@ func NewNode(node int64, min int64) (Node, error) {
 	n.node = node
 	n.epoch = time.Unix(_epoch/SDivMs, (_epoch%SDivMs)*MsDivNs).UnixNano() / MsDivNs
 	n.time, _, n.step = IDFields(min)
-	fmt.Println("n.step:", n.step)
 	return n, nil
 }
 
