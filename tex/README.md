@@ -7,3 +7,4 @@
 - 提供interface到基本数据类型的转化
 - map相关操作，提供了按key获取map[string]interface{}中不同类型的方法
 - map相关操作，提供了合并map[string]interface{}的方法
+- hex提供了将int64和uint64编码成16进制或32进制的相互转化方法
