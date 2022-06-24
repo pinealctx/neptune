@@ -10,6 +10,20 @@ import (
 //GormProcFn gorm func
 type GormProcFn func(txn *gorm.DB) error
 
+//Combine : combine serial GormProcFn to one to avoid append
+func Combine(fns ...GormProcFn) GormProcFn {
+	return func(txn *gorm.DB) error {
+		var err error
+		for _, fn := range fns {
+			err = fn(txn)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 //Transact : db transaction
 func Transact(db *gorm.DB, fnList ...GormProcFn) (err error) {
 	if len(fnList) == 0 {
