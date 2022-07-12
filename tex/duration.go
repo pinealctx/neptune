@@ -6,61 +6,43 @@ import (
 )
 
 var (
-	ErrInvalidDurationJs = errors.New(`duration invalid string`)
+	ErrInvalidDuration = errors.New("invalid.duration.string")
 )
 
-type JsDuration struct {
-	time.Duration
+type Duration time.Duration
+
+func (i Duration) MarshalJSON() ([]byte, error) {
+	var ii = (time.Duration)(i)
+	var bytes = []byte(ii.String())
+	var out = make([]byte, 0, len(bytes)+2)
+	out = append(out, '"')
+	out = append(out, bytes...)
+	out = append(out, '"')
+	return out, nil
 }
 
-func NewJsDuration(d time.Duration) JsDuration {
-	return JsDuration{Duration: d}
-}
-
-//MarshalJSON
-//marshal json
-func (i JsDuration) MarshalJSON() ([]byte, error) {
-	var buf = []byte(i.String())
-	var newBuf = make([]byte, 0, len(buf)+2)
-	newBuf = append(newBuf, '"')
-	newBuf = append(newBuf, buf...)
-	newBuf = append(newBuf, '"')
-	return newBuf, nil
-}
-
-//UnmarshalJSON
-//unmarshal json
-func (i *JsDuration) UnmarshalJSON(b []byte) error {
-	var lb = len(b)
-	if lb <= 2 {
-		return ErrInvalidDurationJs
+func (i *Duration) UnmarshalJSON(b []byte) error {
+	var l = len(b)
+	if l <= 2 {
+		return ErrInvalidDuration
 	}
-
-	var strBuf = string(b[1 : lb-1])
-	var dur, err = time.ParseDuration(strBuf)
+	var dur, err = time.ParseDuration(string(b[1 : l-1]))
 	if err != nil {
 		return err
 	}
-	i.Duration = dur
+	*i = (Duration)(dur)
 	return nil
 }
 
-//UnmarshalTOML
-//unmarshal toml
-func (i *JsDuration) UnmarshalTOML(v interface{}) error {
+func (i *Duration) UnmarshalTOML(v interface{}) error {
 	var s, ok = v.(string)
 	if !ok {
-		return ErrInvalidDurationJs
+		return ErrInvalidDuration
 	}
 	var dur, err = time.ParseDuration(s)
 	if err != nil {
 		return err
 	}
-	i.Duration = dur
+	*i = (Duration)(dur)
 	return nil
-}
-
-//From : from duration
-func (i *JsDuration) From(d time.Duration) {
-	i.Duration = d
 }
