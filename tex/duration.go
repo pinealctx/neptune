@@ -34,6 +34,10 @@ func (i *Duration) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (i Duration) Duration() time.Duration {
+	return time.Duration(i)
+}
+
 func (i *Duration) UnmarshalTOML(v interface{}) error {
 	var s, ok = v.(string)
 	if !ok {

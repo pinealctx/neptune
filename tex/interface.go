@@ -116,10 +116,10 @@ func ToBool(v interface{}) bool {
 		return val != 0
 	case time.Duration:
 		return val != 0
-	case JsDuration:
-		return val.Duration != 0
-	case *JsDuration:
-		return val.Duration != 0
+	case Duration:
+		return val != 0
+	case *Duration:
+		return *val != 0
 	case float32:
 		return val != 0
 	case float64:
@@ -160,10 +160,10 @@ func ToInt(v interface{}) int {
 		iv = int(val)
 	case time.Duration:
 		iv = int(val)
-	case JsDuration:
-		iv = int(val.Duration)
-	case *JsDuration:
-		iv = int(val.Duration)
+	case Duration:
+		iv = int(val)
+	case *Duration:
+		iv = int(*val)
 	case float32:
 		iv = int(val)
 	case float64:
@@ -210,10 +210,10 @@ func ToInt32(v interface{}) int32 {
 		iv = int32(val)
 	case time.Duration:
 		iv = int32(val)
-	case JsDuration:
-		iv = int32(val.Duration)
-	case *JsDuration:
-		iv = int32(val.Duration)
+	case Duration:
+		iv = int32(val)
+	case *Duration:
+		iv = int32(*val)
 	case float32:
 		iv = int32(val)
 	case float64:
@@ -260,10 +260,10 @@ func ToUInt32(v interface{}) uint32 {
 		uv = uint32(val)
 	case time.Duration:
 		uv = uint32(val)
-	case JsDuration:
-		uv = uint32(val.Duration)
-	case *JsDuration:
-		uv = uint32(val.Duration)
+	case Duration:
+		uv = uint32(val)
+	case *Duration:
+		uv = uint32(*val)
 	case float32:
 		uv = uint32(val)
 	case float64:
@@ -308,10 +308,10 @@ func ToInt64(v interface{}) int64 {
 		iv = int64(val)
 	case time.Duration:
 		iv = int64(val)
-	case JsDuration:
-		iv = int64(val.Duration)
-	case *JsDuration:
-		iv = int64(val.Duration)
+	case Duration:
+		iv = int64(val)
+	case *Duration:
+		iv = int64(*val)
 	case float32:
 		iv = int64(val)
 	case float64:
@@ -386,10 +386,10 @@ func ToFloat64(v interface{}) float64 {
 		iv = float64(val)
 	case time.Duration:
 		iv = float64(val)
-	case JsDuration:
-		iv = float64(val.Duration)
-	case *JsDuration:
-		iv = float64(val.Duration)
+	case Duration:
+		iv = float64(val)
+	case *Duration:
+		iv = float64(*val)
 	case float32:
 		iv = float64(val)
 	case float64:
@@ -413,10 +413,10 @@ func ToDuration(v interface{}) (time.Duration, bool) {
 	switch val := v.(type) {
 	case time.Duration:
 		return val, true
-	case JsDuration:
-		return val.Duration, true
-	case *JsDuration:
-		return val.Duration, true
+	case Duration:
+		return time.Duration(val), true
+	case *Duration:
+		return time.Duration(*val), true
 	case float32:
 		return time.Duration(val), true
 	case float64:
@@ -459,8 +459,8 @@ func tryNum2Int(v interface{}) (int, bool) {
 		iv = int(val)
 	case time.Duration:
 		iv = int(val)
-	case JsDuration:
-		iv = int(val.Duration)
+	case Duration:
+		iv = int(val)
 	default:
 		ok = false
 	}
@@ -500,8 +500,8 @@ func tryNum2Int64(v interface{}) (int64, bool) {
 		iv = int64(val)
 	case time.Duration:
 		iv = int64(val)
-	case JsDuration:
-		iv = int64(val.Duration)
+	case Duration:
+		iv = int64(val)
 	default:
 		ok = false
 	}

@@ -138,10 +138,10 @@ func (s *sender) genCode(phone string) string {
 }
 
 func (s *sender) checkSend(c *vCache, now time.Time) error {
-	if now.Sub(c.setTime) < s.MinInterval.Duration {
+	if now.Sub(c.setTime) < s.MinInterval.Duration() {
 		return ErrSendTooFreq
 	}
-	if now.Sub(c.counterTime) > s.CounterDuration.Duration {
+	if now.Sub(c.counterTime) > s.CounterDuration.Duration() {
 		c.refresh(now)
 		return nil
 	}
@@ -163,7 +163,7 @@ func (s *sender) checkVerify(c *vCache, code, hash string) error {
 		return ErrVerifyCodeHashNotMatch
 	}
 	var now = time.Now()
-	if now.Sub(c.setTime) > s.TTL.Duration {
+	if now.Sub(c.setTime) > s.TTL.Duration() {
 		return ErrVerifyCodeTimeout
 	}
 	return nil

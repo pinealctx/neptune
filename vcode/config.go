@@ -12,11 +12,11 @@ type Config struct {
 	// Random code length.
 	CodeLen int `json:"code_len" toml:"code_len"`
 	// Code TTL.
-	TTL tex.JsDuration `json:"ttl" toml:"ttl"`
+	TTL tex.Duration `json:"ttl" toml:"ttl"`
 	// Minimum interval for sending captcha.
-	MinInterval tex.JsDuration `json:"min_interval" toml:"min_interval"`
+	MinInterval tex.Duration `json:"min_interval" toml:"min_interval"`
 	// Captcha count cycle.
-	CounterDuration tex.JsDuration `json:"counter_duration" toml:"counter_duration"`
+	CounterDuration tex.Duration `json:"counter_duration" toml:"counter_duration"`
 	// Verification code count upper limit.
 	MaxCount int `json:"max_count" toml:"max_count"`
 	// Upper limit of verification times of captcha.
