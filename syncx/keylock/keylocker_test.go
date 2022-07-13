@@ -6,14 +6,29 @@ import (
 	"time"
 )
 
-//About 500ns
-func TestKeyLocker_Crazy(t *testing.T) {
+//About 400ns
+func TestKeyLocker_Crazy1(t *testing.T) {
 	var x = NewKeyLocker()
+	testLockerCrazy(t, x)
+}
 
+//About 80ns
+func TestKeyLocker_Crazy2(t *testing.T) {
+	var x = NewKeyLockeGrp()
+	testLockerCrazy(t, x)
+}
+
+//About 120ns
+func TestKeyLocker_Crazy3(t *testing.T) {
+	var x = NewXHashKeyLockeGrp()
+	testLockerCrazy(t, x)
+}
+
+func testLockerCrazy(t *testing.T, x Locker) {
 	var wg sync.WaitGroup
 	wg.Add(200)
 
-	var count = time.Duration(30000)
+	var count = int64(30000)
 	var t1 = time.Now()
 
 	//200 go routine
@@ -21,7 +36,7 @@ func TestKeyLocker_Crazy(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		go func() {
 			defer wg.Done()
-			for j := time.Duration(0); j < count; j++ {
+			for j := int64(0); j < count; j++ {
 				x.Lock(j % 256)
 				x.Unlock(j % 256)
 			}
@@ -32,7 +47,7 @@ func TestKeyLocker_Crazy(t *testing.T) {
 	for i := 0; i < 150; i++ {
 		go func() {
 			defer wg.Done()
-			for j := time.Duration(0); j < count; j++ {
+			for j := int64(0); j < count; j++ {
 				x.RLock(j % 256)
 				x.RULock(j % 256)
 			}
@@ -42,5 +57,5 @@ func TestKeyLocker_Crazy(t *testing.T) {
 	wg.Wait()
 	var t2 = time.Now()
 	var d = t2.Sub(t1)
-	t.Log("use time:", d, "average:", d/(200*count))
+	t.Log("use time:", d, "average:", d/(200*time.Duration(count)))
 }

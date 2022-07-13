@@ -18,7 +18,14 @@ type KeyLocker struct {
 }
 
 //NewKeyLocker new key locker
-func NewKeyLocker() *KeyLocker {
+func NewKeyLocker() Locker {
+	return &KeyLocker{
+		lockMap: make(map[interface{}]*wrapLocker),
+	}
+}
+
+//NewKeyLockerInstance new key locker instance
+func NewKeyLockerInstance() *KeyLocker {
 	return &KeyLocker{
 		lockMap: make(map[interface{}]*wrapLocker),
 	}
