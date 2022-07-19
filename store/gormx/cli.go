@@ -49,6 +49,13 @@ func WithLog() Option {
 	}
 }
 
+func WithLogSwitch(on bool) Option {
+	return func(o *_Option) {
+		o.log = on
+	}
+}
+
+//New : new *gorm.DB
 func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	var option = &_Option{
 		maxOpenConn: DefaultMaxOpenCount,
@@ -88,24 +95,25 @@ func New(dsn string, opts ...Option) (*gorm.DB, error) {
 
 //NewGorm 获取一个db客户端 --maxOpenConn 最大打开连接数
 func NewGorm(dsn string, maxOpenConn, maxIdle int, maxLifeTime time.Duration, log bool) (*gorm.DB, error) {
-	var config = &gorm.Config{}
-	if log {
-		config.Logger = logger.Default.LogMode(logger.Info)
-	}
-	var gormDB, err = gorm.Open(mysql.Open(dsn), config)
-	if err != nil {
-		return gormDB, err
-	}
-	if log {
-		gormDB = gormDB.Debug()
-	}
-	var db *sql.DB
-	db, err = gormDB.DB()
+	return New(dsn,
+		WithMaxOpenConn(maxOpenConn), WithMaxIdle(maxIdle), WithMaxLifeTime(maxLifeTime), WithLogSwitch(log))
+}
+
+//NewDBBySSH new db by ssh
+func NewDBBySSH(sshCnf *SSHConfig, dsn *Dsn, opts ...Option) (*gorm.DB, error) {
+	var sshCli, err = CreateSSHConn(sshCnf)
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(maxOpenConn)
-	db.SetMaxIdleConns(maxIdle)
-	db.SetConnMaxLifetime(maxLifeTime)
-	return gormDB, err
+	var sshDialer = &SSHDialer{
+		client: sshCli,
+	}
+	sshDialer.Register()
+
+	var db *gorm.DB
+	db, err = New(dsn.UseDefault(), opts...)
+	if err != nil {
+		return nil, err
+	}
+	return db, err
 }
