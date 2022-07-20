@@ -93,6 +93,11 @@ func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	return gormDB, err
 }
 
+//NewDBByDsn : new *gorm.DB by Dsn
+func NewDBByDsn(dsn *Dsn, opts ...Option) (*gorm.DB, error) {
+	return New(dsn.UseDefault(), opts...)
+}
+
 //NewGorm 获取一个db客户端 --maxOpenConn 最大打开连接数
 func NewGorm(dsn string, maxOpenConn, maxIdle int, maxLifeTime time.Duration, log bool) (*gorm.DB, error) {
 	return New(dsn,
