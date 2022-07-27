@@ -41,6 +41,9 @@ go内置的bytes.Buffer功能很丰富，但它更多面向的是bytes这样的�
 更快的json包
 [文档](./jsonx/README.md)
 
+## mpb
+通过给protobuf序列化头部打上标记的方式来标记protobuf消息类型
+
 ## remap
 用于将健值分组的一个工具包
 [文档](./remap/README.md)
