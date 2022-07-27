@@ -43,7 +43,7 @@ func NewMsgPacker() *MsgPacker {
 }
 
 // RegisterGenerator register a protobuf generator function with tag
-func (x *MsgPacker) RegisterGenerator(genFn func() FingerprintMsg) {
+func (x *MsgPacker) RegisterGenerator(genFn func() proto.Message) {
 	var exist bool
 	var mo = genFn()
 	if mo == nil {
@@ -58,7 +58,13 @@ func (x *MsgPacker) RegisterGenerator(genFn func() FingerprintMsg) {
 	}
 
 	var reflectT = reflect.TypeOf(mo)
-	var fingerprint = mo.Fingerprint()
+
+	var fm, ok = mo.(FingerprintMsg)
+	if !ok {
+		panic("the message must implement function \"Fingerprint() uint32\" to return its unique fingerprint")
+	}
+
+	var fingerprint = fm.Fingerprint()
 	_, exist = x.genFuncMap[fingerprint]
 	if exist {
 		panic("fingerprint already exist")
@@ -67,6 +73,9 @@ func (x *MsgPacker) RegisterGenerator(genFn func() FingerprintMsg) {
 	if exist {
 		panic("type already exist")
 	}
+
+	x.genFuncMap[fingerprint] = genFn
+	x.typeMap[reflectT] = struct{}{}
 }
 
 // MarshalMsg marshal a protobuf message
@@ -168,7 +177,7 @@ func (x *MsgPacker) unmarshalErr(data []byte) (*spb.Status, error) {
 }
 
 // RegisterGenerator register a protobuf generator function with tag
-func RegisterGenerator(genFn func() FingerprintMsg) {
+func RegisterGenerator(genFn func() proto.Message) {
 	_defaultMsgPacker.RegisterGenerator(genFn)
 }
 
