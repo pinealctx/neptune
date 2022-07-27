@@ -21,6 +21,7 @@ const (
 var (
 	_defaultMsgPacker = NewMsgPacker()
 	_emptyData        = make([]byte, 4)
+	_emptyMsg         = &emptypb.Empty{}
 )
 
 // FingerprintMsg extends "Fingerprint() uint32" to proto message
@@ -97,51 +98,43 @@ func (x *MsgPacker) MarshalMsg(msg proto.Message) ([]byte, error) {
 // msg -- return msg
 // err -- unmarshal error
 func (x *MsgPacker) UnmarshalMsg(data []byte) (msg proto.Message, err error) {
-	var size = len(data)
-	if size < 4 {
-		return nil, errorx.NewWithStack("invalid message length")
+	var preProc = unmarshalEmptyMsgOrErr(data)
+	if preProc.sysErr != nil {
+		return nil, preProc.sysErr
 	}
-	var fingerprint = binary.LittleEndian.Uint32(data)
-
-	if fingerprint == ErrMark {
-		return x.unmarshalErr(data[4:])
+	if preProc.union != nil {
+		return preProc.union, nil
 	}
 
-	if fingerprint == EmptyMark {
-		return &emptypb.Empty{}, nil
-	}
-
-	return x.unmarshalRegisteredMsg(fingerprint, data[4:])
+	return x.unmarshalRegisteredMsg(preProc.fingerprint, data[4:])
 }
 
 // UnmarshalResponse unmarshal to rpc response from bytes.
 // msg -- return msg
 // msgErr -- return error
 // err -- unmarshal error
-func (x *MsgPacker) UnmarshalResponse(data []byte) (msg proto.Message, msgErr error, err error) {
-	var size = len(data)
-	if size < 4 {
-		return nil, nil, errorx.NewWithStack("invalid message length")
+func (x *MsgPacker) UnmarshalResponse(data []byte) (msg proto.Message, msgErr error, sysErr error) {
+	var preProc = unmarshalEmptyMsgOrErr(data)
+	if preProc.sysErr != nil {
+		return nil, nil, preProc.sysErr
 	}
-	var fingerprint = binary.LittleEndian.Uint32(data)
-
-	if fingerprint == ErrMark {
-		var mErr, e = x.unmarshalErr(data[4:])
-		if e != nil {
-			return nil, nil, e
-		}
-		return nil, status.FromProto(mErr).Err(), nil
+	if preProc.msgErr != nil {
+		return nil, preProc.msgErr, nil
+	}
+	if preProc.emptyMsg != nil {
+		return preProc.emptyMsg, nil, nil
 	}
 
-	if fingerprint == EmptyMark {
-		return &emptypb.Empty{}, nil, nil
-	}
-
-	var m, e = x.unmarshalRegisteredMsg(fingerprint, data[4:])
+	var m, e = x.unmarshalRegisteredMsg(preProc.fingerprint, data[4:])
 	if e != nil {
 		return nil, nil, e
 	}
 	return m, nil, nil
+}
+
+// UnmarshalRPC unmarshal response to 2 params return
+func (x *MsgPacker) UnmarshalRPC(data []byte) (proto.Message, error) {
+	return ToResponse(x.UnmarshalResponse(data))
 }
 
 func (x *MsgPacker) marshalMsg(msg FingerprintMsg) ([]byte, error) {
@@ -168,15 +161,6 @@ func (x *MsgPacker) unmarshalRegisteredMsg(fingerprint uint32, data []byte) (pro
 	return m, nil
 }
 
-func (x *MsgPacker) unmarshalErr(data []byte) (*spb.Status, error) {
-	var status = &spb.Status{}
-	var err = proto.Unmarshal(data, status)
-	if err != nil {
-		return nil, errorx.WrapWithStack(err, "unmarshal proto error")
-	}
-	return status, nil
-}
-
 // RegisterGenerator register a protobuf generator function with tag
 func RegisterGenerator(genFn func() proto.Message) {
 	_defaultMsgPacker.RegisterGenerator(genFn)
@@ -189,14 +173,6 @@ func MarshalMsg(msg proto.Message) ([]byte, error) {
 	return _defaultMsgPacker.MarshalMsg(msg)
 }
 
-// UnmarshalResponse unmarshal to rpc response from bytes.
-// msg -- return msg
-// msgErr -- return error
-// err -- unmarshal error
-func UnmarshalResponse(data []byte) (msg proto.Message, msgErr error, err error) {
-	return _defaultMsgPacker.UnmarshalResponse(data)
-}
-
 // MarshalError err can marshal/unmarshal, it uses a specific tag "ErrMark"
 func MarshalError(err error) ([]byte, error) {
 	var v, _ = status.FromError(err)
@@ -206,6 +182,71 @@ func MarshalError(err error) ([]byte, error) {
 // MarshalEmpty tag an empty message
 func MarshalEmpty() []byte {
 	return _emptyData
+}
+
+// UnmarshalMsg unmarshal a proto message from bytes.
+// msg -- return msg
+// err -- unmarshal error
+func UnmarshalMsg(data []byte) (msg proto.Message, err error) {
+	return _defaultMsgPacker.UnmarshalMsg(data)
+}
+
+// UnmarshalResponse unmarshal to rpc response from bytes.
+// msg -- return msg
+// msgErr -- return error
+// err -- unmarshal error
+func UnmarshalResponse(data []byte) (msg proto.Message, msgErr error, sysErr error) {
+	return _defaultMsgPacker.UnmarshalResponse(data)
+}
+
+// UnmarshalRPC unmarshal response to 2 params return
+func UnmarshalRPC(data []byte) (proto.Message, error) {
+	return _defaultMsgPacker.UnmarshalRPC(data)
+}
+
+// UnmarshalEmptyResponse unmarshal to rpc response from bytes.
+// msg -- return msg
+// msgErr -- return error
+// err -- unmarshal error
+func UnmarshalEmptyResponse(data []byte) (msgErr error, sysErr error) {
+	var preProc = unmarshalEmptyMsgOrErr(data)
+	if preProc.sysErr != nil {
+		return nil, preProc.sysErr
+	}
+	if preProc.msgErr != nil {
+		return preProc.msgErr, nil
+	}
+	if preProc.emptyMsg == nil {
+		return errorx.NewfWithStack("excepted empty msg:%+v", preProc.fingerprint), nil
+	}
+	return nil, nil
+}
+
+// UnmarshalEmptyRPC unmarshal to rpc response from bytes.
+// msg -- return msg
+// msgErr -- return error
+// err -- unmarshal error
+func UnmarshalEmptyRPC(data []byte) error {
+	return ToErr(UnmarshalEmptyResponse(data))
+}
+
+// ToResponse convert 3 params to 2 params
+func ToResponse(msg proto.Message, msgErr error, sysErr error) (proto.Message, error) {
+	if sysErr != nil {
+		return nil, sysErr
+	}
+	if msgErr != nil {
+		return nil, msgErr
+	}
+	return msg, nil
+}
+
+// ToErr combine error
+func ToErr(msgErr error, sysErr error) error {
+	if sysErr != nil {
+		return sysErr
+	}
+	return msgErr
 }
 
 func marshalProtoMsg(fingerprint uint32, msg proto.Message) ([]byte, error) {
@@ -220,6 +261,60 @@ func marshalProtoMsg(fingerprint uint32, msg proto.Message) ([]byte, error) {
 	_, _ = buf.Write(header[:])
 	_, _ = buf.Write(data)
 	return buf.Bytes(), nil
+}
+
+type emptyOrErrMsgT struct {
+	fingerprint uint32
+	union       proto.Message
+	emptyMsg    *emptypb.Empty
+	msgErr      error
+	sysErr      error
+}
+
+func feedEmptyOrErrMsg(fingerprint uint32, ep *emptypb.Empty, msgErr *spb.Status, sysErr error) *emptyOrErrMsgT {
+	var x = &emptyOrErrMsgT{
+		fingerprint: fingerprint,
+		emptyMsg:    ep,
+		sysErr:      sysErr,
+	}
+	if msgErr != nil {
+		x.msgErr = status.FromProto(msgErr).Err()
+		x.union = msgErr
+	}
+	if ep != nil {
+		x.union = ep
+	}
+	return x
+}
+
+func unmarshalEmptyMsgOrErr(data []byte) *emptyOrErrMsgT {
+	var size = len(data)
+	if size < 4 {
+		return feedEmptyOrErrMsg(0, nil, nil, errorx.NewWithStack("invalid message length"))
+	}
+	var fingerprint = binary.LittleEndian.Uint32(data)
+
+	if fingerprint == ErrMark {
+		var mErr, e = unmarshalErr(data[4:])
+		if e != nil {
+			return feedEmptyOrErrMsg(fingerprint, nil, nil, e)
+		}
+		return feedEmptyOrErrMsg(fingerprint, nil, mErr, nil)
+	}
+
+	if fingerprint == EmptyMark {
+		return feedEmptyOrErrMsg(fingerprint, _emptyMsg, nil, nil)
+	}
+	return feedEmptyOrErrMsg(fingerprint, nil, nil, nil)
+}
+
+func unmarshalErr(data []byte) (*spb.Status, error) {
+	var wrapErr = &spb.Status{}
+	var err = proto.Unmarshal(data, wrapErr)
+	if err != nil {
+		return nil, errorx.WrapWithStack(err, "unmarshal proto error")
+	}
+	return wrapErr, nil
 }
 
 func init() {
