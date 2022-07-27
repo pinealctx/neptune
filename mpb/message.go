@@ -22,8 +22,8 @@ var (
 	_defaultMsgPacker = NewMsgPacker()
 )
 
-// MarkedProto extends "Fingerprint() uint32" to proto message
-type MarkedProto interface {
+// FingerprintMsg extends "Fingerprint() uint32" to proto message
+type FingerprintMsg interface {
 	proto.Message
 	Fingerprint() uint32
 }
@@ -43,7 +43,7 @@ func NewMsgPacker() *MsgPacker {
 }
 
 // RegisterGenerator register a protobuf generator function with tag
-func (x *MsgPacker) RegisterGenerator(genFn func() MarkedProto) {
+func (x *MsgPacker) RegisterGenerator(genFn func() FingerprintMsg) {
 	var exist bool
 	var mo = genFn()
 	if mo == nil {
@@ -74,7 +74,7 @@ func (x *MsgPacker) RegisterGenerator(genFn func() MarkedProto) {
 // and other proto message which extends "Fingerprint() uint32"
 func (x *MsgPacker) MarshalMsg(msg proto.Message) ([]byte, error) {
 	switch v := msg.(type) {
-	case MarkedProto:
+	case FingerprintMsg:
 		return x.marshalMsg(v)
 	case *emptypb.Empty:
 		return tagEmptyMsg(), nil
@@ -134,7 +134,7 @@ func (x *MsgPacker) UnmarshalResponse(data []byte) (msg proto.Message, msgErr er
 	return m, nil, nil
 }
 
-func (x *MsgPacker) marshalMsg(msg MarkedProto) ([]byte, error) {
+func (x *MsgPacker) marshalMsg(msg FingerprintMsg) ([]byte, error) {
 	var fingerprint = msg.Fingerprint()
 	var _, ok = x.genFuncMap[fingerprint]
 	if !ok {
@@ -168,7 +168,7 @@ func (x *MsgPacker) unmarshalErr(data []byte) (*spb.Status, error) {
 }
 
 // RegisterGenerator register a protobuf generator function with tag
-func RegisterGenerator(genFn func() MarkedProto) {
+func RegisterGenerator(genFn func() FingerprintMsg) {
 	_defaultMsgPacker.RegisterGenerator(genFn)
 }
 
