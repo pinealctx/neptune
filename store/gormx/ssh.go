@@ -10,10 +10,10 @@ import (
 )
 
 type SSHConfig struct {
-	SshHost string `json:"sshHost" toml:"sshHost"`
-	SshUser string `json:"sshUser" toml:"sshUser"`
-	SshPk   string `json:"sshPk" toml:"sshPK"`
-	SshPort int    `json:"sshPort" toml:"sshPort"`
+	Host string `json:"host" toml:"host"`
+	User string `json:"user" toml:"user"`
+	Pk   string `json:"pk" toml:"pk"`
+	Port int    `json:"port" toml:"port"`
 }
 
 type SSHDialer struct {
@@ -29,7 +29,7 @@ func (d *SSHDialer) Register() {
 }
 
 func CreateSSHConn(cnf *SSHConfig) (*ssh.Client, error) {
-	var pkBuf, err = ioutil.ReadFile(cnf.SshPk)
+	var pkBuf, err = ioutil.ReadFile(cnf.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -40,15 +40,15 @@ func CreateSSHConn(cnf *SSHConfig) (*ssh.Client, error) {
 	}
 
 	var snf = &ssh.ClientConfig{
-		User: cnf.SshUser,
+		User: cnf.User,
 		Auth: []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},
 	}
 	var sshCli *ssh.Client
-	var sshUrl = fmt.Sprintf("%s:%d", cnf.SshHost, cnf.SshPort)
-	sshCli, err = ssh.Dial("tcp", sshUrl, snf)
+	var sshURL = fmt.Sprintf("%s:%d", cnf.Host, cnf.Port)
+	sshCli, err = ssh.Dial("tcp", sshURL, snf)
 	if err != nil {
 		return nil, err
 	}
