@@ -204,7 +204,7 @@ func MarshalError(err error) ([]byte, error) {
 }
 
 // MarshalEmpty tag an empty message
-func MarshalEmpty(msg proto.Message) []byte {
+func MarshalEmpty() []byte {
 	return _emptyData
 }
 
