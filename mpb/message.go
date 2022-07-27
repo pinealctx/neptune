@@ -20,6 +20,7 @@ const (
 
 var (
 	_defaultMsgPacker = NewMsgPacker()
+	_emptyData        = make([]byte, 4)
 )
 
 // FingerprintMsg extends "Fingerprint() uint32" to proto message
@@ -86,7 +87,7 @@ func (x *MsgPacker) MarshalMsg(msg proto.Message) ([]byte, error) {
 	case FingerprintMsg:
 		return x.marshalMsg(v)
 	case *emptypb.Empty:
-		return tagEmptyMsg(), nil
+		return _emptyData, nil
 	default:
 		return nil, errorx.NewfWithStack("unsupported message:%+v", msg.ProtoReflect().Descriptor().FullName())
 	}
@@ -202,6 +203,11 @@ func MarshalError(err error) ([]byte, error) {
 	return marshalProtoMsg(ErrMark, v.Proto())
 }
 
+// MarshalEmpty tag an empty message
+func MarshalEmpty(msg proto.Message) []byte {
+	return _emptyData
+}
+
 func marshalProtoMsg(fingerprint uint32, msg proto.Message) ([]byte, error) {
 	var data, err = proto.Marshal(msg)
 	if err != nil {
@@ -216,8 +222,6 @@ func marshalProtoMsg(fingerprint uint32, msg proto.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func tagEmptyMsg() []byte {
-	var header [4]byte
-	binary.LittleEndian.PutUint32(header[:], EmptyMark)
-	return header[:]
+func init() {
+	binary.LittleEndian.PutUint32(_emptyData, EmptyMark)
 }
