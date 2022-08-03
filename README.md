@@ -57,6 +57,10 @@ go内置的bytes.Buffer功能很丰富，但它更多面向的是bytes这样的�
 封装了一些数据中间件客户端代码
 [文档](./store/README.md)
 
+## stringx
+封装了字符串的一些扩展工具函数
+[文档](./stringx/README.md)
+
 ## strvali
 封装了字符串校验工具函数
 [文档](./strvali/README.md)
