@@ -49,6 +49,11 @@ func (w *WideLRUCache) Peek(key interface{}) (v Value, ok bool) {
 	return w.calculateKey(key).Peek(key)
 }
 
+//Exist : return true if key in map
+func (w *WideLRUCache) Exist(key interface{}) bool {
+	return w.calculateKey(key).Exist(key)
+}
+
 // Set sets a value in the cache.
 func (w *WideLRUCache) Set(key interface{}, value Value) {
 	w.calculateKey(key).Set(key, value)

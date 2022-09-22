@@ -35,6 +35,8 @@ type LRUFacade interface {
 	Get(key interface{}) (v Value, ok bool)
 	// Peek returns a value from the cache without changing the LRU order.
 	Peek(key interface{}) (v Value, ok bool)
+	//Exist : return true if key in map
+	Exist(key interface{}) bool
 	// Set sets a value in the cache.
 	Set(key interface{}, value Value)
 	// Delete removes an entry from the cache, and returns if the entry existed.
@@ -119,6 +121,14 @@ func (lru *LRUCache) Peek(key interface{}) (v Value, ok bool) {
 		return nil, false
 	}
 	return element.Value.(*entry).value, true
+}
+
+//Exist : return true if key in map
+func (lru *LRUCache) Exist(key interface{}) bool {
+	lru.mu.Lock()
+	defer lru.mu.Unlock()
+	var _, ok = lru.table[key]
+	return ok
 }
 
 // Set sets a value in the cache.

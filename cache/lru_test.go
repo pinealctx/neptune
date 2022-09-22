@@ -293,3 +293,23 @@ func TestLRUIsEvicted(t *testing.T) {
 		t.Errorf("evictions: %d, want: %d", e, want)
 	}
 }
+
+type Empty struct {
+}
+
+func (e Empty) Size() int {
+	return 1
+}
+
+func TestLRUCache_Exist(t *testing.T) {
+	var size = int64(3)
+	cache := NewLRUCache(size)
+	cache.Set(1, Empty{})
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	cache.Set(2, Empty{})
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	cache.Set(3, Empty{})
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	cache.Set(4, Empty{})
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+}
