@@ -1,7 +1,7 @@
 package oss
 
 import (
-	"context"
+	"io"
 )
 
 const (
@@ -16,8 +16,8 @@ const (
 type ACLType int32
 
 var (
-	//OssStoreIns global instance
-	OssStoreIns *OssStore
+	//StoreIns global instance
+	StoreIns *StoreWrapper
 )
 
 type aclOption struct {
@@ -44,51 +44,75 @@ func UsePublicACL() ACLOption {
 //IOssStore store interface
 type IOssStore interface {
 	//Save save k-v
-	Save(ctx context.Context, key string, data []byte, acl ACLType) error
+	Save(key string, data []byte, acl ACLType) error
+
+	//SaveWithReader : save with io.Reader
+	SaveWithReader(key string, reader io.Reader, acl ACLType) error
+
+	//SaveWithReadCloser : save with io.ReadCloser
+	SaveWithReadCloser(key string, readCloser io.ReadCloser, acl ACLType) error
 
 	//Delete delete k
-	Delete(ctx context.Context, key string) error
+	Delete(key string) error
 
 	//DeleteMulti delete multi keys
-	DeleteMulti(ctx context.Context, keys []string) ([]string, error)
+	DeleteMulti(keys []string) ([]string, error)
 
-	//Get get v from k
-	Get(ctx context.Context, key string) (data []byte, err error)
+	//Get : get v from k
+	Get(key string) (data []byte, err error)
 }
 
-//OssStore store container
-type OssStore struct {
+//StoreWrapper store container
+type StoreWrapper struct {
 	storeIns IOssStore
 }
 
-func (c *OssStore) SetStore(i IOssStore) {
+func (c *StoreWrapper) SetStore(i IOssStore) {
 	c.storeIns = i
 }
 
 //Save save k-v
-func (c *OssStore) Save(ctx context.Context, key string, data []byte, opts ...ACLOption) error {
+func (c *StoreWrapper) Save(key string, data []byte, opts ...ACLOption) error {
 	var o = &aclOption{o: DefaultACL}
 	for _, opt := range opts {
 		opt(o)
 	}
-	return c.storeIns.Save(ctx, key, data, o.o)
+	return c.storeIns.Save(key, data, o.o)
+}
+
+//SaveWithReader : save with io.Reader
+func (c *StoreWrapper) SaveWithReader(key string, reader io.Reader, opts ...ACLOption) error {
+	var o = &aclOption{o: DefaultACL}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return c.storeIns.SaveWithReader(key, reader, o.o)
+}
+
+//SaveWithReadCloser : save with io.ReadCloser
+func (c *StoreWrapper) SaveWithReadCloser(key string, readCloser io.ReadCloser, opts ...ACLOption) error {
+	var o = &aclOption{o: DefaultACL}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return c.storeIns.SaveWithReadCloser(key, readCloser, o.o)
 }
 
 //Delete delete k
-func (c *OssStore) Delete(ctx context.Context, key string) error {
-	return c.storeIns.Delete(ctx, key)
+func (c *StoreWrapper) Delete(key string) error {
+	return c.storeIns.Delete(key)
 }
 
 //DeleteMulti delete multi
-func (c *OssStore) DeleteMulti(ctx context.Context, keys []string) ([]string, error) {
-	return c.storeIns.DeleteMulti(ctx, keys)
+func (c *StoreWrapper) DeleteMulti(keys []string) ([]string, error) {
+	return c.storeIns.DeleteMulti(keys)
 }
 
-//Get get v from k
-func (c *OssStore) Get(ctx context.Context, key string) (data []byte, err error) {
-	return c.storeIns.Get(ctx, key)
+//Get : get v from k
+func (c *StoreWrapper) Get(key string) (data []byte, err error) {
+	return c.storeIns.Get(key)
 }
 
 func init() {
-	OssStoreIns = &OssStore{}
+	StoreIns = &StoreWrapper{}
 }
