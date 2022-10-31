@@ -15,16 +15,7 @@ type Dsn struct {
 }
 
 func (d *Dsn) String() string {
-	var url = fmt.Sprintf("%s:%s@%s(%s)/%s", d.User, d.Password, d.Proto, d.Host, d.Schema)
-	if len(d.Options) == 0 {
-		return url
-	}
-	url += "?"
-	for k, v := range d.Options {
-		url += fmt.Sprintf("%s=%s&", k, v)
-	}
-	url = strings.TrimSuffix(url, "&")
-	return url
+	return d.UseDefault()
 }
 
 func (d *Dsn) UseDefault() string {
@@ -44,5 +35,18 @@ func (d *Dsn) UseDefault() string {
 	if !ok {
 		d.Options["loc"] = "Local"
 	}
-	return d.String()
+	return d.toString()
+}
+
+func (d *Dsn) toString() string {
+	var url = fmt.Sprintf("%s:%s@%s(%s)/%s", d.User, d.Password, d.Proto, d.Host, d.Schema)
+	if len(d.Options) == 0 {
+		return url
+	}
+	url += "?"
+	for k, v := range d.Options {
+		url += fmt.Sprintf("%s=%s&", k, v)
+	}
+	url = strings.TrimSuffix(url, "&")
+	return url
 }

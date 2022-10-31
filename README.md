@@ -29,6 +29,9 @@ go内置的bytes.Buffer功能很丰富，但它更多面向的是bytes这样的�
 加解密相关的包
 [文档](./cryptx/README.md)
 
+## dl
+用于下载指定URL的包
+
 ## ds
 数据结构相关的包
 [文档](./ds/README.md)
