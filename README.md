@@ -48,6 +48,10 @@ go内置的bytes.Buffer功能很丰富，但它更多面向的是bytes这样的�
 通过给protobuf序列化头部打上标记的方式来标记protobuf消息类型
 [文档](./mpb/README.md)
 
+## randx
+封装随机数相关函数
+[文档](./randx/README.md)
+
 ## remap
 用于将健值分组的一个工具包
 [文档](./remap/README.md)
