@@ -1,35 +1,36 @@
 package slicex
 
 // Insert 往slice里面插入元素，如果index大于slice的长度，则追加在最后面，如果index小于0，则panic
-func Insert[T any](s []T, index int, v T) []T {
-	if index >= len(s) {
-		return append(s, v)
+func Insert[T any](s *[]T, index int, v T) {
+	if index >= len(*s) {
+		*s = append(*s, v)
+		return
 	}
-	s = append(s, v)
-	copy(s[index+1:], s[index:])
-	s[index] = v
-	return s
+	*s = append(*s, v)
+	copy((*s)[index+1:], (*s)[index:])
+	(*s)[index] = v
 }
 
 // Remove 移除index位置的元素，如果index小于0，则panic
-func Remove[T any](s []T, index int) []T {
-	if len(s) == 0 {
-		return s
+func Remove[T any](s *[]T, index int) {
+	if len(*s) == 0 {
+		return
 	}
-	if index >= len(s) {
-		return s[:len(s)-1]
+	if index >= len(*s) {
+		*s = (*s)[:len(*s)-1]
+		return
 	}
-	copy(s[index:], s[index+1:])
-	return s[:len(s)-1]
+	copy((*s)[index:], (*s)[index+1:])
+	*s = (*s)[:len(*s)-1]
 }
 
 // RemoveElem 删除第一个匹配的元素
-func RemoveElem[T comparable](s []T, v T) []T {
-	index := FindIndex[T](s, v)
+func RemoveElem[T comparable](s *[]T, v T) {
+	index := FindIndex[T](*s, v)
 	if index == -1 {
-		return s
+		return
 	}
-	return Remove(s, index)
+	Remove(s, index)
 }
 
 // FindIndex 查找第一个匹配的元素所在的index，返回-1代表没有找到
