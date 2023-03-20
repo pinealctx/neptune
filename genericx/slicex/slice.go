@@ -33,6 +33,13 @@ func RemoveElem[T comparable](s *[]T, v T) {
 	Remove(s, index)
 }
 
+// RemoveElems 删除第一个匹配的元素
+func RemoveElems[T comparable](s *[]T, beRemoved []T) {
+	for _, v := range beRemoved {
+		RemoveElem(s, v)
+	}
+}
+
 // FindIndex 查找第一个匹配的元素所在的index，返回-1代表没有找到
 func FindIndex[T comparable](s []T, v T) int {
 	for i, sv := range s {
