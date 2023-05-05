@@ -1,6 +1,7 @@
-package crypto
+package mess
 
 import (
+	"github.com/btcsuite/btcutil/base58"
 	"testing"
 	"time"
 )
@@ -41,19 +42,31 @@ func TestIntCypher_DecryptU32V3(t *testing.T) {
 	t.Log("duration:", dur, "average:", dur/time.Duration(10000000-10000))
 }
 
-func TestIntCypher_DecryptU64(t *testing.T) {
+func TestIntCypher_DecryptStr(t *testing.T) {
 	var t1 = time.Now()
 	var ic = NewIntCypher([]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80},
 		[]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66})
-	for i := uint64(10000); i < 10000000; i++ {
-		cypherU64(t, ic, i)
+	for i := uint32(10000); i < 10000000; i++ {
+		cypherUs32N20(t, ic, i)
 	}
 	var t2 = time.Now()
 	var dur = t2.Sub(t1)
 	t.Log("duration:", dur, "average:", dur/time.Duration(10000000-10000))
 }
 
-func TestIntCypher_EncryptU32(t *testing.T) {
+func TestIntCypher_DecryptStrEx(t *testing.T) {
+	var t1 = time.Now()
+	var ic = NewIntCypher([]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80},
+		[]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66})
+	for i := uint32(10000); i < 10000000; i++ {
+		cypherUs32ExN20(t, ic, i)
+	}
+	var t2 = time.Now()
+	var dur = t2.Sub(t1)
+	t.Log("duration:", dur, "average:", dur/time.Duration(10000000-10000))
+}
+
+func TestIntCypher_EncryptMix(t *testing.T) {
 	var start = uint32(100081)
 	var ic = NewIntCypher([]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80},
 		[]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66})
@@ -65,6 +78,30 @@ func TestIntCypher_EncryptU32(t *testing.T) {
 		start = uint32(200000)
 		for i := uint32(0); i < 100; i++ {
 			t.Log(start+i, "-->", ic.EncU32[k](start+i))
+		}
+		t.Log("")
+		t.Log("")
+	}
+	for k := byte(17); k <= 20; k++ {
+		t.Log("k:", k, "------------------------")
+		for i := uint32(0); i < 100; i++ {
+			t.Log(start+i, "-->", ic.EncU32ToStr[20](start+i))
+		}
+		start = uint32(200000)
+		for i := uint32(0); i < 100; i++ {
+			t.Log(start+i, "-->", ic.EncU32ToStr[20](start+i))
+		}
+		t.Log("")
+		t.Log("")
+	}
+	for k := byte(17); k <= 20; k++ {
+		t.Log("k:", k, "------------------------")
+		for i := uint32(0); i < 100; i++ {
+			t.Log(start+i, "-->", ic.EncU32ToStrEx[20](start+i))
+		}
+		start = uint32(200000)
+		for i := uint32(0); i < 100; i++ {
+			t.Log(start+i, "-->", ic.EncU32ToStrEx[20](start+i))
 		}
 		t.Log("")
 		t.Log("")
@@ -86,72 +123,49 @@ func TestIntCypher_EncryptComp(t *testing.T) {
 
 }
 
-/*
-func TestIntCypher_EncryptU32V2C1(t *testing.T) {
-	var start = uint32(100081)
-	var ic = NewIntCypher([]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80},
-		[]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66})
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32V2(start+i))
-	}
-	start = uint32(200000)
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32V2(start+i))
-	}
+func TestFeedByteArray(t *testing.T) {
+	var b [4]byte
+	feed4Byte(b[:])
+	t.Log(b)
+	t.Log(b[:])
 }
 
-func TestIntCypher_EncryptU32V3C1(t *testing.T) {
-	var start = uint32(100081)
-	var ic = NewIntCypher([]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80},
-		[]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66})
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32V3(start+i))
-	}
-	start = uint32(200000)
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32V3(start+i))
-	}
-}
+func TestBase58Decode(t *testing.T) {
+	var b = base58.Decode("0")
+	t.Log(b)
+	b = base58.Decode("O")
+	t.Log(b)
+	b = base58.Decode("I")
+	t.Log(b)
+	b = base58.Decode("l")
+	t.Log(b)
 
-func TestIntCypher_EncryptU32C2(t *testing.T) {
-	var start = uint32(100081)
-	var ic = NewIntCypher([]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66},
-		[]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80})
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32(start+i))
-	}
-	start = uint32(200000)
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32(start+i))
-	}
-}
+	b = base58.Decode("01")
+	t.Log(b)
+	b = base58.Decode("1")
+	t.Log(b)
+	b = base58.Decode("O1")
+	t.Log(b)
+	b = base58.Decode("1")
+	t.Log(b)
+	b = base58.Decode("I1")
+	t.Log(b)
+	b = base58.Decode("1I")
+	t.Log(b)
+	b = base58.Decode("l01")
+	t.Log(b)
+	b = base58.Decode("100l")
+	t.Log(b)
 
-func TestIntCypher_EncryptU32C2V3(t *testing.T) {
-	var start = uint32(100081)
-	var ic = NewIntCypher([]byte{115, 141, 121, 11, 126, 146, 20, 188, 225, 177, 134, 227, 184, 148, 105, 66},
-		[]byte{54, 179, 221, 82, 230, 144, 168, 47, 124, 130, 37, 240, 255, 53, 121, 80})
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32V3(start+i))
-	}
-	start = uint32(200000)
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32V3(start+i))
-	}
+	b = base58.Decode("a0a")
+	t.Log(b)
+	b = base58.Decode("aOa")
+	t.Log(b)
+	b = base58.Decode("aIa")
+	t.Log(b)
+	b = base58.Decode("ala")
+	t.Log(b)
 }
-
-func TestIntCypher_EncryptU32C3(t *testing.T) {
-	var start = uint32(100081)
-	var ic = NewIntCypher(make([]byte, 16),
-		make([]byte, 16))
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32(start+i))
-	}
-	start = uint32(200000)
-	for i := uint32(0); i < 100; i++ {
-		t.Log(start+i, "-->", ic.EncryptU32(start+i))
-	}
-}
-*/
 
 func cypherU32N0(t *testing.T, x *IntCypher, number uint32) {
 	var y = x.EncU32[0](number)
@@ -177,11 +191,19 @@ func cypherU32N2(t *testing.T, x *IntCypher, number uint32) {
 	}
 }
 
-func cypherU64(t *testing.T, x *IntCypher, number uint64) {
-	var y = x.EncryptU64(number)
-	var z = x.DecryptU64(y)
+func cypherUs32N20(t *testing.T, x *IntCypher, number uint32) {
+	var y = x.EncU32ToStr[20](number)
+	var z = x.DecStrToU32[20](y)
 	if z != number {
-		t.Fatal("failed to cypher number:", number, "cyphered:", y, "decyphered:", z)
+		t.Fatal("failed to cypher number cypherUs32ExN20:", number, "cyphered:", y, "decyphered:", z)
+	}
+}
+
+func cypherUs32ExN20(t *testing.T, x *IntCypher, number uint32) {
+	var y = x.EncU32ToStrEx[20](number)
+	var z = x.DecStrToU32Ex[20](y)
+	if z != number {
+		t.Fatal("failed to cypher number cypherUs32ExN20:", number, "cyphered:", y, "decyphered:", z)
 	}
 }
 
@@ -201,5 +223,11 @@ func calculateOutput(input uint32) uint32 {
 		return input*diff + 1992294400
 	} else {
 		return input*diff - 1992294400
+	}
+}
+
+func feed4Byte(buf []byte) {
+	for i := 0; i < 4; i++ {
+		buf[i] = byte(i + 1)
 	}
 }

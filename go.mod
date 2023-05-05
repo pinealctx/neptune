@@ -2,6 +2,7 @@ module github.com/pinealctx/neptune
 
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.7+incompatible
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/eapache/queue v1.1.0
 	github.com/go-redis/redis/v8 v8.11.5
