@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-//SemMapper define interface to Acquire/Release semaphore map container
+// SemMapper define interface to Acquire/Release semaphore map container
 type SemMapper interface {
 	//AcquireRead acquire for read
 	AcquireRead(ctx context.Context, key interface{}) (*Weighted, error)
@@ -17,22 +17,22 @@ type SemMapper interface {
 	ReleaseWrite(key interface{}, w *Weighted)
 }
 
-//SemMap semaphore map
+// SemMap semaphore map
 type SemMap struct {
 	m       map[interface{}]*Weighted
 	mux     *sync.Mutex
 	rwRatio int
 }
 
-//NewSemMap new semaphore map
+// NewSemMap new semaphore map
 func NewSemMap(opts ...Option) SemMapper {
 	var o = RangeOption(opts...)
 	return newSemMap(o.rwRatio)
 }
 
-//newSemMap new semaphore map
-//rwRatio : read/write ratio, for example, if it's 10, means that 10 read go routine can enter at same time.
-//if one write go routine enters, no read go routine can enter.
+// newSemMap new semaphore map
+// rwRatio : read/write ratio, for example, if it's 10, means that 10 read go routine can enter at same time.
+// if one write go routine enters, no read go routine can enter.
 func newSemMap(rwRatio int) *SemMap {
 	var m = &SemMap{}
 	m.mux = &sync.Mutex{}
@@ -41,27 +41,27 @@ func newSemMap(rwRatio int) *SemMap {
 	return m
 }
 
-//AcquireRead acquire for read
+// AcquireRead acquire for read
 func (s *SemMap) AcquireRead(ctx context.Context, key interface{}) (*Weighted, error) {
 	return s.acquire(ctx, key, 1)
 }
 
-//ReleaseRead release read lock
+// ReleaseRead release read lock
 func (s *SemMap) ReleaseRead(key interface{}, w *Weighted) {
 	s.release(key, w, 1)
 }
 
-//AcquireWrite acquire for write
+// AcquireWrite acquire for write
 func (s *SemMap) AcquireWrite(ctx context.Context, key interface{}) (*Weighted, error) {
 	return s.acquire(ctx, key, s.rwRatio)
 }
 
-//ReleaseWrite release write lock
+// ReleaseWrite release write lock
 func (s *SemMap) ReleaseWrite(key interface{}, w *Weighted) {
 	s.release(key, w, s.rwRatio)
 }
 
-//acquire : acquire lock
+// acquire : acquire lock
 func (s *SemMap) acquire(ctx context.Context, key interface{}, n int) (*Weighted, error) {
 	var err error
 	s.mux.Lock()
@@ -82,7 +82,7 @@ func (s *SemMap) acquire(ctx context.Context, key interface{}, n int) (*Weighted
 	return w, nil
 }
 
-//release : release lock
+// release : release lock
 func (s *SemMap) release(key interface{}, w *Weighted, n int) {
 	s.mux.Lock()
 	defer s.mux.Unlock()

@@ -85,7 +85,7 @@ func (s *Weighted) release(n int) bool {
 	return s.notifyWaiters()
 }
 
-//notify other waiters, if waiter list is empty, return true
+// notify other waiters, if waiter list is empty, return true
 func (s *Weighted) notifyWaiters() bool {
 	for {
 		next := s.waiters.Front()

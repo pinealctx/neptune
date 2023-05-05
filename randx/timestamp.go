@@ -6,33 +6,33 @@ import (
 	"time"
 )
 
-//RandInt random generate int, rand seed is current nano timestamp
+// RandInt random generate int, rand seed is current nano timestamp
 func RandInt() int {
 	return int(RandUint64())
 }
 
-//RandUint random generate uint, rand seed is current nano timestamp
+// RandUint random generate uint, rand seed is current nano timestamp
 func RandUint() uint {
 	return uint(RandUint64())
 }
 
-//RandInt64 random generate int64, rand seed is current nano timestamp
+// RandInt64 random generate int64, rand seed is current nano timestamp
 func RandInt64() int64 {
 	return int64(RandUint64())
 }
 
-//RandUint64 random generate uint64, rand seed is current nano timestamp
+// RandUint64 random generate uint64, rand seed is current nano timestamp
 func RandUint64() uint64 {
 	var r = feedNowRand()
 	return r.Uint64()
 }
 
-//RandInt32 random generate int32, rand seed is current nano timestamp
+// RandInt32 random generate int32, rand seed is current nano timestamp
 func RandInt32() int32 {
 	return int32(RandUint32())
 }
 
-//RandUint32 random generate uint32, rand seed is current nano timestamp
+// RandUint32 random generate uint32, rand seed is current nano timestamp
 func RandUint32() uint32 {
 	var r = feedNowRand()
 	return r.Uint32()

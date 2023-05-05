@@ -9,25 +9,25 @@ import (
 	"sort"
 )
 
-//Bs an interface can convert self to bytes
+// Bs an interface can convert self to bytes
 type Bs interface {
 	//ToBytes convert self to bytes
 	ToBytes() []byte
 }
 
-//HitGroup an interface can convert self to a fixed uint64 which can target a group id
+// HitGroup an interface can convert self to a fixed uint64 which can target a group id
 type HitGroup interface {
 	//Hit convert self to a specific uint64 value
 	Hit() uint64
 }
 
-//ReMap remap meta info
+// ReMap remap meta info
 type ReMap struct {
 	numbs uint64   //切分的份数,取素数
 	nps   []uint64 //切分uint64为211份,从小到大排列
 }
 
-//NewReMap : new remap instance
+// NewReMap : new remap instance
 func NewReMap(opts ...Option) *ReMap {
 	var r = &ReMap{}
 	var o = &_Option{prime: DefaultPrime}
@@ -45,12 +45,12 @@ func NewReMap(opts ...Option) *ReMap {
 	return r
 }
 
-//Numbs 获取切分份数
+// Numbs 获取切分份数
 func (r *ReMap) Numbs() uint64 {
 	return r.numbs
 }
 
-//SimpleIndex figure simple index
+// SimpleIndex figure simple index
 func (r *ReMap) SimpleIndex(i interface{}) int {
 	var it uint64
 	switch v := i.(type) {
@@ -82,12 +82,12 @@ func (r *ReMap) SimpleIndex(i interface{}) int {
 	return int(it % r.numbs)
 }
 
-//XHashIndex figure xhash index
+// XHashIndex figure xhash index
 func (r *ReMap) XHashIndex(i interface{}) int {
 	return r.SearchIndex(XXHash(i))
 }
 
-//SearchIndex search uint64 index
+// SearchIndex search uint64 index
 func (r *ReMap) SearchIndex(x uint64) int {
 	var i = SearchUInt64s(r.nps, x)
 	if i < 0 || i >= int(r.numbs) {
@@ -96,12 +96,12 @@ func (r *ReMap) SearchIndex(x uint64) int {
 	return i
 }
 
-//SearchUInt64s search uint64 array index
+// SearchUInt64s search uint64 array index
 func SearchUInt64s(a []uint64, x uint64) int {
 	return sort.Search(len(a), func(i int) bool { return a[i] >= x })
 }
 
-//XXHash : use xxhash hash interface
+// XXHash : use xxhash hash interface
 func XXHash(i interface{}) uint64 {
 	switch v := i.(type) {
 	case string:
@@ -111,7 +111,7 @@ func XXHash(i interface{}) uint64 {
 	}
 }
 
-//ToBytes : convert interface to []byte
+// ToBytes : convert interface to []byte
 func ToBytes(i interface{}) []byte {
 	switch v := i.(type) {
 	case byte:

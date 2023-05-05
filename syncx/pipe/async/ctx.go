@@ -5,16 +5,16 @@ import (
 	"reflect"
 )
 
-//Delegate : proc delegate function
+// Delegate : proc delegate function
 type Delegate func(ctx context.Context) (interface{}, error)
 
-//Proc : proc interface
+// Proc : proc interface
 type Proc interface {
 	//Do : do proc
 	Do(ctx context.Context) (interface{}, error)
 }
 
-//ctx runner
+// ctx runner
 type ctxRunnerI interface {
 	//run
 	run()
@@ -22,10 +22,10 @@ type ctxRunnerI interface {
 	r() (interface{}, error)
 }
 
-//callCtxT call function context
-//An async wrapped function must follow such template:
-//func(ctx context, param AnyType) (result AnyType, err error)
-//"AnyType" here means any type
+// callCtxT call function context
+// An async wrapped function must follow such template:
+// func(ctx context, param AnyType) (result AnyType, err error)
+// "AnyType" here means any type
 type callCtxT struct {
 	//context
 	ctx context.Context
@@ -43,7 +43,7 @@ type callCtxT struct {
 	err error
 }
 
-//new call context
+// new call context
 func newCallCtx(ctx context.Context, fn interface{}, arg interface{}) *callCtxT {
 	var fnType, valid = validateFn(fn)
 	if !valid {
@@ -58,7 +58,7 @@ func newCallCtx(ctx context.Context, fn interface{}, arg interface{}) *callCtxT 
 	}
 }
 
-//r : get result with wait
+// r : get result with wait
 func (c *callCtxT) r() (interface{}, error) {
 	select {
 	case <-c.ctx.Done():
@@ -68,7 +68,7 @@ func (c *callCtxT) r() (interface{}, error) {
 	}
 }
 
-//run
+// run
 func (c *callCtxT) run() {
 	var params [2]reflect.Value
 
@@ -91,7 +91,7 @@ func (c *callCtxT) run() {
 	}
 }
 
-//delegateCtxT : proc context, interface
+// delegateCtxT : proc context, interface
 type delegateCtxT struct {
 	//context
 	ctx context.Context
@@ -105,7 +105,7 @@ type delegateCtxT struct {
 	err error
 }
 
-//new delegate context
+// new delegate context
 func newDelegateCtx(ctx context.Context, delegate Delegate) *delegateCtxT {
 	return &delegateCtxT{
 		ctx:      ctx,
@@ -114,7 +114,7 @@ func newDelegateCtx(ctx context.Context, delegate Delegate) *delegateCtxT {
 	}
 }
 
-//r : get result with wait
+// r : get result with wait
 func (c *delegateCtxT) r() (interface{}, error) {
 	select {
 	case <-c.ctx.Done():
@@ -124,7 +124,7 @@ func (c *delegateCtxT) r() (interface{}, error) {
 	}
 }
 
-//run
+// run
 func (c *delegateCtxT) run() {
 	defer close(c.wait)
 
@@ -138,7 +138,7 @@ func (c *delegateCtxT) run() {
 	c.result, c.err = c.delegate(c.ctx)
 }
 
-//procCtxT : proc context, interface
+// procCtxT : proc context, interface
 type procCtxT struct {
 	//context
 	ctx context.Context
@@ -152,7 +152,7 @@ type procCtxT struct {
 	err error
 }
 
-//new proc context
+// new proc context
 func newProcCtx(ctx context.Context, proc Proc) *procCtxT {
 	return &procCtxT{
 		ctx:  ctx,
@@ -161,7 +161,7 @@ func newProcCtx(ctx context.Context, proc Proc) *procCtxT {
 	}
 }
 
-//r : get result with wait
+// r : get result with wait
 func (c *procCtxT) r() (interface{}, error) {
 	select {
 	case <-c.ctx.Done():
@@ -171,7 +171,7 @@ func (c *procCtxT) r() (interface{}, error) {
 	}
 }
 
-//run
+// run
 func (c *procCtxT) run() {
 	defer close(c.wait)
 

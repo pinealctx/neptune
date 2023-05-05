@@ -42,10 +42,10 @@ var (
 	ErrInvalidPath = errors.New("invalid.etcd.path")
 )
 
-//Code error code
+// Code error code
 type Code int
 
-//Error error define
+// Error error define
 type Error struct {
 	code Code
 	msg  string
@@ -59,7 +59,7 @@ func (e *Error) Code() Code {
 	return e.code
 }
 
-//ErrCode get error code of etcd
+// ErrCode get error code of etcd
 func ErrCode(err error) Code {
 	if err == nil {
 		return OK
@@ -71,13 +71,13 @@ func ErrCode(err error) Code {
 	return Unknown
 }
 
-//IsNotFoundErr is not found
+// IsNotFoundErr is not found
 func IsNotFoundErr(err error) bool {
 	var code = ErrCode(err)
 	return code == NodeNotFound
 }
 
-//convert error to consul error
+// convert error to consul error
 func convertErr(nodePath string, err error) error {
 	if err == nil {
 		return nil
@@ -128,7 +128,7 @@ func convertErr(nodePath string, err error) error {
 	}
 }
 
-//make error
+// make error
 func genErr(node string, code Code) error {
 	var msg string
 	switch code {

@@ -10,10 +10,10 @@ var (
 	ErrDupKey = status.Error(codes.AlreadyExists, "gas.duplicated.key")
 )
 
-//OpType : op type
+// OpType : op type
 type OpType int
 
-//CacheFacade : cache facade, could be lru cache, map, or both mixed.
+// CacheFacade : cache facade, could be lru cache, map, or both mixed.
 type CacheFacade interface {
 	//Peek : only useful in lru cache, peek means no update LRU order.
 	Peek(key interface{}) (interface{}, bool)
@@ -25,7 +25,7 @@ type CacheFacade interface {
 	Delete(key interface{})
 }
 
-//R : combine interface and error, for return result
+// R : combine interface and error, for return result
 type R struct {
 	//return value
 	r interface{}
@@ -33,7 +33,7 @@ type R struct {
 	err error
 }
 
-//AsyncC : async cell
+// AsyncC : async cell
 type AsyncC struct {
 	//context
 	ctx context.Context
@@ -43,7 +43,7 @@ type AsyncC struct {
 	rChan chan R
 }
 
-//NewAsync : new async call
+// NewAsync : new async call
 func NewAsync(ctx context.Context, op OpCode) *AsyncC {
 	return &AsyncC{
 		ctx:   ctx,
@@ -52,7 +52,7 @@ func NewAsync(ctx context.Context, op OpCode) *AsyncC {
 	}
 }
 
-//SetR : set op result
+// SetR : set op result
 func (a *AsyncC) SetR(r interface{}, err error) {
 	a.rChan <- R{
 		r:   r,
@@ -60,7 +60,7 @@ func (a *AsyncC) SetR(r interface{}, err error) {
 	}
 }
 
-//R : get result
+// R : get result
 func (a *AsyncC) R() (interface{}, error) {
 	select {
 	case <-a.ctx.Done():
@@ -70,30 +70,30 @@ func (a *AsyncC) R() (interface{}, error) {
 	}
 }
 
-//RenewDataFn : renew data function, including load/add, excluding delete.
-//input: ctx->context:can be ignored in case; d->input data
-//output: v-> return cache value; err->if failed, return err
+// RenewDataFn : renew data function, including load/add, excluding delete.
+// input: ctx->context:can be ignored in case; d->input data
+// output: v-> return cache value; err->if failed, return err
 type RenewDataFn func(ctx context.Context, d interface{}) (v interface{}, err error)
 
-//UpdateDataFn : update data function.
-//input: ctx->context:can be ignored in case; d->input data; e->the existed item.
-//output: v-> return cache value; err->if failed, return err.
-//actually e is from load function if it's not in cache.
+// UpdateDataFn : update data function.
+// input: ctx->context:can be ignored in case; d->input data; e->the existed item.
+// output: v-> return cache value; err->if failed, return err.
+// actually e is from load function if it's not in cache.
 type UpdateDataFn func(ctx context.Context, d interface{}, e interface{}) (v interface{}, err error)
 
-//DeleteFn : delete data function.
-//input: ctx->context:can be ignored in case; d->input data.
-//output: error->if failed, return err.
+// DeleteFn : delete data function.
+// input: ctx->context:can be ignored in case; d->input data.
+// output: error->if failed, return err.
 type DeleteFn func(ctx context.Context, d interface{}) error
 
-//IsNotFoundFn : to detective an error is "not found" or not.
+// IsNotFoundFn : to detective an error is "not found" or not.
 type IsNotFoundFn func(err error) bool
 
 type OpCode interface {
 	GetK() interface{}
 }
 
-//OpLoad : wrapped load command
+// OpLoad : wrapped load command
 type OpLoad struct {
 	//loadFn: load item
 	loadFn RenewDataFn
@@ -112,7 +112,7 @@ func (o *OpLoad) GetK() interface{} {
 	return o.k
 }
 
-//OpAdd : wrapped add command
+// OpAdd : wrapped add command
 type OpAdd struct {
 	//addFn: add item
 	addFn RenewDataFn
@@ -134,8 +134,8 @@ func (o *OpAdd) GetK() interface{} {
 	return o.k
 }
 
-//OpUpdate : wrapped update command
-//Actually : update should after load data
+// OpUpdate : wrapped update command
+// Actually : update should after load data
 type OpUpdate struct {
 	//loadFn : load item
 	loadFn RenewDataFn
@@ -160,7 +160,7 @@ func (o *OpUpdate) GetK() interface{} {
 	return o.k
 }
 
-//OpDelete : wrapped delete command
+// OpDelete : wrapped delete command
 type OpDelete struct {
 	//deleteFn : delete item
 	deleteFn DeleteFn

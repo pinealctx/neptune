@@ -39,7 +39,7 @@ type Watcher struct {
 	backoff time.Duration
 }
 
-//NewWatcher new watcher
+// NewWatcher new watcher
 func NewWatcher(cli *Client, path string, timeout, backoff time.Duration) *Watcher {
 	var ctx, cancel = context.WithCancel(context.Background())
 	return &Watcher{
@@ -55,27 +55,27 @@ func NewWatcher(cli *Client, path string, timeout, backoff time.Duration) *Watch
 	}
 }
 
-//DirChan dir chan
+// DirChan dir chan
 func (w *Watcher) DirChan() <-chan DirEvent {
 	return w.dirChan
 }
 
-//StartWatchDir loop watch dir -- if chan closed, which means go routine out
+// StartWatchDir loop watch dir -- if chan closed, which means go routine out
 func (w *Watcher) StartWatchDir() {
 	w.startOnce.Do(func() {
 		go w.startWatchDir(true)
 	})
 }
 
-//StartWatchDirWhenExist loop watch dir -- if chan closed, which means go routine out
-//only in case there is any key under the watch path
+// StartWatchDirWhenExist loop watch dir -- if chan closed, which means go routine out
+// only in case there is any key under the watch path
 func (w *Watcher) StartWatchDirWhenExist() {
 	w.startOnce.Do(func() {
 		go w.startWatchDir(false)
 	})
 }
 
-//Stop stop loop watch
+// Stop stop loop watch
 func (w *Watcher) Stop() {
 	w.closeOnce.Do(func() {
 		var ok bool
@@ -90,7 +90,7 @@ func (w *Watcher) Stop() {
 	})
 }
 
-//start watch dir
+// start watch dir
 func (w *Watcher) startWatchDir(ignoreEmpty bool) {
 	var (
 		dRet   DirRet
@@ -151,9 +151,9 @@ func (w *Watcher) startWatchDir(ignoreEmpty bool) {
 	}
 }
 
-//loop dir session
-//if ctx.Done, return true, means watch is done.
-//if return false, just quit current session, continue to next session
+// loop dir session
+// if ctx.Done, return true, means watch is done.
+// if return false, just quit current session, continue to next session
 func (w *Watcher) procSession(iChan <-chan DirEvent) bool {
 	var (
 		dEvent DirEvent
@@ -180,11 +180,11 @@ func (w *Watcher) procSession(iChan <-chan DirEvent) bool {
 
 }
 
-//proc first dir result
-//if dRet.Err is not nil, means get dir is empty, just return to next to watch.
-//if dRet.Err is nil, put the result to channel
-//if ctx.Done, return true, means watch is done.
-//if return false, just quit current session, continue to next session
+// proc first dir result
+// if dRet.Err is not nil, means get dir is empty, just return to next to watch.
+// if dRet.Err is nil, put the result to channel
+// if ctx.Done, return true, means watch is done.
+// if return false, just quit current session, continue to next session
 func (w *Watcher) procFirstRet(dRet DirRet) bool {
 	if dRet.Err != nil {
 		if !IsNotFoundErr(dRet.Err) {
@@ -208,10 +208,10 @@ func (w *Watcher) procFirstRet(dRet DirRet) bool {
 	return false
 }
 
-//handle cli.WatchDir error
-//return
-//true  --- move on
-//false --- restart from the loop(continue)
+// handle cli.WatchDir error
+// return
+// true  --- move on
+// false --- restart from the loop(continue)
 func (w *Watcher) watchDirMoveOn(dRet DirRet, ignoreEmpty bool) bool {
 	if dRet.Err != nil {
 		if !ignoreEmpty || !IsNotFoundErr(dRet.Err) {
@@ -221,7 +221,7 @@ func (w *Watcher) watchDirMoveOn(dRet DirRet, ignoreEmpty bool) bool {
 	return true
 }
 
-//first get dir to event
+// first get dir to event
 func first2Event(dirRet DirRet) DirEvent {
 	var event = DirEvent{
 		Err:      dirRet.Err,

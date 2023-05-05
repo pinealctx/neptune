@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-//RandIntSecure random generate int, read data from linux /dev/urandom
-//actually, it's almost a random id
+// RandIntSecure random generate int, read data from linux /dev/urandom
+// actually, it's almost a random id
 func RandIntSecure() int {
 	var v, err = randReadU64()
 	if err != nil {
@@ -16,8 +16,8 @@ func RandIntSecure() int {
 	return int(v)
 }
 
-//RandUintSecure random generate uint, read data from linux /dev/urandom
-//actually, it's almost a random id
+// RandUintSecure random generate uint, read data from linux /dev/urandom
+// actually, it's almost a random id
 func RandUintSecure() uint {
 	var v, err = randReadU64()
 	if err != nil {
@@ -26,8 +26,8 @@ func RandUintSecure() uint {
 	return uint(v)
 }
 
-//RandInt64Secure random generate int64, read data from linux /dev/urandom
-//actually, it's almost a random id
+// RandInt64Secure random generate int64, read data from linux /dev/urandom
+// actually, it's almost a random id
 func RandInt64Secure() int64 {
 	var v, err = randReadU64()
 	if err != nil {
@@ -36,8 +36,8 @@ func RandInt64Secure() int64 {
 	return int64(v)
 }
 
-//RandUint64Secure random generate uint64, read data from linux /dev/urandom
-//actually, it's almost a random id
+// RandUint64Secure random generate uint64, read data from linux /dev/urandom
+// actually, it's almost a random id
 func RandUint64Secure() uint64 {
 	var v, err = randReadU64()
 	if err != nil {
@@ -46,8 +46,8 @@ func RandUint64Secure() uint64 {
 	return v
 }
 
-//RandUint32Secure random generate uint32, read data from linux /dev/urandom
-//actually, it's almost a random id
+// RandUint32Secure random generate uint32, read data from linux /dev/urandom
+// actually, it's almost a random id
 func RandUint32Secure() uint32 {
 	var v, err = randReadU32()
 	if err != nil {
@@ -56,8 +56,8 @@ func RandUint32Secure() uint32 {
 	return v
 }
 
-//RandInt32Secure random generate int32, read data from linux /dev/urandom
-//actually, it's almost a random id
+// RandInt32Secure random generate int32, read data from linux /dev/urandom
+// actually, it's almost a random id
 func RandInt32Secure() int32 {
 	var v, err = randReadU32()
 	if err != nil {

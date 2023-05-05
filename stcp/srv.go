@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-//IConnMgr interface
-//连接管理接口
+// IConnMgr interface
+// 连接管理接口
 type IConnMgr interface {
 	//ConnCount 当前连接数
 	ConnCount() int32
@@ -18,19 +18,25 @@ type IConnMgr interface {
 	SetLogger(logger *ulog.Logger)
 }
 
-//Server : tcp server frame
+// ITemporary interface
+// to replace net.Error interface to avoid go lint check
+type ITemporary interface {
+	Temporary() bool
+}
+
+// Server : tcp server frame
 type Server struct {
 	ln      net.Listener
 	ch      IConnMgr //connection manager
 	address string
 }
 
-//Address :
+// Address :
 func (s *Server) Address() string {
 	return s.address
 }
 
-//NewTCPSrv :
+// NewTCPSrv :
 func NewTCPSrv(address string, ch IConnMgr) *Server {
 	return &Server{
 		address: address,
@@ -38,13 +44,13 @@ func NewTCPSrv(address string, ch IConnMgr) *Server {
 	}
 }
 
-//NewTCPSrvX : use a simple IConnMgr
+// NewTCPSrvX : use a simple IConnMgr
 func NewTCPSrvX(address string, rh ISession, opts ...MOption) *Server {
 	var ch = NewSessionMgr(rh, opts...)
 	return NewTCPSrv(address, ch)
 }
 
-//LoopStart :
+// LoopStart :
 func (s *Server) LoopStart(opts ...Option) error {
 	var cnf = defaultStartOpt()
 	for _, opt := range opts {
@@ -60,8 +66,8 @@ func (s *Server) LoopStart(opts ...Option) error {
 	return s.loopAccept(cnf)
 }
 
-//Start : loop start server will go loop state
-//Use a channel to receive error
+// Start : loop start server will go loop state
+// Use a channel to receive error
 func (s *Server) Start(opts ...Option) <-chan error {
 	var eh = make(chan error, 1)
 	var err error
@@ -74,12 +80,12 @@ func (s *Server) Start(opts ...Option) <-chan error {
 	return eh
 }
 
-//Close : close server
+// Close : close server
 func (s *Server) Close() error {
 	return s.ln.Close()
 }
 
-//start to listen
+// start to listen
 func (s *Server) startListen(cnf *_SrvStartOpt) error {
 	var err error
 	s.ln, err = net.Listen("tcp", s.address)
@@ -91,23 +97,23 @@ func (s *Server) startListen(cnf *_SrvStartOpt) error {
 	return nil
 }
 
-//loop to accept
+// loop to accept
 func (s *Server) loopAccept(cnf *_SrvStartOpt) error {
 	var conn net.Conn
 	var err error
-	var errNet net.Error
+	var errNet ITemporary
 	var ok bool
 
 	var accDelay time.Duration
 	var accRetryCount int
 
 	var handleErr = func() error {
-		errNet, ok = err.(net.Error)
+		errNet, ok = err.(ITemporary)
 		if !ok {
 			return err
 		}
 		if !errNet.Temporary() {
-			return errNet
+			return err
 		}
 
 		//setup retry
@@ -153,45 +159,45 @@ func (s *Server) loopAccept(cnf *_SrvStartOpt) error {
 	}
 }
 
-//Option server start option
+// Option server start option
 type Option func(o *_SrvStartOpt)
 
-//WithMaxConn : setup max conn number
+// WithMaxConn : setup max conn number
 func WithMaxConn(r int32) Option {
 	return func(o *_SrvStartOpt) {
 		o.maxConn = r
 	}
 }
 
-//WithLogger : setup logger
+// WithLogger : setup logger
 func WithLogger(l *ulog.Logger) Option {
 	return func(o *_SrvStartOpt) {
 		o.logger = l
 	}
 }
 
-//WithAccDelay : setup acceptDelay
+// WithAccDelay : setup acceptDelay
 func WithAccDelay(t time.Duration) Option {
 	return func(o *_SrvStartOpt) {
 		o.acceptDelay = t
 	}
 }
 
-//WithAccMaxDelay : setup acceptMaxDelay
+// WithAccMaxDelay : setup acceptMaxDelay
 func WithAccMaxDelay(t time.Duration) Option {
 	return func(o *_SrvStartOpt) {
 		o.acceptMaxDelay = t
 	}
 }
 
-//WithAccMaxRetry : setup acceptMaxRetry
+// WithAccMaxRetry : setup acceptMaxRetry
 func WithAccMaxRetry(r int) Option {
 	return func(o *_SrvStartOpt) {
 		o.acceptMaxRetry = r
 	}
 }
 
-//server start config
+// server start config
 type _SrvStartOpt struct {
 	acceptDelay    time.Duration
 	acceptMaxDelay time.Duration
@@ -207,7 +213,7 @@ func (o *_SrvStartOpt) Logger() *ulog.Logger {
 	return o.logger
 }
 
-//get default start cnf
+// get default start cnf
 func defaultStartOpt() *_SrvStartOpt {
 	return &_SrvStartOpt{
 		acceptDelay:    5 * time.Microsecond,

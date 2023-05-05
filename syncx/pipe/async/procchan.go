@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-//procChanCtxT : proc context, interface
+// procChanCtxT : proc context, interface
 type procChanCtxT struct {
 	//context
 	ctx context.Context
@@ -21,7 +21,7 @@ type procChanCtxT struct {
 	err error
 }
 
-//new proc chan context
+// new proc chan context
 func newProcChanCtx(ctx context.Context, proc Proc) *procChanCtxT {
 	return &procChanCtxT{
 		ctx:  ctx,
@@ -30,7 +30,7 @@ func newProcChanCtx(ctx context.Context, proc Proc) *procChanCtxT {
 	}
 }
 
-//r : get result with wait
+// r : get result with wait
 func (c *procChanCtxT) r(stopChan <-chan struct{}) (interface{}, error) {
 	select {
 	case <-c.ctx.Done():
@@ -42,7 +42,7 @@ func (c *procChanCtxT) r(stopChan <-chan struct{}) (interface{}, error) {
 	}
 }
 
-//run
+// run
 func (c *procChanCtxT) run() {
 	defer close(c.wait)
 
@@ -56,7 +56,7 @@ func (c *procChanCtxT) run() {
 	c.result, c.err = c.proc.Do(c.ctx)
 }
 
-//ProcChan : async proc chan
+// ProcChan : async proc chan
 type ProcChan struct {
 	//chan
 	ch chan *procChanCtxT
@@ -79,7 +79,7 @@ type ProcChan struct {
 	name string
 }
 
-//NewProcChan : new async proc queue
+// NewProcChan : new async proc queue
 func NewProcChan(opts ...Option) *ProcChan {
 	var o = &optionT{
 		size: DefaultQSize,
@@ -97,14 +97,14 @@ func NewProcChan(opts ...Option) *ProcChan {
 	return c
 }
 
-//Size : get queue size
+// Size : get queue size
 func (c *ProcChan) Size() int {
 	return c.size
 }
 
-//AsyncProc : async proc
-//ctx -- context.Context
-//proc -- proc interface
+// AsyncProc : async proc
+// ctx -- context.Context
+// proc -- proc interface
 func (c *ProcChan) AsyncProc(ctx context.Context, proc Proc) (interface{}, error) {
 	var procCtx, err = c.addCallCtx(ctx, proc)
 	if err != nil {
@@ -113,7 +113,7 @@ func (c *ProcChan) AsyncProc(ctx context.Context, proc Proc) (interface{}, error
 	return procCtx.r(c.stopChan)
 }
 
-//Run : run all queue msg handler
+// Run : run all queue msg handler
 func (c *ProcChan) Run() {
 	c.startOnce.Do(func() {
 		if c.wg != nil {
@@ -123,19 +123,19 @@ func (c *ProcChan) Run() {
 	})
 }
 
-//Stop : stop
+// Stop : stop
 func (c *ProcChan) Stop() {
 	c.stopOnce.Do(func() {
 		close(c.stopChan)
 	})
 }
 
-//WaitStop : wait runner loop exits
+// WaitStop : wait runner loop exits
 func (c *ProcChan) WaitStop() {
 	<-c.stopChan
 }
 
-//addCallCtx : add call context
+// addCallCtx : add call context
 func (c *ProcChan) addCallCtx(ctx context.Context, proc Proc) (*procChanCtxT, error) {
 	var procCtx = newProcChanCtx(ctx, proc)
 	select {
@@ -148,7 +148,7 @@ func (c *ProcChan) addCallCtx(ctx context.Context, proc Proc) (*procChanCtxT, er
 	}
 }
 
-//pop call loop
+// pop call loop
 func (c *ProcChan) popLoop() {
 	var (
 		err error

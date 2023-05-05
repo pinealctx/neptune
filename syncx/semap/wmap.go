@@ -5,26 +5,26 @@ import (
 	"github.com/pinealctx/neptune/remap"
 )
 
-//WideSemMap use SemMap array as wide map
+// WideSemMap use SemMap array as wide map
 type WideSemMap struct {
 	ms       []*SemMap
 	calKeyFn func(key interface{}) int
 	rehash   *remap.ReMap
 }
 
-//NewWideSemMap new wide semaphore map
+// NewWideSemMap new wide semaphore map
 func NewWideSemMap(opts ...Option) SemMapper {
 	var o = RangeOption(opts...)
 	return newWideSemMap(o.rwRatio, o.prime, false)
 }
 
-//NewWideXHashSemMap new wide semaphore map
+// NewWideXHashSemMap new wide semaphore map
 func NewWideXHashSemMap(opts ...Option) SemMapper {
 	var o = RangeOption(opts...)
 	return newWideSemMap(o.rwRatio, o.prime, true)
 }
 
-//newWideSemMap new wide semaphore map
+// newWideSemMap new wide semaphore map
 func newWideSemMap(rwRatio int, prime uint64, useXHash bool) SemMapper {
 	var w = &WideSemMap{}
 	if prime > 0 {
@@ -45,27 +45,27 @@ func newWideSemMap(rwRatio int, prime uint64, useXHash bool) SemMapper {
 	return w
 }
 
-//AcquireRead acquire for read
+// AcquireRead acquire for read
 func (s *WideSemMap) AcquireRead(ctx context.Context, key interface{}) (*Weighted, error) {
 	return s.calculateKey(key).AcquireRead(ctx, key)
 }
 
-//ReleaseRead release read lock
+// ReleaseRead release read lock
 func (s *WideSemMap) ReleaseRead(key interface{}, w *Weighted) {
 	s.calculateKey(key).ReleaseRead(key, w)
 }
 
-//AcquireWrite acquire for write
+// AcquireWrite acquire for write
 func (s *WideSemMap) AcquireWrite(ctx context.Context, key interface{}) (*Weighted, error) {
 	return s.calculateKey(key).AcquireWrite(ctx, key)
 }
 
-//ReleaseWrite release write lock
+// ReleaseWrite release write lock
 func (s *WideSemMap) ReleaseWrite(key interface{}, w *Weighted) {
 	s.calculateKey(key).ReleaseWrite(key, w)
 }
 
-//calculate key
+// calculate key
 func (s *WideSemMap) calculateKey(key interface{}) *SemMap {
 	var i = s.calKeyFn(key)
 	return s.ms[i]

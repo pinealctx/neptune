@@ -8,7 +8,7 @@ const (
 	DefaultQSize = 1024 * 8
 )
 
-//shunt option
+// shunt option
 type _Option struct {
 	//slot size
 	slotSize int
@@ -16,24 +16,24 @@ type _Option struct {
 	qSize int
 }
 
-//Option shunt option function
+// Option shunt option function
 type Option func(o *_Option)
 
-//WithSlotSize setup slot size
+// WithSlotSize setup slot size
 func WithSlotSize(slotSize int) Option {
 	return func(o *_Option) {
 		o.slotSize = slotSize
 	}
 }
 
-//WithQSize setup queue size in each slot
+// WithQSize setup queue size in each slot
 func WithQSize(qSize int) Option {
 	return func(o *_Option) {
 		o.qSize = qSize
 	}
 }
 
-//GetOption : return slot size and q size
+// GetOption : return slot size and q size
 func GetOption(opts ...Option) (slotSize int, qSize int) {
 	var o = &_Option{
 		slotSize: DefaultSlotSize,

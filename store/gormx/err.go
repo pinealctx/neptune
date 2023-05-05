@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-//IsDupError is duplicated key error
+// IsDupError is duplicated key error
 func IsDupError(err error) bool {
 	mysqlErr, ok := err.(*mysql.MySQLError)
 	if ok {
@@ -23,7 +23,7 @@ func IsDupError(err error) bool {
 	return false
 }
 
-//IsNotFoundErr is not found error
+// IsNotFoundErr is not found error
 func IsNotFoundErr(err error) bool {
 	if err == nil {
 		return false
@@ -31,7 +31,7 @@ func IsNotFoundErr(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
-//ToGRPCNotFoundErr error to grpc
+// ToGRPCNotFoundErr error to grpc
 func ToGRPCNotFoundErr(err error) error {
 	if err == nil {
 		return err
@@ -42,7 +42,7 @@ func ToGRPCNotFoundErr(err error) error {
 	return err
 }
 
-//ToGRPCDupErr err to grpc duplicate
+// ToGRPCDupErr err to grpc duplicate
 func ToGRPCDupErr(err error) error {
 	if err == nil {
 		return err

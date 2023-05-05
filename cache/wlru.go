@@ -4,24 +4,24 @@ import (
 	"github.com/pinealctx/neptune/remap"
 )
 
-//WideLRUCache use LruCache group array as a wide lru cache
+// WideLRUCache use LruCache group array as a wide lru cache
 type WideLRUCache struct {
 	ls       []*LRUCache
 	calKeyFn func(key interface{}) int
 	rehash   *remap.ReMap
 }
 
-//NeWideLRUCache new wide lru cache
+// NeWideLRUCache new wide lru cache
 func NeWideLRUCache(capacity int64, opts ...remap.Option) LRUFacade {
 	return newWideLRUCache(capacity, false, opts...)
 }
 
-//NewWideXHashLRUCache new wide lru cache use xxhash as group
+// NewWideXHashLRUCache new wide lru cache use xxhash as group
 func NewWideXHashLRUCache(capacity int64, opts ...remap.Option) LRUFacade {
 	return newWideLRUCache(capacity, true, opts...)
 }
 
-//newWideLRUCache new wide lru cache group
+// newWideLRUCache new wide lru cache group
 func newWideLRUCache(capacity int64, useXHash bool, opts ...remap.Option) LRUFacade {
 	var w = &WideLRUCache{}
 	w.rehash = remap.NewReMap(opts...)
@@ -49,7 +49,7 @@ func (w *WideLRUCache) Peek(key interface{}) (v Value, ok bool) {
 	return w.calculateKey(key).Peek(key)
 }
 
-//Exist : return true if key in map
+// Exist : return true if key in map
 func (w *WideLRUCache) Exist(key interface{}) bool {
 	return w.calculateKey(key).Exist(key)
 }
@@ -64,7 +64,7 @@ func (w *WideLRUCache) Delete(key interface{}) bool {
 	return w.calculateKey(key).Delete(key)
 }
 
-//calculate key
+// calculate key
 func (w *WideLRUCache) calculateKey(key interface{}) *LRUCache {
 	var i = w.calKeyFn(key)
 	return w.ls[i]

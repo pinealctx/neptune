@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//ToBytes 将基本类型转换为[]byte
+// ToBytes 将基本类型转换为[]byte
 func ToBytes(v interface{}) []byte {
 	switch vt := v.(type) {
 	case string:
@@ -21,7 +21,7 @@ func ToBytes(v interface{}) []byte {
 	}
 }
 
-//ToString 将基本类型转换为字符串
+// ToString 将基本类型转换为字符串
 func ToString(v interface{}) string {
 
 	//检查整数
@@ -63,7 +63,7 @@ func ToString(v interface{}) string {
 	return fmt.Sprint(v)
 }
 
-//ToStringList 将基本类型转换为字符串list
+// ToStringList 将基本类型转换为字符串list
 func ToStringList(v interface{}) []string {
 	switch val := v.(type) {
 	case []string:
@@ -85,7 +85,7 @@ func ToStringList(v interface{}) []string {
 	}
 }
 
-//ToBool 将基本类型转换为bool
+// ToBool 将基本类型转换为bool
 func ToBool(v interface{}) bool {
 	switch val := v.(type) {
 	case bool:
@@ -130,7 +130,7 @@ func ToBool(v interface{}) bool {
 	return false
 }
 
-//ToInt 将基本类型转换为整型
+// ToInt 将基本类型转换为整型
 func ToInt(v interface{}) int {
 	var iv int
 	switch val := v.(type) {
@@ -180,7 +180,7 @@ func ToUInt(v interface{}) uint {
 	return uint(ToInt(v))
 }
 
-//ToInt32 将基本类型转换为32位整型
+// ToInt32 将基本类型转换为32位整型
 func ToInt32(v interface{}) int32 {
 	var iv int32
 	switch val := v.(type) {
@@ -230,7 +230,7 @@ func ToInt32(v interface{}) int32 {
 	return iv
 }
 
-//ToInt32 将基本类型转换为32位无符号整型
+// ToInt32 将基本类型转换为32位无符号整型
 func ToUInt32(v interface{}) uint32 {
 	var uv uint32
 	switch val := v.(type) {
@@ -278,7 +278,7 @@ func ToUInt32(v interface{}) uint32 {
 	return uv
 }
 
-//ToInt64 将基本类型转换为64位整型
+// ToInt64 将基本类型转换为64位整型
 func ToInt64(v interface{}) int64 {
 	var iv int64
 	switch val := v.(type) {
@@ -330,7 +330,7 @@ func ToUInt64(v interface{}) uint64 {
 	return uint64(ToInt64(v))
 }
 
-//ToJsInt64 将基本类型转换为json int64整型
+// ToJsInt64 将基本类型转换为json int64整型
 func ToJsInt64(v interface{}) JsInt64 {
 	switch val := v.(type) {
 	case JsInt64:
@@ -343,7 +343,7 @@ func ToJsInt64(v interface{}) JsInt64 {
 	}
 }
 
-//ToJsUInt64 将基本类型转换为json uint64整型
+// ToJsUInt64 将基本类型转换为json uint64整型
 func ToJsUInt64(v interface{}) JsUInt64 {
 	switch val := v.(type) {
 	case JsUInt64:
@@ -356,7 +356,7 @@ func ToJsUInt64(v interface{}) JsUInt64 {
 	}
 }
 
-//ToFloat64 将基本类型转换为浮点型
+// ToFloat64 将基本类型转换为浮点型
 func ToFloat64(v interface{}) float64 {
 	var iv float64
 	switch val := v.(type) {
@@ -402,13 +402,13 @@ func ToFloat64(v interface{}) float64 {
 	return iv
 }
 
-//ToTime 转换为time.Time
+// ToTime 转换为time.Time
 func ToTime(v interface{}) (time.Time, bool) {
 	t, ok := v.(time.Time)
 	return t, ok
 }
 
-//ToDuration 转换为time.Duration
+// ToDuration 转换为time.Duration
 func ToDuration(v interface{}) (time.Duration, bool) {
 	switch val := v.(type) {
 	case time.Duration:
@@ -426,7 +426,7 @@ func ToDuration(v interface{}) (time.Duration, bool) {
 	return time.Duration(num), ok
 }
 
-//try to convert number type to int
+// try to convert number type to int
 func tryNum2Int(v interface{}) (int, bool) {
 	var (
 		iv int
@@ -467,7 +467,7 @@ func tryNum2Int(v interface{}) (int, bool) {
 	return iv, ok
 }
 
-//try to convert number type to int
+// try to convert number type to int
 func tryNum2Int64(v interface{}) (int64, bool) {
 	var (
 		iv int64

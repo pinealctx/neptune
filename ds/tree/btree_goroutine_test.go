@@ -15,8 +15,8 @@ func (x *X) Less(b Node) bool {
 	return x.a < b.(*X).a
 }
 
-//TestBtreeCmp :
-//此用例测试结果说明，在index变化后，不能直接插入，需要先删除，再插入
+// TestBtreeCmp :
+// 此用例测试结果说明，在index变化后，不能直接插入，需要先删除，再插入
 func TestBtreeCmp(t *testing.T) {
 	var b = btree.New(2)
 	var x = &X{1}
@@ -46,9 +46,9 @@ func (i Int) Less(b Node) bool {
 	return i < b.(Int)
 }
 
-//测试多个go routine不加锁读
-//一个go routine写的情况
-//事实证明，it's a joke, no cow here.
+// 测试多个go routine不加锁读
+// 一个go routine写的情况
+// 事实证明，it's a joke, no cow here.
 func TestBtreeNoLock(t *testing.T) {
 	var b = btree.New(2)
 	var wg sync.WaitGroup
@@ -82,9 +82,9 @@ func TestBtreeNoLock(t *testing.T) {
 	t.Log("use time:", d, "average:", d/time.Duration(count*c))
 }
 
-//测试多个go routine加读锁读
-//一个go routine写加写锁的情况
-//遍历1023节点长度的数耗时在9us左右 -- 因为都使用了写锁
+// 测试多个go routine加读锁读
+// 一个go routine写加写锁的情况
+// 遍历1023节点长度的数耗时在9us左右 -- 因为都使用了写锁
 func TestBtreeLock(t *testing.T) {
 	var b = btree.New(2)
 	var wg sync.WaitGroup
@@ -127,9 +127,9 @@ func TestBtreeLock(t *testing.T) {
 	t.Log("use time:", d, "average:", d/time.Duration(count*c))
 }
 
-//测试多个go routine加写锁锁读
-//一个go routine写加写锁的情况
-//遍历1023节点长度的数耗时在9us左右 -- 因为都使用了写锁
+// 测试多个go routine加写锁锁读
+// 一个go routine写加写锁的情况
+// 遍历1023节点长度的数耗时在9us左右 -- 因为都使用了写锁
 func TestBtreeWLock(t *testing.T) {
 	var b = btree.New(2)
 	var wg sync.WaitGroup
@@ -172,8 +172,8 @@ func TestBtreeWLock(t *testing.T) {
 	t.Log("use time:", d, "average:", d/time.Duration(count*c))
 }
 
-//测试多个go routine读不加锁
-//遍历1023节点长度的数耗时在4us左右 -- 这是因为多核
+// 测试多个go routine读不加锁
+// 遍历1023节点长度的数耗时在4us左右 -- 这是因为多核
 func TestBtreeNoLockRead(t *testing.T) {
 	var b = btree.New(2)
 	var wg sync.WaitGroup
@@ -207,8 +207,8 @@ func TestBtreeNoLockRead(t *testing.T) {
 	t.Log("use time:", d, "average:", d/time.Duration(count*c))
 }
 
-//测试多个go routine读只加加锁
-//遍历1023节点长度的数耗时在4us左右 -- 这是因为多核
+// 测试多个go routine读只加加锁
+// 遍历1023节点长度的数耗时在4us左右 -- 这是因为多核
 func TestBtreeLockRead(t *testing.T) {
 	var b = btree.New(2)
 	var wg sync.WaitGroup
@@ -245,8 +245,8 @@ func TestBtreeLockRead(t *testing.T) {
 	t.Log("use time:", d, "average:", d/time.Duration(count*c))
 }
 
-//测试纯遍历耗时
-//遍历1023节点长度的数耗时在11us左右
+// 测试纯遍历耗时
+// 遍历1023节点长度的数耗时在11us左右
 func TestBtreeWalk(t *testing.T) {
 	var b = btree.New(2)
 

@@ -11,19 +11,19 @@ import (
 	"go.etcd.io/etcd/client/v3"
 )
 
-//DirEvent dir event
+// DirEvent dir event
 type DirEvent struct {
 	Events   []*clientv3.Event
 	Err      error
 	Revision int64
 }
 
-//AddEvent add event
+// AddEvent add event
 func (w *DirEvent) AddEvent(e *clientv3.Event) {
 	w.Events = append(w.Events, e)
 }
 
-//DebugInfo debug info
+// DebugInfo debug info
 func (w *DirEvent) DebugInfo() string {
 	var buffer strings.Builder
 	var head = fmt.Sprintf("len event:%d, error:%+v, revision:%+v",
@@ -81,7 +81,7 @@ func (c *Client) WatchDir(ctx context.Context,
 	return dRet, nChan, outCancel
 }
 
-//dir watch loop
+// dir watch loop
 func dirLoop(ctx context.Context,
 	notifyChan chan<- DirEvent, watcher clientv3.WatchChan, nodePath string) {
 	var err error
@@ -126,9 +126,9 @@ func dirLoop(ctx context.Context,
 	}
 }
 
-//proc dir events, if not put and delete, need exist current watch
-//return true -- something wrong, need exit current session
-//return false -- done current event work, move on
+// proc dir events, if not put and delete, need exist current watch
+// return true -- something wrong, need exit current session
+// return false -- done current event work, move on
 func procDirEvents(wRsp clientv3.WatchResponse, nodePath string, notifyChan chan<- DirEvent) bool {
 	var watchDir = DirEvent{}
 	watchDir.Revision = wRsp.Header.Revision

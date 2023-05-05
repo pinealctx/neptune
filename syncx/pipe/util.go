@@ -19,7 +19,7 @@ var (
 	ErrInvalidRsp = status.Error(codes.Internal, "invalid.rsp.msg")
 )
 
-//ConvertQueueErr convert msg queue error
+// ConvertQueueErr convert msg queue error
 func ConvertQueueErr(err error) error {
 	if err == nil {
 		return nil
@@ -33,7 +33,7 @@ func ConvertQueueErr(err error) error {
 	return err
 }
 
-//NormalizeSlotIndex slot index
+// NormalizeSlotIndex slot index
 func NormalizeSlotIndex(index int, slotSize int) int {
 	if index < 0 {
 		index = -index

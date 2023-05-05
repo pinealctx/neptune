@@ -11,47 +11,47 @@ var (
 	_DefaultLogger atomic.Value
 )
 
-//Debug : log debug
+// Debug : log debug
 func Debug(msg string, fields ...zap.Field) {
 	loadLogger().Debug(msg, fields...)
 }
 
-//Info : log info
+// Info : log info
 func Info(msg string, fields ...zap.Field) {
 	loadLogger().Info(msg, fields...)
 }
 
-//Warn : log warn
+// Warn : log warn
 func Warn(msg string, fields ...zap.Field) {
 	loadLogger().Warn(msg, fields...)
 }
 
-//Error : log error
+// Error : log error
 func Error(msg string, fields ...zap.Field) {
 	loadLogger().Error(msg, fields...)
 }
 
-//GetLevel : get log level
+// GetLevel : get log level
 func GetLevel() zapcore.Level {
 	return loadLogger().Level()
 }
 
-//GetLevelStr : get log level str
+// GetLevelStr : get log level str
 func GetLevelStr() string {
 	return loadLogger().LevelStr()
 }
 
-//SetLogLevel : set log level
+// SetLogLevel : set log level
 func SetLogLevel(level zapcore.Level) {
 	loadLogger().SetLevel(level)
 }
 
-//SetLogLevelStr : set log level by string
+// SetLogLevelStr : set log level by string
 func SetLogLevelStr(levelStr string) {
 	loadLogger().SetLevelStr(levelStr)
 }
 
-//SetDefaultLogger : set default logger
+// SetDefaultLogger : set default logger
 func SetDefaultLogger(logger *Logger) {
 	if logger == nil {
 		return
@@ -65,12 +65,12 @@ func SetDefaultLogger(logger *Logger) {
 	_DefaultLogger.Store(&cloneLogger)
 }
 
-//GetDefaultLogger : get default logger
+// GetDefaultLogger : get default logger
 func GetDefaultLogger() *Logger {
 	return loadLogger()
 }
 
-//load logger
+// load logger
 func loadLogger() *Logger {
 	var logger = _DefaultLogger.Load()
 	if logger == nil {

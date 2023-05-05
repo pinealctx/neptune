@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-//MD5UUID new uuid first, use md5 hash
+// MD5UUID new uuid first, use md5 hash
 func MD5UUID() string {
 	id := uuid.NewV1()
 	/* #nosec */
@@ -15,7 +15,7 @@ func MD5UUID() string {
 	return writeHex(h, id[:])
 }
 
-//SHA256UUID new uuid first, use sha256 hash
+// SHA256UUID new uuid first, use sha256 hash
 func SHA256UUID() string {
 	id := uuid.NewV1()
 	h := sha3.New256()

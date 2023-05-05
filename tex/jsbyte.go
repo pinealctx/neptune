@@ -11,13 +11,13 @@ var (
 	ErrInvalidByteJs = errors.New(`byte.invalid.string`)
 )
 
-//JsByte
-//json could not support readable []byte
-//use string to replace the byte array
+// JsByte
+// json could not support readable []byte
+// use string to replace the byte array
 type JsByte []byte
 
-//MarshalJSON
-//marshal json
+// MarshalJSON
+// marshal json
 func (i JsByte) MarshalJSON() ([]byte, error) {
 	buf := i.ToJS()
 	newBuf := make([]byte, 0, len(buf)+2)
@@ -27,8 +27,8 @@ func (i JsByte) MarshalJSON() ([]byte, error) {
 	return newBuf, nil
 }
 
-//UnmarshalJSON
-//unmarshal json
+// UnmarshalJSON
+// unmarshal json
 func (i *JsByte) UnmarshalJSON(b []byte) error {
 	lb := len(b)
 	if lb < 2 {
@@ -39,8 +39,8 @@ func (i *JsByte) UnmarshalJSON(b []byte) error {
 	return i.FromString(strBuf)
 }
 
-//FromString
-//from string
+// FromString
+// from string
 func (i *JsByte) FromString(strBuf string) error {
 	if len(strBuf) == 0 {
 		*i = nil
@@ -65,23 +65,23 @@ func (i *JsByte) FromString(strBuf string) error {
 	return nil
 }
 
-//ToJS
-//split byte to string
-//use '/' split
+// ToJS
+// split byte to string
+// use '/' split
 func (i JsByte) ToJS() []byte {
 	var builder = i.splitBuilder()
 	return builder.Bytes()
 }
 
-//ToString
-//split byte to byte
-//use '/' split
+// ToString
+// split byte to byte
+// use '/' split
 func (i JsByte) ToString() string {
 	var builder = i.splitBuilder()
 	return builder.String()
 }
 
-//split builder
+// split builder
 func (i JsByte) splitBuilder() *bytes.Buffer {
 	var builder = bytes.NewBuffer(nil)
 	var size = len(i)

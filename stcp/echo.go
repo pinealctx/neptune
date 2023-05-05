@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//Echo 应答式session
+// Echo 应答式session
 type Echo struct {
 	//连接
 	conn net.Conn
@@ -24,7 +24,7 @@ type Echo struct {
 	startOnce sync.Once
 }
 
-//NewEcho :
+// NewEcho :
 func NewEcho(b *EchoMgr, conn net.Conn) *Echo {
 	return &Echo{
 		b:    b,
@@ -32,7 +32,7 @@ func NewEcho(b *EchoMgr, conn net.Conn) *Echo {
 	}
 }
 
-//Start :
+// Start :
 func (s *Echo) Start() {
 	s.startOnce.Do(func() {
 		s.b.count.Inc()
@@ -40,33 +40,33 @@ func (s *Echo) Start() {
 	})
 }
 
-//ReleaseRef : when Echo session is disposed, this function should be called to decrease connection counter
-//减少引用计数
+// ReleaseRef : when Echo session is disposed, this function should be called to decrease connection counter
+// 减少引用计数
 func (s *Echo) ReleaseRef() {
 	s.b.count.Dec()
 }
 
-//Set :
+// Set :
 func (s *Echo) Set(v interface{}) {
 	s.value.Store(v)
 }
 
-//Get :
+// Get :
 func (s *Echo) Get() interface{} {
 	return s.value.Load()
 }
 
-//SetRemoteAddr :
+// SetRemoteAddr :
 func (s *Echo) SetRemoteAddr(addr string) {
 	s.remoteAddr.Store(addr)
 }
 
-//RemoteAddr :
+// RemoteAddr :
 func (s *Echo) RemoteAddr() string {
 	return absRemoteAddr(s.remoteAddr, s.conn)
 }
 
-//Send : send bytes, put bytes to queue, not send directly
+// Send : send bytes, put bytes to queue, not send directly
 func (s *Echo) Send(bs []byte) error {
 	var err = s.conn.SetWriteDeadline(time.Now().Add(s.b.writeTimeout))
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *Echo) Send(bs []byte) error {
 	return err
 }
 
-//Read : read specific bytes
+// Read : read specific bytes
 func (s *Echo) Read(bs []byte) error {
 	var err = s.conn.SetReadDeadline(time.Now().Add(s.b.readTimeout))
 	if err != nil {
@@ -88,8 +88,8 @@ func (s *Echo) Read(bs []byte) error {
 	return err
 }
 
-//Close : close session
-//just close connection
+// Close : close session
+// just close connection
 func (s *Echo) Close() {
 	var err = s.conn.Close()
 	if err != nil {
@@ -97,28 +97,28 @@ func (s *Echo) Close() {
 	}
 }
 
-//Logger : get logger
+// Logger : get logger
 func (s *Echo) Logger() *ulog.Logger {
 	return s.b.Logger()
 }
 
-//RemoteZap : for uber log
+// RemoteZap : for uber log
 func (s *Echo) RemoteZap() zap.Field {
 	return zap.String("session.Addr", s.RemoteAddr())
 }
 
-//KeyZaps : for uber log
+// KeyZaps : for uber log
 func (s *Echo) KeyZaps(ext ...zap.Field) []zap.Field {
 	return absSessionInfo(s.value, ext...)
 }
 
-//IEcho echo handler
+// IEcho echo handler
 type IEcho interface {
 	//RunEcho :
 	RunEcho(s *Echo)
 }
 
-//EchoMgr :
+// EchoMgr :
 type EchoMgr struct {
 	count        atomic.Int32
 	logger       *ulog.Logger
@@ -127,7 +127,7 @@ type EchoMgr struct {
 	eh           IEcho
 }
 
-//NewEchoMgr :
+// NewEchoMgr :
 func NewEchoMgr(eh IEcho, opts ...MOption) *EchoMgr {
 	var cnf = defaultSessMgrOpt()
 	for _, opt := range opts {
@@ -140,23 +140,23 @@ func NewEchoMgr(eh IEcho, opts ...MOption) *EchoMgr {
 	}
 }
 
-//SetLogger :
+// SetLogger :
 func (m *EchoMgr) SetLogger(logger *ulog.Logger) {
 	m.logger = logger
 }
 
-//ConnCount 当前连接数
+// ConnCount 当前连接数
 func (m *EchoMgr) ConnCount() int32 {
 	return m.count.Load()
 }
 
-//Do :
+// Do :
 func (m *EchoMgr) Do(conn net.Conn) {
 	var echo = NewEcho(m, conn)
 	echo.Start()
 }
 
-//Logger : get logger
+// Logger : get logger
 func (m *EchoMgr) Logger() *ulog.Logger {
 	if m.logger == nil {
 		return ulog.GetDefaultLogger()

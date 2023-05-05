@@ -61,15 +61,15 @@ const (
 	TimeStrLen = 24
 )
 
-//Node : generate id interface
+// Node : generate id interface
 type Node interface {
 	Generate() int64
 }
 
-//NodeBitsMode node bit mode
+// NodeBitsMode node bit mode
 type NodeBitsMode uint8
 
-//_Option : snowflake option
+// _Option : snowflake option
 type _Option struct {
 	//创世的毫秒时间戳，假如以2021年开始时间为创世时间，则需要保证后面ID生成的过程中，不会出现早于2021年的系统时间
 	epoch int64
@@ -81,14 +81,14 @@ type _Option struct {
 
 type Option func(o *_Option)
 
-//UseEpoch : 设置创世时间
+// UseEpoch : 设置创世时间
 func UseEpoch(t time.Time) Option {
 	return func(o *_Option) {
 		o.epoch = t.UnixNano() / int64(time.Millisecond)
 	}
 }
 
-//UseNodeMode : 设置节点位数模式
+// UseNodeMode : 设置节点位数模式
 func UseNodeMode(m NodeBitsMode) Option {
 	return func(o *_Option) {
 		switch m {
@@ -101,14 +101,14 @@ func UseNodeMode(m NodeBitsMode) Option {
 	}
 }
 
-//NodeAtLowest : 设置节点位数模式
+// NodeAtLowest : 设置节点位数模式
 func NodeAtLowest() Option {
 	return func(o *_Option) {
 		o.nodeAtLowest = true
 	}
 }
 
-//Setup setup snowflake
+// Setup setup snowflake
 func Setup(opts ...Option) {
 	var o = &_Option{
 		epoch:        _epoch,

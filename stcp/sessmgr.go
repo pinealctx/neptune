@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//ISession session handler
+// ISession session handler
 type ISession interface {
 	//Read : read
 	Read(s *Session) error
@@ -15,7 +15,7 @@ type ISession interface {
 	OnExit(s *Session)
 }
 
-//SessionMgr :
+// SessionMgr :
 type SessionMgr struct {
 	count        atomic.Int32
 	logger       *ulog.Logger
@@ -24,7 +24,7 @@ type SessionMgr struct {
 	rh           ISession
 }
 
-//NewSessionMgr :
+// NewSessionMgr :
 func NewSessionMgr(rh ISession, opts ...MOption) *SessionMgr {
 	var cnf = defaultSessMgrOpt()
 	for _, opt := range opts {
@@ -37,23 +37,23 @@ func NewSessionMgr(rh ISession, opts ...MOption) *SessionMgr {
 	}
 }
 
-//SetLogger :
+// SetLogger :
 func (m *SessionMgr) SetLogger(logger *ulog.Logger) {
 	m.logger = logger
 }
 
-//ConnCount 当前连接数
+// ConnCount 当前连接数
 func (m *SessionMgr) ConnCount() int32 {
 	return m.count.Load()
 }
 
-//Do :
+// Do :
 func (m *SessionMgr) Do(conn net.Conn) {
 	var session = NewSession(m, conn)
 	session.Start()
 }
 
-//Logger : get logger
+// Logger : get logger
 func (m *SessionMgr) Logger() *ulog.Logger {
 	if m.logger == nil {
 		return ulog.GetDefaultLogger()
@@ -61,30 +61,30 @@ func (m *SessionMgr) Logger() *ulog.Logger {
 	return m.logger
 }
 
-//MOption session mgr option
+// MOption session mgr option
 type MOption func(o *_SessMgrOpt)
 
-//WithWriteTimeout : setup write timeout
+// WithWriteTimeout : setup write timeout
 func WithWriteTimeout(t time.Duration) MOption {
 	return func(o *_SessMgrOpt) {
 		o.writeTimeout = t
 	}
 }
 
-//WithReadTimeout : setup read timeout
+// WithReadTimeout : setup read timeout
 func WithReadTimeout(t time.Duration) MOption {
 	return func(o *_SessMgrOpt) {
 		o.readTimeout = t
 	}
 }
 
-//session mgr config
+// session mgr config
 type _SessMgrOpt struct {
 	writeTimeout time.Duration
 	readTimeout  time.Duration
 }
 
-//get default session mgr config
+// get default session mgr config
 func defaultSessMgrOpt() *_SessMgrOpt {
 	return &_SessMgrOpt{
 		writeTimeout: 8 * time.Second,  //8 second

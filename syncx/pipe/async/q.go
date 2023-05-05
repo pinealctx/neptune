@@ -17,7 +17,7 @@ var (
 	ErrSync = status.Error(codes.OutOfRange, "async.never.gonna.happen.crazy")
 )
 
-//Q actor queue structure define
+// Q actor queue structure define
 type Q struct {
 	//request queue list
 	reqList *list.List
@@ -32,8 +32,8 @@ type Q struct {
 	cond sync.Cond
 }
 
-//NewQ new queue
-//size: queue size, if set 0, it means that no limitation of size, it's an infinity queue.
+// NewQ new queue
+// size: queue size, if set 0, it means that no limitation of size, it's an infinity queue.
 func NewQ(size int) *Q {
 	if size < 0 {
 		size = 0
@@ -46,20 +46,20 @@ func NewQ(size int) *Q {
 	return actorQ
 }
 
-//IsClosed return queue is closed or not
+// IsClosed return queue is closed or not
 func (a *Q) IsClosed() bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	return a.closed
 }
 
-//Size return queue size
+// Size return queue size
 func (a *Q) Size() int {
 	return a.size
 }
 
-//AddAnyway add normal request to the normal queue end place anyway
-//if queue full, sleep then try
+// AddAnyway add normal request to the normal queue end place anyway
+// if queue full, sleep then try
 func (a *Q) AddAnyway(req interface{}, ts time.Duration) error {
 	var err error
 	for {
@@ -72,7 +72,7 @@ func (a *Q) AddAnyway(req interface{}, ts time.Duration) error {
 	}
 }
 
-//Add : add normal request to the normal queue end place.
+// Add : add normal request to the normal queue end place.
 func (a *Q) Add(req interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -89,7 +89,7 @@ func (a *Q) Add(req interface{}) error {
 	return nil
 }
 
-//AddPrior add prior request to queue first place.
+// AddPrior add prior request to queue first place.
 func (a *Q) AddPrior(req interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -101,17 +101,17 @@ func (a *Q) AddPrior(req interface{}) error {
 	return nil
 }
 
-//Pop consume an item, if list is empty, it's been blocked
+// Pop consume an item, if list is empty, it's been blocked
 func (a *Q) Pop() (interface{}, error) {
 	return a.pop(true)
 }
 
-//PopAnyway consume an item like Pop, but it can consume even the queue is closed.
+// PopAnyway consume an item like Pop, but it can consume even the queue is closed.
 func (a *Q) PopAnyway() (interface{}, error) {
 	return a.pop(false)
 }
 
-//Close : close the queue
+// Close : close the queue
 func (a *Q) Close() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -122,10 +122,10 @@ func (a *Q) Close() {
 	a.cond.Broadcast()
 }
 
-//pop : pop item
-//input: checkClose
-//if true  --> when queue is closed, pop can will return error even in case someone is in queue.
-//if false --> when queue is closed, the queue also can be pop if anyone is in queue.
+// pop : pop item
+// input: checkClose
+// if true  --> when queue is closed, pop can will return error even in case someone is in queue.
+// if false --> when queue is closed, the queue also can be pop if anyone is in queue.
 func (a *Q) pop(checkClose bool) (interface{}, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()

@@ -17,7 +17,7 @@ var (
 	ErrSizeLimit       = errors.New("byte.buffer.size.limit")
 )
 
-//IBufferX buffer interface
+// IBufferX buffer interface
 type IBufferX interface {
 	//Len : length
 	Len() int
@@ -93,17 +93,17 @@ type IBufferX interface {
 	WriteF64(float64)
 }
 
-//BufferX buffer implement
+// BufferX buffer implement
 type BufferX struct {
 	buffer *bytes.Buffer
 }
 
-//Len : buffer len
+// Len : buffer len
 func (b *BufferX) Len() int {
 	return b.buffer.Len()
 }
 
-//read to a buffer
+// read to a buffer
 func (b *BufferX) Read(p []byte) error {
 	var l = len(p)
 	if l == 0 {
@@ -119,7 +119,7 @@ func (b *BufferX) Read(p []byte) error {
 	return nil
 }
 
-//ReadN read n length buffer
+// ReadN read n length buffer
 func (b *BufferX) ReadN(n int) ([]byte, error) {
 	if n <= 0 {
 		return nil, ErrReadWrongNum
@@ -129,7 +129,7 @@ func (b *BufferX) ReadN(n int) ([]byte, error) {
 	return buf, err
 }
 
-//ZReadN read n length buffer - no copy
+// ZReadN read n length buffer - no copy
 func (b *BufferX) ZReadN(n int) ([]byte, error) {
 	if n < 0 {
 		return nil, ErrReadWrongNum
@@ -141,18 +141,18 @@ func (b *BufferX) ZReadN(n int) ([]byte, error) {
 	return data, nil
 }
 
-//write to a buffer
+// write to a buffer
 func (b *BufferX) Write(p []byte) {
 	_, _ = b.buffer.Write(p)
 }
 
-//ReWrite buffer
+// ReWrite buffer
 func (b *BufferX) ReWrite(pos int, p []byte) {
 	var buf = b.buffer.Bytes()
 	copy(buf[pos:], p)
 }
 
-//ReadLimitString read limit size string
+// ReadLimitString read limit size string
 func (b *BufferX) ReadLimitString(limit uint32) (string, error) {
 	var n, err = b.ReadU32()
 	if err != nil {
@@ -171,7 +171,7 @@ func (b *BufferX) ReadLimitString(limit uint32) (string, error) {
 	return string(data), nil
 }
 
-//WriteLimitString write limit size string
+// WriteLimitString write limit size string
 func (b *BufferX) WriteLimitString(limit uint32, val string) error {
 	var size = uint32(len(val))
 	if size > limit {
@@ -182,7 +182,7 @@ func (b *BufferX) WriteLimitString(limit uint32, val string) error {
 	return nil
 }
 
-//ReadString read string
+// ReadString read string
 func (b *BufferX) ReadString() (string, error) {
 	var n, err = b.ReadU32()
 	if err != nil {
@@ -196,24 +196,24 @@ func (b *BufferX) ReadString() (string, error) {
 	return string(data), nil
 }
 
-//WriteString write string
+// WriteString write string
 func (b *BufferX) WriteString(val string) {
 	var size = uint32(len(val))
 	b.WriteU32(size)
 	_, _ = b.buffer.WriteString(val)
 }
 
-//Bytes all buffer bytes
+// Bytes all buffer bytes
 func (b *BufferX) Bytes() []byte {
 	return b.buffer.Bytes()
 }
 
-//Reset clear all buffer bytes
+// Reset clear all buffer bytes
 func (b *BufferX) Reset() {
 	b.buffer.Reset()
 }
 
-//ReadBool read a bool
+// ReadBool read a bool
 func (b *BufferX) ReadBool() (bool, error) {
 	var x, err = b.ReadU8()
 	if err != nil {
@@ -222,7 +222,7 @@ func (b *BufferX) ReadBool() (bool, error) {
 	return x != 0, nil
 }
 
-//WriteBool write a bool
+// WriteBool write a bool
 func (b *BufferX) WriteBool(v bool) {
 	if v {
 		_ = b.buffer.WriteByte(1)
@@ -231,17 +231,17 @@ func (b *BufferX) WriteBool(v bool) {
 	}
 }
 
-//ReadU8 read a byte
+// ReadU8 read a byte
 func (b *BufferX) ReadU8() (byte, error) {
 	return b.buffer.ReadByte()
 }
 
-//WriteU8 write a byte
+// WriteU8 write a byte
 func (b *BufferX) WriteU8(v byte) {
 	_ = b.buffer.WriteByte(v)
 }
 
-//ReadU16 read uint16
+// ReadU16 read uint16
 func (b *BufferX) ReadU16() (uint16, error) {
 	var u16buf [2]byte
 	var err = b.Read(u16buf[:])
@@ -252,25 +252,25 @@ func (b *BufferX) ReadU16() (uint16, error) {
 	return u16, err
 }
 
-//WriteU16 write uint16
+// WriteU16 write uint16
 func (b *BufferX) WriteU16(v uint16) {
 	var u16buf [2]byte
 	binary.LittleEndian.PutUint16(u16buf[:], v)
 	b.Write(u16buf[:])
 }
 
-//ReadI16 read int16
+// ReadI16 read int16
 func (b *BufferX) ReadI16() (int16, error) {
 	var u16, err = b.ReadU16()
 	return int16(u16), err
 }
 
-//WriteI16 write int16
+// WriteI16 write int16
 func (b *BufferX) WriteI16(v int16) {
 	b.WriteU16(uint16(v))
 }
 
-//ReadU32 read uint32
+// ReadU32 read uint32
 func (b *BufferX) ReadU32() (uint32, error) {
 	var u32buf [4]byte
 	var err = b.Read(u32buf[:])
@@ -281,32 +281,32 @@ func (b *BufferX) ReadU32() (uint32, error) {
 	return u32, err
 }
 
-//WriteU32 write uint32
+// WriteU32 write uint32
 func (b *BufferX) WriteU32(v uint32) {
 	var u32buf [4]byte
 	binary.LittleEndian.PutUint32(u32buf[:], v)
 	b.Write(u32buf[:])
 }
 
-//ReWriteU32 rewrite uint32
+// ReWriteU32 rewrite uint32
 func (b *BufferX) ReWriteU32(pos int, v uint32) {
 	var u32buf [4]byte
 	binary.LittleEndian.PutUint32(u32buf[:], v)
 	b.ReWrite(pos, u32buf[:])
 }
 
-//ReadI32 read int32
+// ReadI32 read int32
 func (b *BufferX) ReadI32() (int32, error) {
 	var u32, err = b.ReadU32()
 	return int32(u32), err
 }
 
-//WriteI32 write int32
+// WriteI32 write int32
 func (b *BufferX) WriteI32(v int32) {
 	b.WriteU32(uint32(v))
 }
 
-//ReadU64 read uint64
+// ReadU64 read uint64
 func (b *BufferX) ReadU64() (uint64, error) {
 	var u64buf [8]byte
 	var err = b.Read(u64buf[:])
@@ -317,95 +317,95 @@ func (b *BufferX) ReadU64() (uint64, error) {
 	return u64, err
 }
 
-//WriteU64 write uint64
+// WriteU64 write uint64
 func (b *BufferX) WriteU64(v uint64) {
 	var u64buf [8]byte
 	binary.LittleEndian.PutUint64(u64buf[:], v)
 	b.Write(u64buf[:])
 }
 
-//ReadI64 read int64
+// ReadI64 read int64
 func (b *BufferX) ReadI64() (int64, error) {
 	var u64, err = b.ReadU64()
 	return int64(u64), err
 }
 
-//WriteI64 write int64
+// WriteI64 write int64
 func (b *BufferX) WriteI64(v int64) {
 	b.WriteU64(uint64(v))
 }
 
-//ReadVarU64 read variant uint64
+// ReadVarU64 read variant uint64
 func (b *BufferX) ReadVarU64() (uint64, error) {
 	return binary.ReadUvarint(b.buffer)
 }
 
-//WriteVarU64 write variant uint64
+// WriteVarU64 write variant uint64
 func (b *BufferX) WriteVarU64(v uint64) {
 	var u64buf [12]byte
 	var n = binary.PutUvarint(u64buf[:], v)
 	b.Write(u64buf[:n])
 }
 
-//ReadVarI64 read variant int64
+// ReadVarI64 read variant int64
 func (b *BufferX) ReadVarI64() (int64, error) {
 	return binary.ReadVarint(b.buffer)
 }
 
-//WriteVarI64 write variant int64
+// WriteVarI64 write variant int64
 func (b *BufferX) WriteVarI64(v int64) {
 	var i64buf [12]byte
 	var n = binary.PutVarint(i64buf[:], v)
 	b.Write(i64buf[:n])
 }
 
-//ReadVarU32 read variant uint32
+// ReadVarU32 read variant uint32
 func (b *BufferX) ReadVarU32() (uint32, error) {
 	var v, err = binary.ReadUvarint(b.buffer)
 	return uint32(v), err
 }
 
-//WriteVarU32 write variant uint32
+// WriteVarU32 write variant uint32
 func (b *BufferX) WriteVarU32(v uint32) {
 	var u64buf [12]byte
 	var n = binary.PutUvarint(u64buf[:], uint64(v))
 	b.Write(u64buf[:n])
 }
 
-//ReadVarI32 read variant int32
+// ReadVarI32 read variant int32
 func (b *BufferX) ReadVarI32() (int32, error) {
 	var v, err = binary.ReadVarint(b.buffer)
 	return int32(v), err
 }
 
-//WriteVarI32 write variant int32
+// WriteVarI32 write variant int32
 func (b *BufferX) WriteVarI32(v int32) {
 	var i64buf [12]byte
 	var n = binary.PutVarint(i64buf[:], int64(v))
 	b.Write(i64buf[:n])
 }
 
-//ReadF64 read float64
+// ReadF64 read float64
 func (b *BufferX) ReadF64() (float64, error) {
 	var u64, err = b.ReadU64()
 	return math.Float64frombits(u64), err
 }
 
-//WriteF64 write float64
+// WriteF64 write float64
 func (b *BufferX) WriteF64(v float64) {
 	b.WriteU64(math.Float64bits(v))
 }
 
-//NewReadableBufferX new buffer from existed bytes to read.
-//Use existed bytes to fill buffer, the buffer is always used as read stream.
+// NewReadableBufferX new buffer from existed bytes to read.
+// Use existed bytes to fill buffer, the buffer is always used as read stream.
 func NewReadableBufferX(data []byte) *BufferX {
 	var buffer = bytes.NewBuffer(data)
 	var bufferX = &BufferX{buffer: buffer}
 	return bufferX
 }
 
-//NewBufferX new buffer with a default size
-//as unpack
+// NewBufferX new buffer with a default size
+// as unpack
 func NewBufferX() *BufferX {
 	var data = make([]byte, defaultByteBuff)
 	var buffer = bytes.NewBuffer(data)
@@ -414,7 +414,7 @@ func NewBufferX() *BufferX {
 	return bufferX
 }
 
-//NewSizedBufferX : new buffer with specific size
+// NewSizedBufferX : new buffer with specific size
 func NewSizedBufferX(size int) *BufferX {
 	var data = make([]byte, size)
 	var buffer = bytes.NewBuffer(data)

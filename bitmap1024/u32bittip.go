@@ -14,10 +14,10 @@ const (
 	MaxU32TipStart uint32 = math.MaxUint32 / C1K
 )
 
-//U32BitTips U32BitTip list
+// U32BitTips U32BitTip list
 type U32BitTips []*U32BitTip
 
-//Reverse : clone and reverse bit
+// Reverse : clone and reverse bit
 func (b U32BitTips) Reverse() U32BitTips {
 	var l = len(b)
 	if l == 0 {
@@ -32,9 +32,9 @@ func (b U32BitTips) Reverse() U32BitTips {
 	return c
 }
 
-//GetNAsU32 : iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// GetNAsU32 : iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b U32BitTips) GetNAsU32(n int) []uint32 {
 	var l = len(b)
 	if l == 0 {
@@ -61,9 +61,9 @@ func (b U32BitTips) GetNAsU32(n int) []uint32 {
 	return s[:iterN]
 }
 
-//RGetNAsU32 : reverse iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// RGetNAsU32 : reverse iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b U32BitTips) RGetNAsU32(n int) []uint32 {
 	var l = len(b)
 	if l == 0 {
@@ -90,20 +90,20 @@ func (b U32BitTips) RGetNAsU32(n int) []uint32 {
 	return s[:iterN]
 }
 
-//U32BitTip combine uint32 and 1024
+// U32BitTip combine uint32 and 1024
 type U32BitTip struct {
 	Start uint32
 	B1024 Bit1024
 }
 
-//NewU32BitTip : new big u32
+// NewU32BitTip : new big u32
 func NewU32BitTip() *U32BitTip {
 	return &U32BitTip{
 		B1024: NewBit1024(),
 	}
 }
 
-//NewU32BitTipFromData : new big u32 from uint32 and []byte
+// NewU32BitTipFromData : new big u32 from uint32 and []byte
 func NewU32BitTipFromData(start uint32, buf []byte) (*U32BitTip, error) {
 	if start > MaxU32TipStart {
 		return nil, fmt.Errorf("u32.unsupport.start:%+v", start)
@@ -118,7 +118,7 @@ func NewU32BitTipFromData(start uint32, buf []byte) (*U32BitTip, error) {
 	return b, nil
 }
 
-//NewU32BitTipFromU32 : new u32 bit tip from uint32
+// NewU32BitTipFromU32 : new u32 bit tip from uint32
 func NewU32BitTipFromU32(u32 uint32) *U32BitTip {
 	var start = u32 / C1K
 	var mod = int16(u32 % C1K)
@@ -130,7 +130,7 @@ func NewU32BitTipFromU32(u32 uint32) *U32BitTip {
 	return b
 }
 
-//Reverse : reverse bit
+// Reverse : reverse bit
 func (b *U32BitTip) Reverse() *U32BitTip {
 	return &U32BitTip{
 		Start: b.Start,
@@ -138,7 +138,7 @@ func (b *U32BitTip) Reverse() *U32BitTip {
 	}
 }
 
-//SetU32 set uint32
+// SetU32 set uint32
 func (b *U32BitTip) SetU32(u32 uint32) error {
 	var start = u32 / C1K
 	if start != b.Start {
@@ -149,39 +149,39 @@ func (b *U32BitTip) SetU32(u32 uint32) error {
 	return nil
 }
 
-//GetNAsU32 : iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// GetNAsU32 : iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b *U32BitTip) GetNAsU32(n int) []uint32 {
 	return b.getNAsU32(n, false)
 }
 
-//RGetNAsU32 : reverse iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// RGetNAsU32 : reverse iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b *U32BitTip) RGetNAsU32(n int) []uint32 {
 	return b.getNAsU32(n, true)
 }
 
-//IterAsU32 : iterate bitmap
-//input: s -- an uint32 array, pos -- slice position, n -- iter count
-//return:
-//actually iter count
+// IterAsU32 : iterate bitmap
+// input: s -- an uint32 array, pos -- slice position, n -- iter count
+// return:
+// actually iter count
 func (b *U32BitTip) IterAsU32(s []uint32, pos int, n int) int {
 	return b.B1024.IterAsU32(s, pos, b.Start*C1K, n)
 }
 
-//RIterAsU32 : reverse iterate bitmap
-//input: s -- an uint32 array, pos -- slice position, n -- iter count
-//return:
-//actually iter count
+// RIterAsU32 : reverse iterate bitmap
+// input: s -- an uint32 array, pos -- slice position, n -- iter count
+// return:
+// actually iter count
 func (b *U32BitTip) RIterAsU32(s []uint32, pos int, n int) int {
 	return b.B1024.RIterAsU32(s, pos, b.Start*C1K, n)
 }
 
-//getNAsU32 : iterate bitmap
-//input: n -- iter number
-//reverse -- reverse iter or not
+// getNAsU32 : iterate bitmap
+// input: n -- iter number
+// reverse -- reverse iter or not
 func (b *U32BitTip) getNAsU32(n int, reverse bool) []uint32 {
 	var s = make([]uint32, n)
 	var iterN int

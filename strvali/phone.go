@@ -10,7 +10,7 @@ var (
 	cnPhoneReg = regexp.MustCompile(`^1[3456789]\d{9}$`)
 )
 
-//IsValidPhoneNum verify phone(xx) with area(+xx) code.
+// IsValidPhoneNum verify phone(xx) with area(+xx) code.
 func IsValidPhoneNum(areaCode, phone string) bool {
 	if len(areaCode) <= 1 || len(phone) == 0 {
 		return false

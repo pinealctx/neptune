@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
-	"io/ioutil"
 	"net"
+	"os"
 )
 
 type SSHConfig struct {
@@ -29,7 +29,7 @@ func (d *SSHDialer) Register() {
 }
 
 func CreateSSHConn(cnf *SSHConfig) (*ssh.Client, error) {
-	var pkBuf, err = ioutil.ReadFile(cnf.Pk)
+	var pkBuf, err = os.ReadFile(cnf.Pk)
 	if err != nil {
 		return nil, err
 	}

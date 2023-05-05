@@ -78,7 +78,7 @@ type entry struct {
 	size  int64
 }
 
-//NewSingleLRUCache create a single lru cache
+// NewSingleLRUCache create a single lru cache
 func NewSingleLRUCache(capacity int64) LRUFacade {
 	return NewLRUCache(capacity)
 }
@@ -90,7 +90,7 @@ func NewLRUCache(capacity int64) *LRUCache {
 	return c
 }
 
-//Init : init memory
+// Init : init memory
 func (lru *LRUCache) Init(capacity int64) {
 	lru.list = list.New()
 	lru.table = make(map[interface{}]*list.Element)
@@ -123,7 +123,7 @@ func (lru *LRUCache) Peek(key interface{}) (v Value, ok bool) {
 	return element.Value.(*entry).value, true
 }
 
-//Exist : return true if key in map
+// Exist : return true if key in map
 func (lru *LRUCache) Exist(key interface{}) bool {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()

@@ -8,7 +8,7 @@ const (
 	DefaultDeepSize = 1024 * 8
 )
 
-//mux option
+// mux option
 type _Option struct {
 	//mux size
 	muxSize int
@@ -16,17 +16,17 @@ type _Option struct {
 	deepSize int
 }
 
-//Option mux option function
+// Option mux option function
 type Option func(o *_Option)
 
-//WithSize setup mux size
+// WithSize setup mux size
 func WithSize(muxSize int) Option {
 	return func(o *_Option) {
 		o.muxSize = muxSize
 	}
 }
 
-//WithDeep setup queue deep
+// WithDeep setup queue deep
 func WithDeep(deepSize int) Option {
 	return func(o *_Option) {
 		o.deepSize = deepSize

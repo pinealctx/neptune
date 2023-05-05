@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-//IReaderX reader interface
+// IReaderX reader interface
 type IReaderX interface {
 	//Read : read specific p, if length is not enough, return error
 	Read(p []byte) error
@@ -48,12 +48,12 @@ type IReaderX interface {
 	ReadF64() (float64, error)
 }
 
-//ReaderX buffer implement
+// ReaderX buffer implement
 type ReaderX struct {
 	reader io.Reader
 }
 
-//Read : read to a buffer
+// Read : read to a buffer
 func (b *ReaderX) Read(p []byte) error {
 	var l = len(p)
 	if l == 0 {
@@ -69,7 +69,7 @@ func (b *ReaderX) Read(p []byte) error {
 	return nil
 }
 
-//ReadN read n length buffer
+// ReadN read n length buffer
 func (b *ReaderX) ReadN(n int) ([]byte, error) {
 	if n <= 0 {
 		return nil, ErrReadWrongNum
@@ -79,12 +79,12 @@ func (b *ReaderX) ReadN(n int) ([]byte, error) {
 	return buf, err
 }
 
-//ZReadN read n length buffer - no copy
+// ZReadN read n length buffer - no copy
 func (b *ReaderX) ZReadN(n int) ([]byte, error) {
 	return b.ReadN(n)
 }
 
-//ReadLimitString read limit size string
+// ReadLimitString read limit size string
 func (b *ReaderX) ReadLimitString(limit uint32) (string, error) {
 	var n, err = b.ReadU32()
 	if err != nil {
@@ -104,7 +104,7 @@ func (b *ReaderX) ReadLimitString(limit uint32) (string, error) {
 	return string(data), nil
 }
 
-//ReadString read string
+// ReadString read string
 func (b *ReaderX) ReadString() (string, error) {
 	var n, err = b.ReadU32()
 	if err != nil {
@@ -119,7 +119,7 @@ func (b *ReaderX) ReadString() (string, error) {
 	return string(data), nil
 }
 
-//ReadBool read a bool
+// ReadBool read a bool
 func (b *ReaderX) ReadBool() (bool, error) {
 	var x, err = b.ReadByte()
 	if err != nil {
@@ -128,7 +128,7 @@ func (b *ReaderX) ReadBool() (bool, error) {
 	return x != 0, nil
 }
 
-//ReadByte read a byte
+// ReadByte read a byte
 func (b *ReaderX) ReadByte() (byte, error) {
 	var p [1]byte
 	var err = b.Read(p[:])
@@ -138,7 +138,7 @@ func (b *ReaderX) ReadByte() (byte, error) {
 	return p[0], nil
 }
 
-//ReadU16 read uint16
+// ReadU16 read uint16
 func (b *ReaderX) ReadU16() (uint16, error) {
 	var u16buf [2]byte
 	var err = b.Read(u16buf[:])
@@ -149,13 +149,13 @@ func (b *ReaderX) ReadU16() (uint16, error) {
 	return u16, err
 }
 
-//ReadI16 read int16
+// ReadI16 read int16
 func (b *ReaderX) ReadI16() (int16, error) {
 	var u16, err = b.ReadU16()
 	return int16(u16), err
 }
 
-//ReadU32 read uint32
+// ReadU32 read uint32
 func (b *ReaderX) ReadU32() (uint32, error) {
 	var u32buf [4]byte
 	var err = b.Read(u32buf[:])
@@ -166,13 +166,13 @@ func (b *ReaderX) ReadU32() (uint32, error) {
 	return u32, err
 }
 
-//ReadI32 read int32
+// ReadI32 read int32
 func (b *ReaderX) ReadI32() (int32, error) {
 	var u32, err = b.ReadU32()
 	return int32(u32), err
 }
 
-//ReadU64 read uint64
+// ReadU64 read uint64
 func (b *ReaderX) ReadU64() (uint64, error) {
 	var u64buf [8]byte
 	var err = b.Read(u64buf[:])
@@ -183,19 +183,19 @@ func (b *ReaderX) ReadU64() (uint64, error) {
 	return u64, err
 }
 
-//ReadI64 read int64
+// ReadI64 read int64
 func (b *ReaderX) ReadI64() (int64, error) {
 	var u64, err = b.ReadU64()
 	return int64(u64), err
 }
 
-//ReadF64 read float64
+// ReadF64 read float64
 func (b *ReaderX) ReadF64() (float64, error) {
 	var u64, err = b.ReadU64()
 	return math.Float64frombits(u64), err
 }
 
-//NewReaderX new with io.reader
+// NewReaderX new with io.reader
 func NewReaderX(reader io.Reader) *ReaderX {
 	return &ReaderX{reader: reader}
 }

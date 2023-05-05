@@ -8,7 +8,7 @@ var (
 	_localDiff time.Duration
 )
 
-//LocalDiff local time zone diff
+// LocalDiff local time zone diff
 func LocalDiff() time.Duration {
 	return _localDiff
 }

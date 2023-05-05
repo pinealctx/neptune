@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//Dsn2DB from dsn json string to db
+// Dsn2DB from dsn json string to db
 func Dsn2DB(dsnURL string, withLog bool) (*gorm.DB, error) {
 	var dsn Dsn
 	var err = jsonx.JSONFastUnmarshal([]byte(dsnURL), &dsn)

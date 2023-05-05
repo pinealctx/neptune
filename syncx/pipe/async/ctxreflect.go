@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-//type validation cache
+// type validation cache
 var (
 	typeCache     = make(map[reflect.Type]struct{})
 	typeCacheLock sync.RWMutex
@@ -16,14 +16,14 @@ var (
 	contextInterface = reflect.TypeOf((*context.Context)(nil)).Elem()
 )
 
-//add type validation
+// add type validation
 func addType2Validation(t reflect.Type) {
 	typeCacheLock.Lock()
 	typeCache[t] = struct{}{}
 	typeCacheLock.Unlock()
 }
 
-//is in type validation cache
+// is in type validation cache
 func inValidateCache(t reflect.Type) bool {
 	var ok bool
 	typeCacheLock.RLock()
@@ -32,7 +32,7 @@ func inValidateCache(t reflect.Type) bool {
 	return ok
 }
 
-//validate function
+// validate function
 func validateFn(fn interface{}) (reflect.Type, bool) {
 	if fn == nil {
 		return nil, false

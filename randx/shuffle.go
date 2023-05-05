@@ -5,14 +5,15 @@ var (
 )
 
 // Swapper interface, each slice is a swapper, for example
-//   type IntSwap []int
-//   func (x IntSwap) (i, j) {
-//       x[i], x[j] = x[j], x[i]
-//   }
 //
-//   func (x IntSwap) Len() int{
-//       return len(x)
-//   }
+//	type IntSwap []int
+//	func (x IntSwap) (i, j) {
+//	    x[i], x[j] = x[j], x[i]
+//	}
+//
+//	func (x IntSwap) Len() int{
+//	    return len(x)
+//	}
 type Swapper interface {
 	Swap(i, j int)
 	Len() int

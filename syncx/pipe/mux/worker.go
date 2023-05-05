@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-//Worker : a go routine to handle queue work
+// Worker : a go routine to handle queue work
 type Worker struct {
 	workQ *Q
 	wg    *sync.WaitGroup
@@ -22,7 +22,7 @@ func NewWorker(qSize int, wg *sync.WaitGroup, ca CacheFacade) *Worker {
 	}
 }
 
-//DoGet : get from cache first if not load from db
+// DoGet : get from cache first if not load from db
 func (w *Worker) DoGet(ctx context.Context, loadFn RenewDataFn, k interface{}) (interface{}, error) {
 	var v, ok = w.ca.Get(k)
 	if ok {
@@ -32,60 +32,60 @@ func (w *Worker) DoGet(ctx context.Context, loadFn RenewDataFn, k interface{}) (
 	return w.asyncCall(ctx, NewLoad(loadFn, k))
 }
 
-//DoAdd : add item
+// DoAdd : add item
 func (w *Worker) DoAdd(ctx context.Context, addFn RenewDataFn, k interface{}, data interface{}) (interface{}, error) {
 	return w.asyncCall(ctx, NewAdd(addFn, k, data))
 }
 
-//DoUpdate : update item
+// DoUpdate : update item
 func (w *Worker) DoUpdate(ctx context.Context,
 	loadFn RenewDataFn, updFn UpdateDataFn, k interface{}, data interface{}) (interface{}, error) {
 	return w.asyncCall(ctx, NewUpdate(loadFn, updFn, k, data))
 }
 
-//DoDelete : delete item
+// DoDelete : delete item
 func (w *Worker) DoDelete(ctx context.Context, deleteFn DeleteFn, k interface{}) (interface{}, error) {
 	return w.asyncCall(ctx, NewDelete(deleteFn, k))
 }
 
-//DoUpdOrAddIfNull :
-//1. load.
-//2. update if existed.
-//3. add if not existed.
+// DoUpdOrAddIfNull :
+// 1. load.
+// 2. update if existed.
+// 3. add if not existed.
 func (w *Worker) DoUpdOrAddIfNull(ctx context.Context,
 	loadFn RenewDataFn, updFn UpdateDataFn, addFn RenewDataFn, isNotFoundFn IsNotFoundFn,
 	k interface{}, data interface{}) (interface{}, error) {
 	return w.asyncCall(ctx, NewMixUpdOrAddIfNull(loadFn, updFn, addFn, isNotFoundFn, k, data))
 }
 
-//DoUpsertThenLoad :
-//1. upsert.
-//2. update cache if cache hit.
-//3. load cache if cache miss.
+// DoUpsertThenLoad :
+// 1. upsert.
+// 2. update cache if cache hit.
+// 3. load cache if cache miss.
 func (w *Worker) DoUpsertThenLoad(ctx context.Context,
 	upsertFn UpdateDataFn, loadFn RenewDataFn, k interface{}, data interface{}) (interface{}, error) {
 	return w.asyncCall(ctx, NewMixUpsertThenLoad(upsertFn, loadFn, k, data))
 }
 
-//DoUpsertThenRenewInCache :
-//1. upsert.
-//2. update cache if cache hit.
+// DoUpsertThenRenewInCache :
+// 1. upsert.
+// 2. update cache if cache hit.
 func (w *Worker) DoUpsertThenRenewInCache(ctx context.Context,
 	upsertFn UpdateDataFn, k interface{}, data interface{}) (interface{}, error) {
 	return w.asyncCall(ctx, NewMixUpsertThenRenewInCache(upsertFn, k, data))
 }
 
-//Start : start handler go routine
+// Start : start handler go routine
 func (w *Worker) Start() {
 	go w.runLoop()
 }
 
-//Stop : close queue, not accept input anymore.
+// Stop : close queue, not accept input anymore.
 func (w *Worker) Stop() {
 	w.workQ.Close()
 }
 
-//async call
+// async call
 func (w *Worker) asyncCall(ctx context.Context, op OpCode) (interface{}, error) {
 	var c = NewAsync(ctx, op)
 	var err = w.workQ.AddReq(c)
@@ -95,7 +95,7 @@ func (w *Worker) asyncCall(ctx context.Context, op OpCode) (interface{}, error) 
 	return c.R()
 }
 
-//loop go routine to handle async call
+// loop go routine to handle async call
 func (w *Worker) runLoop() {
 	var (
 		e   interface{}
@@ -116,7 +116,7 @@ func (w *Worker) runLoop() {
 	}
 }
 
-//async handler entry
+// async handler entry
 func (w *Worker) handleAsync(c *AsyncC) {
 	switch op := c.op.(type) {
 	case *OpLoad:
@@ -136,7 +136,7 @@ func (w *Worker) handleAsync(c *AsyncC) {
 	}
 }
 
-//handle load
+// handle load
 func (w *Worker) handleLoad(c *AsyncC, op *OpLoad) {
 	var v, ok = w.ca.Get(op.k)
 	if ok {
@@ -157,7 +157,7 @@ func (w *Worker) handleLoad(c *AsyncC, op *OpLoad) {
 	c.SetR(v, nil)
 }
 
-//handle add
+// handle add
 func (w *Worker) handleAdd(c *AsyncC, op *OpAdd) {
 	var _, exist = w.ca.Peek(op.k)
 	if exist {
@@ -177,7 +177,7 @@ func (w *Worker) handleAdd(c *AsyncC, op *OpAdd) {
 	c.SetR(v, nil)
 }
 
-//handle update
+// handle update
 func (w *Worker) handleUpdate(c *AsyncC, op *OpUpdate) {
 	var pre, ok = w.ca.Peek(op.k)
 	if ok {
@@ -211,7 +211,7 @@ func (w *Worker) handleUpdate(c *AsyncC, op *OpUpdate) {
 	c.SetR(v, nil)
 }
 
-//handle delete
+// handle delete
 func (w *Worker) handleDelete(c *AsyncC, op *OpDelete) {
 	var err = op.deleteFn(c.ctx, op.k)
 	if err != nil {
@@ -225,7 +225,7 @@ func (w *Worker) handleDelete(c *AsyncC, op *OpDelete) {
 	c.SetR(nil, nil)
 }
 
-//handle update if exist else add if not exist.
+// handle update if exist else add if not exist.
 func (w *Worker) handleMixUpdOrAddIfNull(c *AsyncC, op *OpMixUpdOrAddIfNull) {
 	var pre, ok = w.ca.Peek(op.k)
 	if ok {
@@ -273,7 +273,7 @@ func (w *Worker) handleMixUpdOrAddIfNull(c *AsyncC, op *OpMixUpdOrAddIfNull) {
 	c.SetR(v, nil)
 }
 
-//handle upsert first the re-new cache
+// handle upsert first the re-new cache
 func (w *Worker) handleMixUpsertThenLoad(c *AsyncC, op *OpMixUpsertThenLoad) {
 	var pre, ok = w.ca.Peek(op.k)
 	if ok {
@@ -309,7 +309,7 @@ func (w *Worker) handleMixUpsertThenLoad(c *AsyncC, op *OpMixUpsertThenLoad) {
 	c.SetR(v, nil)
 }
 
-//handle upsert first the re-new cache if cache hit
+// handle upsert first the re-new cache if cache hit
 func (w *Worker) handleMixUpsertThenRenewInCache(c *AsyncC, op *OpMixUpsertThenRenewInCache) {
 	var pre, ok = w.ca.Peek(op.k)
 	if ok {

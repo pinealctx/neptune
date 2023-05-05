@@ -8,7 +8,7 @@ var (
 	Snappy = &_Snappy{}
 )
 
-//snappy compress
+// snappy compress
 type _Snappy struct {
 }
 

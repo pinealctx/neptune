@@ -166,7 +166,7 @@ func (b *Buffer) Grow(n int) {
 	b.buf = b.buf[:m]
 }
 
-//ReWrite add a pos rewrite
+// ReWrite add a pos rewrite
 func (b *Buffer) ReWrite(pos int, p []byte) {
 	copy(b.buf[pos:], p)
 }

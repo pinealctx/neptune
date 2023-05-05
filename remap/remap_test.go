@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-//测试平分
+// 测试平分
 func TestUint64Split(t *testing.T) {
 	var x uint64 = math.MaxUint64
 	t.Log(x)
@@ -26,7 +26,7 @@ func TestUint64Split(t *testing.T) {
 	t.Log(math.MaxInt64)
 }
 
-//测试Hash时间
+// 测试Hash时间
 func TestHashKey(t *testing.T) {
 	var t1 = time.Now()
 	for i := 0; i < 100000; i++ {

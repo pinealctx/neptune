@@ -5,15 +5,15 @@ const (
 	DefaultPrime uint64 = 73
 )
 
-//remap option: use a prime number as group number
+// remap option: use a prime number as group number
 type _Option struct {
 	prime uint64
 }
 
-//Option : option function
+// Option : option function
 type Option func(o *_Option)
 
-//WithPrime : setup prime number
+// WithPrime : setup prime number
 func WithPrime(prime uint64) Option {
 	return func(o *_Option) {
 		o.prime = prime

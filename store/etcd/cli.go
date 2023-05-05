@@ -19,7 +19,7 @@ const (
 	IgnoreRevision = -1
 )
 
-//etcd cli option
+// etcd cli option
 type _Option struct {
 	//dial timeout
 	dialTimeout time.Duration
@@ -27,10 +27,10 @@ type _Option struct {
 	tlsInfo *transport.TLSInfo
 }
 
-//Option setup option
+// Option setup option
 type Option func(*_Option)
 
-//WithTLS set tls
+// WithTLS set tls
 func WithTLS(certPath, keyPath, caPath string) Option {
 	return func(o *_Option) {
 		o.tlsInfo = &transport.TLSInfo{
@@ -41,34 +41,34 @@ func WithTLS(certPath, keyPath, caPath string) Option {
 	}
 }
 
-//WithDialTimeout set dial timeout
+// WithDialTimeout set dial timeout
 func WithDialTimeout(timeout time.Duration) Option {
 	return func(o *_Option) {
 		o.dialTimeout = timeout
 	}
 }
 
-//WRet Write Ret
+// WRet Write Ret
 type WRet struct {
 	Revision int64
 	Err      error
 }
 
-//NodeRet Read Node Ret
+// NodeRet Read Node Ret
 type NodeRet struct {
 	Data     []byte
 	Err      error
 	Revision int64
 }
 
-//DirRet Read Dir Ret
+// DirRet Read Dir Ret
 type DirRet struct {
 	KVS      []*mvccpb.KeyValue
 	Err      error
 	Revision int64
 }
 
-//ExceptNotFoundErr dir ret is error except "not found"
+// ExceptNotFoundErr dir ret is error except "not found"
 func (d *DirRet) ExceptNotFoundErr() bool {
 	if d.Err == nil {
 		return false
@@ -76,7 +76,7 @@ func (d *DirRet) ExceptNotFoundErr() bool {
 	return !IsNotFoundErr(d.Err)
 }
 
-//DebugInfo debug info
+// DebugInfo debug info
 func (d *DirRet) DebugInfo() string {
 	var buffer strings.Builder
 	var head = fmt.Sprintf("len kv:%d, error:%+v, revision:%+v",
@@ -94,7 +94,7 @@ func (d *DirRet) DebugInfo() string {
 	return buffer.String()
 }
 
-//Client etcd client
+// Client etcd client
 type Client struct {
 	//etcd client
 	eCli *clientv3.Client
@@ -106,7 +106,7 @@ type Client struct {
 	option *_Option
 }
 
-//NewClient new etcd client
+// NewClient new etcd client
 func NewClient(url string, root string, ops ...Option) (*Client, error) {
 	if root == "" {
 		return nil, ErrEmptyRoot
@@ -150,7 +150,7 @@ func NewClient(url string, root string, ops ...Option) (*Client, error) {
 	return cli, nil
 }
 
-//Create create node with value, if node exist fail
+// Create create node with value, if node exist fail
 func (c *Client) Create(ctx context.Context, nodePath string, content []byte) WRet {
 	nodePath = path.Join(c.root, nodePath)
 
@@ -171,7 +171,7 @@ func (c *Client) Create(ctx context.Context, nodePath string, content []byte) WR
 	return WRet{Revision: rsp.Header.Revision}
 }
 
-//Delete delete node
+// Delete delete node
 func (c *Client) Delete(ctx context.Context, nodePath string, revision int64) WRet {
 	nodePath = path.Join(c.root, nodePath)
 
@@ -224,7 +224,7 @@ func (c *Client) Delete(ctx context.Context, nodePath string, revision int64) WR
 
 }
 
-//DeleteDir delete dir
+// DeleteDir delete dir
 func (c *Client) DeleteDir(ctx context.Context, nodePath string, revision int64) WRet {
 	nodePath = path.Join(c.root, nodePath) + "/"
 
@@ -272,7 +272,7 @@ func (c *Client) DeleteDir(ctx context.Context, nodePath string, revision int64)
 
 }
 
-//Put put node data
+// Put put node data
 func (c *Client) Put(ctx context.Context, nodePath string, content []byte, revision int64) WRet {
 	nodePath = path.Join(c.root, nodePath)
 
@@ -304,7 +304,7 @@ func (c *Client) Put(ctx context.Context, nodePath string, content []byte, revis
 	return WRet{Revision: rsp.Header.Revision}
 }
 
-//Get get node data
+// Get get node data
 func (c *Client) Get(ctx context.Context, nodePath string, opts ...clientv3.OpOption) NodeRet {
 	nodePath = path.Join(c.root, nodePath)
 	var rsp, err = c.eCli.Get(ctx, nodePath, opts...)
@@ -323,8 +323,8 @@ func (c *Client) Get(ctx context.Context, nodePath string, opts ...clientv3.OpOp
 	}
 }
 
-//GetDir common get dir
-//get dir - if keyOnly is false, get all dir children data.
+// GetDir common get dir
+// get dir - if keyOnly is false, get all dir children data.
 func (c *Client) GetDir(ctx context.Context, nodePath string, keyOnly bool) DirRet {
 	nodePath = path.Join(c.root, nodePath) + "/"
 
@@ -364,7 +364,7 @@ func (c *Client) GetDir(ctx context.Context, nodePath string, keyOnly bool) DirR
 	}
 }
 
-//Close close
+// Close close
 func (c *Client) Close() error {
 	if c.eCli != nil {
 		return c.eCli.Close()

@@ -2,16 +2,16 @@ package line
 
 import "context"
 
-//CallFn : call function
+// CallFn : call function
 type CallFn func(ctx context.Context, req interface{}) (rsp interface{}, err error)
 
-//CallCtx : call context, function and param
+// CallCtx : call context, function and param
 type CallCtx struct {
 	Call  CallFn
 	Param interface{}
 }
 
-//NewCallCtx : new call context
+// NewCallCtx : new call context
 func NewCallCtx(call CallFn, param interface{}) *CallCtx {
 	return &CallCtx{
 		Call:  call,
@@ -19,7 +19,7 @@ func NewCallCtx(call CallFn, param interface{}) *CallCtx {
 	}
 }
 
-//AsyncR : async call result.
+// AsyncR : async call result.
 type AsyncR struct {
 	//result
 	r interface{}
@@ -27,7 +27,7 @@ type AsyncR struct {
 	err error
 }
 
-//AsyncCtx : async call context
+// AsyncCtx : async call context
 type AsyncCtx struct {
 	//context
 	ctx context.Context
@@ -43,10 +43,10 @@ type AsyncCtx struct {
 	rChan chan AsyncR
 }
 
-//newAsyncCtx : new async call context
-//ctx -- context
-//call -- async call function
-//param -- async call param
+// newAsyncCtx : new async call context
+// ctx -- context
+// call -- async call function
+// param -- async call param
 func newAsyncCtx(ctx context.Context, call CallFn, param interface{}) *AsyncCtx {
 	return &AsyncCtx{
 		ctx:   ctx,
@@ -56,7 +56,7 @@ func newAsyncCtx(ctx context.Context, call CallFn, param interface{}) *AsyncCtx 
 	}
 }
 
-//SetR : set return
+// SetR : set return
 func (m *AsyncCtx) SetR(r interface{}, err error) {
 	m.rChan <- AsyncR{
 		r:   r,
@@ -64,7 +64,7 @@ func (m *AsyncCtx) SetR(r interface{}, err error) {
 	}
 }
 
-//R : get response with wait
+// R : get response with wait
 func (m *AsyncCtx) R() (interface{}, error) {
 	select {
 	case <-m.ctx.Done():

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//NetIO : net io
+// NetIO : net io
 type NetIO interface {
 	//Set set session related value
 	Set(v interface{})
@@ -36,16 +36,16 @@ type NetIO interface {
 	KeyZaps(ext ...zap.Field) []zap.Field
 }
 
-//IKeyZap : 做调试用的信息
+// IKeyZap : 做调试用的信息
 type IKeyZap interface {
 	//KeyZaps : for uber log, key info
 	KeyZaps(ext ...zap.Field) []zap.Field
 }
 
-//Session session
-//SessionMgr的handler作为缺省的handler
-//rh作为自己独立的handler
-//优先使用rh，如果rh为空，使用SessionMgr
+// Session session
+// SessionMgr的handler作为缺省的handler
+// rh作为自己独立的handler
+// 优先使用rh，如果rh为空，使用SessionMgr
 type Session struct {
 	//连接
 	conn net.Conn
@@ -66,7 +66,7 @@ type Session struct {
 	exitOnce sync.Once
 }
 
-//NewSession :
+// NewSession :
 func NewSession(b *SessionMgr, conn net.Conn) *Session {
 	return &Session{
 		b:     b,
@@ -75,7 +75,7 @@ func NewSession(b *SessionMgr, conn net.Conn) *Session {
 	}
 }
 
-//Start :
+// Start :
 func (s *Session) Start() {
 	s.startOnce.Do(func() {
 		s.b.count.Inc()
@@ -84,64 +84,64 @@ func (s *Session) Start() {
 	})
 }
 
-//UpdateHandler : update handler
+// UpdateHandler : update handler
 func (s *Session) UpdateHandler(rh ISession) {
 	s.rh = rh
 }
 
-//Set :
+// Set :
 func (s *Session) Set(v interface{}) {
 	s.value.Store(v)
 }
 
-//Get :
+// Get :
 func (s *Session) Get() interface{} {
 	return s.value.Load()
 }
 
-//SetRemoteAddr :
+// SetRemoteAddr :
 func (s *Session) SetRemoteAddr(addr string) {
 	s.remoteAddr.Store(addr)
 }
 
-//RemoteAddr :
+// RemoteAddr :
 func (s *Session) RemoteAddr() string {
 	return absRemoteAddr(s.remoteAddr, s.conn)
 }
 
-//Send : send bytes, put bytes to queue, not send directly
+// Send : send bytes, put bytes to queue, not send directly
 func (s *Session) Send(bs []byte) error {
 	return s.sendQ.AddReq(bs)
 }
 
-//Read : read specific bytes
+// Read : read specific bytes
 func (s *Session) Read(bs []byte) error {
 	var _, err = io.ReadFull(s.conn, bs)
 	return err
 }
 
-//Close : close session
-//use close send msg queue to exit loop read/write go routine
+// Close : close session
+// use close send msg queue to exit loop read/write go routine
 func (s *Session) Close() {
 	s.sendQ.Close()
 }
 
-//Logger : get logger
+// Logger : get logger
 func (s *Session) Logger() *ulog.Logger {
 	return s.b.Logger()
 }
 
-//RemoteZap : for uber log
+// RemoteZap : for uber log
 func (s *Session) RemoteZap() zap.Field {
 	return zap.String("session.Addr", s.RemoteAddr())
 }
 
-//KeyZaps : for uber log
+// KeyZaps : for uber log
 func (s *Session) KeyZaps(ext ...zap.Field) []zap.Field {
 	return absSessionInfo(s.value, ext...)
 }
 
-//loop send
+// loop send
 func (s *Session) loopSend() {
 	var (
 		err   error
@@ -171,7 +171,7 @@ func (s *Session) loopSend() {
 	}
 }
 
-//loop receive
+// loop receive
 func (s *Session) loopReceive() {
 	defer s.recovery()
 	defer s.quit()
@@ -194,7 +194,7 @@ func (s *Session) loopReceive() {
 	}
 }
 
-//send buffer
+// send buffer
 func (s *Session) send(buf []byte) error {
 	var err = s.conn.SetWriteDeadline(time.Now().Add(s.b.writeTimeout))
 	if err != nil {
@@ -205,7 +205,7 @@ func (s *Session) send(buf []byte) error {
 	return err
 }
 
-//quit :
+// quit :
 func (s *Session) quit() {
 	s.exitOnce.Do(func() {
 		if s.rh != nil {
@@ -224,7 +224,7 @@ func (s *Session) quit() {
 	})
 }
 
-//recovery :
+// recovery :
 func (s *Session) recovery() {
 	var r = recover()
 	if r != nil {
@@ -234,14 +234,14 @@ func (s *Session) recovery() {
 	}
 }
 
-//log send/read error
+// log send/read error
 func (s *Session) loggerSendReadErr(msg string, err error) {
 	if s.b.Logger().Level() <= zapcore.WarnLevel {
 		s.b.Logger().Warn(msg, s.KeyZaps(zap.Error(err), s.RemoteZap())...)
 	}
 }
 
-//abs remote address
+// abs remote address
 func absRemoteAddr(rdAddr atomic.String, conn net.Conn) string {
 	var rd = rdAddr.Load()
 	if rd == "" {
@@ -257,7 +257,7 @@ func absRemoteAddr(rdAddr atomic.String, conn net.Conn) string {
 	return rd
 }
 
-//abs session info to debug info
+// abs session info to debug info
 func absSessionInfo(value atomic.Value, ext ...zap.Field) []zap.Field {
 	var info = value.Load()
 

@@ -14,24 +14,24 @@ type _Option struct {
 	name  string
 }
 
-//Option : only qSize option
+// Option : only qSize option
 type Option func(option *_Option)
 
-//WithQSize : setup qSize
+// WithQSize : setup qSize
 func WithQSize(qSize int) Option {
 	return func(o *_Option) {
 		o.qSize = qSize
 	}
 }
 
-//WithName : setup name
+// WithName : setup name
 func WithName(name string) Option {
 	return func(o *_Option) {
 		o.name = name
 	}
 }
 
-//Line : async runner
+// Line : async runner
 type Line struct {
 	//queue size
 	qSize int
@@ -51,7 +51,7 @@ type Line struct {
 	name string
 }
 
-//NewLine : new async line
+// NewLine : new async line
 func NewLine(wg *sync.WaitGroup, opts ...Option) *Line {
 	var o = &_Option{
 		qSize: pipe.DefaultQSize,
@@ -63,7 +63,7 @@ func NewLine(wg *sync.WaitGroup, opts ...Option) *Line {
 	return newLine(o.name, o.qSize, wg)
 }
 
-//newLine : new async line
+// newLine : new async line
 func newLine(name string, qSize int, wg *sync.WaitGroup) *Line {
 	var c = &Line{}
 	c.name = name
@@ -73,14 +73,14 @@ func newLine(name string, qSize int, wg *sync.WaitGroup) *Line {
 	return c
 }
 
-//QSize : get queue size in each slot
+// QSize : get queue size in each slot
 func (c *Line) QSize() int {
 	return c.qSize
 }
 
-//AsyncCall : wrap call
-//ctx -- context.Context
-//callCtx -- call context
+// AsyncCall : wrap call
+// ctx -- context.Context
+// callCtx -- call context
 func (c *Line) AsyncCall(ctx context.Context, callCtx *CallCtx) (interface{}, error) {
 	var proc, err = c.addCallCtx(ctx, callCtx)
 	if err != nil {
@@ -89,7 +89,7 @@ func (c *Line) AsyncCall(ctx context.Context, callCtx *CallCtx) (interface{}, er
 	return proc.R()
 }
 
-//Run : run all queue msg handler
+// Run : run all queue msg handler
 func (c *Line) Run() {
 	c.startOnce.Do(func() {
 		c.wg.Add(1)
@@ -97,21 +97,21 @@ func (c *Line) Run() {
 	})
 }
 
-//Stop : stop
+// Stop : stop
 func (c *Line) Stop() {
 	c.stopOnce.Do(func() {
 		c.q.Close()
 	})
 }
 
-//addCallCtx : add call context
+// addCallCtx : add call context
 func (c *Line) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, error) {
 	var proc = newAsyncCtx(ctx, callCtx.Call, callCtx.Param)
 	var err = pipe.ConvertQueueErr(c.q.AddReq(proc))
 	return proc, err
 }
 
-//pop call loop
+// pop call loop
 func (c *Line) popLoop() {
 	var (
 		err  error

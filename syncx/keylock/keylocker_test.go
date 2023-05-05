@@ -6,19 +6,19 @@ import (
 	"time"
 )
 
-//About 400ns
+// About 400ns
 func TestKeyLocker_Crazy1(t *testing.T) {
 	var x = NewKeyLocker()
 	testLockerCrazy(t, x)
 }
 
-//About 80ns
+// About 80ns
 func TestKeyLocker_Crazy2(t *testing.T) {
 	var x = NewKeyLockeGrp()
 	testLockerCrazy(t, x)
 }
 
-//About 120ns
+// About 120ns
 func TestKeyLocker_Crazy3(t *testing.T) {
 	var x = NewXHashKeyLockeGrp()
 	testLockerCrazy(t, x)

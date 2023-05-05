@@ -15,7 +15,7 @@ const (
 	DefaultMaxLifeTime  = time.Hour
 )
 
-//db option
+// db option
 type _Option struct {
 	maxOpenConn int
 	maxIdle     int
@@ -55,7 +55,7 @@ func WithLogSwitch(on bool) Option {
 	}
 }
 
-//New : new *gorm.DB
+// New : new *gorm.DB
 func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	var option = &_Option{
 		maxOpenConn: DefaultMaxOpenCount,
@@ -93,18 +93,18 @@ func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	return gormDB, err
 }
 
-//NewDBByDsn : new *gorm.DB by Dsn
+// NewDBByDsn : new *gorm.DB by Dsn
 func NewDBByDsn(dsn *Dsn, opts ...Option) (*gorm.DB, error) {
 	return New(dsn.UseDefault(), opts...)
 }
 
-//NewGorm 获取一个db客户端 --maxOpenConn 最大打开连接数
+// NewGorm 获取一个db客户端 --maxOpenConn 最大打开连接数
 func NewGorm(dsn string, maxOpenConn, maxIdle int, maxLifeTime time.Duration, log bool) (*gorm.DB, error) {
 	return New(dsn,
 		WithMaxOpenConn(maxOpenConn), WithMaxIdle(maxIdle), WithMaxLifeTime(maxLifeTime), WithLogSwitch(log))
 }
 
-//NewDBBySSH new db by ssh
+// NewDBBySSH new db by ssh
 func NewDBBySSH(sshCnf *SSHConfig, dsn *Dsn, opts ...Option) (*gorm.DB, error) {
 	var sshCli, err = CreateSSHConn(sshCnf)
 	if err != nil {

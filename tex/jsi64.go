@@ -11,13 +11,13 @@ var (
 	ErrInvalidInt64Js = errors.New(`int64 invalid string`)
 )
 
-//JsInt64
-//json could not support large number
-//use string to replace the number if a field is int64
+// JsInt64
+// json could not support large number
+// use string to replace the number if a field is int64
 type JsInt64 int64
 
-//MarshalJSON
-//marshal json
+// MarshalJSON
+// marshal json
 func (i JsInt64) MarshalJSON() ([]byte, error) {
 	buf := []byte(strconv.FormatInt(int64(i), 10))
 	newBuf := make([]byte, 0, len(buf)+2)
@@ -27,8 +27,8 @@ func (i JsInt64) MarshalJSON() ([]byte, error) {
 	return newBuf, nil
 }
 
-//UnmarshalJSON
-//unmarshal json
+// UnmarshalJSON
+// unmarshal json
 func (i *JsInt64) UnmarshalJSON(b []byte) error {
 	lb := len(b)
 	if lb < 2 {

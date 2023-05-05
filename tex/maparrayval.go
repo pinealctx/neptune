@@ -1,6 +1,6 @@
 package tex
 
-//MapVal2BoolList : 将map中的value转换为bool list
+// MapVal2BoolList : 将map中的value转换为bool list
 func MapVal2BoolList(m map[string]interface{}, k string) ([]bool, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -17,7 +17,7 @@ func MapVal2BoolList(m map[string]interface{}, k string) ([]bool, bool) {
 	return rs, true
 }
 
-//MapVal2IntList : 将map中的value转换为int list
+// MapVal2IntList : 将map中的value转换为int list
 func MapVal2IntList(m map[string]interface{}, k string) ([]int, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -34,7 +34,7 @@ func MapVal2IntList(m map[string]interface{}, k string) ([]int, bool) {
 	return rs, true
 }
 
-//MapVal2Int64List : 将map中的value转换为int64 list
+// MapVal2Int64List : 将map中的value转换为int64 list
 func MapVal2Int64List(m map[string]interface{}, k string) ([]int64, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -51,7 +51,7 @@ func MapVal2Int64List(m map[string]interface{}, k string) ([]int64, bool) {
 	return rs, true
 }
 
-//MapVal2JsInt64List : 将map中的value转换为 json int64 list
+// MapVal2JsInt64List : 将map中的value转换为 json int64 list
 func MapVal2JsInt64List(m map[string]interface{}, k string) ([]JsInt64, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -68,7 +68,7 @@ func MapVal2JsInt64List(m map[string]interface{}, k string) ([]JsInt64, bool) {
 	return rs, true
 }
 
-//MapVal2Int32List : 将map中的value转换为int32 list
+// MapVal2Int32List : 将map中的value转换为int32 list
 func MapVal2Int32List(m map[string]interface{}, k string) ([]int32, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -85,7 +85,7 @@ func MapVal2Int32List(m map[string]interface{}, k string) ([]int32, bool) {
 	return rs, true
 }
 
-//MapVal2Float64List : 将map中的value转换为float64 list
+// MapVal2Float64List : 将map中的value转换为float64 list
 func MapVal2Float64List(m map[string]interface{}, k string) ([]float64, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -102,7 +102,7 @@ func MapVal2Float64List(m map[string]interface{}, k string) ([]float64, bool) {
 	return rs, true
 }
 
-//MapVal2StringList : 将map中的value转换为string list
+// MapVal2StringList : 将map中的value转换为string list
 func MapVal2StringList(m map[string]interface{}, k string) ([]string, bool) {
 	var es, ok = mapValIsInterfaceArray(m, k)
 	if !ok {
@@ -119,7 +119,7 @@ func MapVal2StringList(m map[string]interface{}, k string) ([]string, bool) {
 	return rs, true
 }
 
-//is interface array
+// is interface array
 func mapValIsInterfaceArray(m map[string]interface{}, k string) ([]interface{}, bool) {
 	var x, ok = m[k]
 	if !ok {

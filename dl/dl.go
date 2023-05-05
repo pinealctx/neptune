@@ -30,10 +30,11 @@ func (h *HTTPObj) Close() error {
 // Warning: Call "defer HTTPObj.Resp.Body.Close()" at the beginning.
 // uri -- url string
 // for instance
-//     uri -> https://example.com/1.jpg
-//         HTTPObj.Resp -> http.Response
-//         HTTPObj.Name -> 1.jpg
-//         err -> error return when failed
+//
+//	uri -> https://example.com/1.jpg
+//	    HTTPObj.Resp -> http.Response
+//	    HTTPObj.Name -> 1.jpg
+//	    err -> error return when failed
 func DownloadObj(uri string) (*HTTPObj, error) {
 	var fileURL, err = url.Parse(uri)
 	if err != nil {
@@ -65,10 +66,11 @@ func DownloadObj(uri string) (*HTTPObj, error) {
 // Download2Buffer : download a url object to bytes buffer
 // uri -- url string
 // for instance
-//     uri -> https://example.com/1.jpg
-//         name -> 1.jpg
-//         data -> binary data
-//         err -> error return when failed
+//
+//	uri -> https://example.com/1.jpg
+//	    name -> 1.jpg
+//	    data -> binary data
+//	    err -> error return when failed
 func Download2Buffer(uri string) (string, []byte, error) {
 	var rsp, err = DownloadObj(uri)
 	if err != nil {
@@ -94,9 +96,10 @@ func Download2Buffer(uri string) (string, []byte, error) {
 // uri -- url string
 // dir -- current file dir
 // for instance
-//     uri -> https://example.com/1.jpg
-//     dir -> /home/pics
-//     would download file then save as /home/pics/1.jpg
+//
+//	uri -> https://example.com/1.jpg
+//	dir -> /home/pics
+//	would download file then save as /home/pics/1.jpg
 func Download2Path(uri string, dir string) error {
 	var rsp, err = DownloadObj(uri)
 	if err != nil {

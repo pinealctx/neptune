@@ -21,32 +21,32 @@ var (
 	ErrSync = errors.New("never.gonna.happen.crazy")
 )
 
-//option for actor queue
+// option for actor queue
 type _Option struct {
 	ctrlMaxNum int
 	reqMaxNum  int
 }
 
-//Option : option function
+// Option : option function
 type Option func(o *_Option)
 
-//WithQCtrlSize setup max queue number of control queue
-//if max is 0, which means no limit
+// WithQCtrlSize setup max queue number of control queue
+// if max is 0, which means no limit
 func WithQCtrlSize(num int) Option {
 	return func(o *_Option) {
 		o.ctrlMaxNum = num
 	}
 }
 
-//WithQReqSize setup max queue number of request queue
-//if max is 0, which means no limit
+// WithQReqSize setup max queue number of request queue
+// if max is 0, which means no limit
 func WithQReqSize(num int) Option {
 	return func(o *_Option) {
 		o.reqMaxNum = num
 	}
 }
 
-//MQ actor queue structure define
+// MQ actor queue structure define
 type MQ struct {
 	//control queue list
 	ctrlList *list.List
@@ -74,7 +74,7 @@ type MQ struct {
 	cond sync.Cond
 }
 
-//NewMQ new queue
+// NewMQ new queue
 func NewMQ(options ...Option) *MQ {
 	var actorQ = &MQ{
 		ctrlList:  list.New(),
@@ -96,8 +96,8 @@ func NewMQ(options ...Option) *MQ {
 	return actorQ
 }
 
-//AddCtrlAnyway dd control request to the control queue end place anyway
-//if queue full, sleep then try
+// AddCtrlAnyway dd control request to the control queue end place anyway
+// if queue full, sleep then try
 func (a *MQ) AddCtrlAnyway(cmd interface{}, ts time.Duration) error {
 	var err error
 	for {
@@ -110,7 +110,7 @@ func (a *MQ) AddCtrlAnyway(cmd interface{}, ts time.Duration) error {
 	}
 }
 
-//AddCtrl add control request to the control queue end place.
+// AddCtrl add control request to the control queue end place.
 func (a *MQ) AddCtrl(cmd interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -127,7 +127,7 @@ func (a *MQ) AddCtrl(cmd interface{}) error {
 	return nil
 }
 
-//AddPriorCtrl add control request to the control queue first place.
+// AddPriorCtrl add control request to the control queue first place.
 func (a *MQ) AddPriorCtrl(cmd interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -139,8 +139,8 @@ func (a *MQ) AddPriorCtrl(cmd interface{}) error {
 	return nil
 }
 
-//AddReqAnyway add normal request to the normal queue end place anyway
-//if queue full, sleep then try
+// AddReqAnyway add normal request to the normal queue end place anyway
+// if queue full, sleep then try
 func (a *MQ) AddReqAnyway(req interface{}, ts time.Duration) error {
 	var err error
 	for {
@@ -153,7 +153,7 @@ func (a *MQ) AddReqAnyway(req interface{}, ts time.Duration) error {
 	}
 }
 
-//AddReq add normal request to the normal queue end place.
+// AddReq add normal request to the normal queue end place.
 func (a *MQ) AddReq(req interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -170,7 +170,7 @@ func (a *MQ) AddReq(req interface{}) error {
 	return nil
 }
 
-//AddPriorReq add normal request to the normal queue first place.
+// AddPriorReq add normal request to the normal queue first place.
 func (a *MQ) AddPriorReq(req interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -182,7 +182,7 @@ func (a *MQ) AddPriorReq(req interface{}) error {
 	return nil
 }
 
-//Pop consume an item, if list is empty, it's been blocked
+// Pop consume an item, if list is empty, it's been blocked
 func (a *MQ) Pop() (interface{}, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -209,7 +209,7 @@ func (a *MQ) Pop() (interface{}, error) {
 	return nil, ErrSync
 }
 
-//PopAnyway consume an item like Pop, but it can consume even the queue is closed.
+// PopAnyway consume an item like Pop, but it can consume even the queue is closed.
 func (a *MQ) PopAnyway() (interface{}, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -233,7 +233,7 @@ func (a *MQ) PopAnyway() (interface{}, error) {
 	return nil, ErrSync
 }
 
-//Close : close the queue
+// Close : close the queue
 func (a *MQ) Close() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -245,8 +245,8 @@ func (a *MQ) Close() {
 	a.cond.Broadcast()
 }
 
-//TryClose try to close a queue in case it's empty.
-//otherwise, the queue can not be closed.
+// TryClose try to close a queue in case it's empty.
+// otherwise, the queue can not be closed.
 func (a *MQ) TryClose() bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -261,12 +261,12 @@ func (a *MQ) TryClose() bool {
 	return a.closed
 }
 
-//TryClear try to clear a queue.
-//the function should be called by consumer.
-//if the queue be set can pop even after closed.
-//the consumer handle the last pop item, it can call the function.
-//after the function be called, which means the queue is totally clear.
-//no producer/no consumer anymore
+// TryClear try to clear a queue.
+// the function should be called by consumer.
+// if the queue be set can pop even after closed.
+// the consumer handle the last pop item, it can call the function.
+// after the function be called, which means the queue is totally clear.
+// no producer/no consumer anymore
 func (a *MQ) TryClear() bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -282,7 +282,7 @@ func (a *MQ) TryClear() bool {
 	return a.cleared
 }
 
-//WaitClose wait close, must call in another go routine
+// WaitClose wait close, must call in another go routine
 func (a *MQ) WaitClose(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -292,10 +292,10 @@ func (a *MQ) WaitClose(ctx context.Context) error {
 	}
 }
 
-//WaitClear wait clear, must call in another go routine
-//clear must be called after queue closed.
-//be caution: if there is no one to call TryClear to clear the queue
-//the clear would never happen
+// WaitClear wait clear, must call in another go routine
+// clear must be called after queue closed.
+// be caution: if there is no one to call TryClear to clear the queue
+// the clear would never happen
 func (a *MQ) WaitClear(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -305,14 +305,14 @@ func (a *MQ) WaitClear(ctx context.Context) error {
 	}
 }
 
-//IsClosed is closed or not
+// IsClosed is closed or not
 func (a *MQ) IsClosed() bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	return a.closed
 }
 
-//IsCleared is cleared or not
+// IsCleared is cleared or not
 func (a *MQ) IsCleared() bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()

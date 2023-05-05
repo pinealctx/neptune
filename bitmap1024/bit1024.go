@@ -11,15 +11,15 @@ const (
 	L128 = 128
 )
 
-//Bit1024 : 16*8 = 128bytes
+// Bit1024 : 16*8 = 128bytes
 type Bit1024 []Bit64
 
-//NewBit1024 : new bit 1024
+// NewBit1024 : new bit 1024
 func NewBit1024() Bit1024 {
 	return make([]Bit64, L16)
 }
 
-//SetI32 : set bit
+// SetI32 : set bit
 func (b Bit1024) SetI32(i int32) {
 	var index = i / B64
 	if index >= 0 && index < L16 {
@@ -28,7 +28,7 @@ func (b Bit1024) SetI32(i int32) {
 	}
 }
 
-//UnsetI32 : unset bit
+// UnsetI32 : unset bit
 func (b Bit1024) UnsetI32(i int32) {
 	var index = i / B64
 	if index >= 0 && index < L16 {
@@ -37,7 +37,7 @@ func (b Bit1024) UnsetI32(i int32) {
 	}
 }
 
-//SetI16 : set bit
+// SetI16 : set bit
 func (b Bit1024) SetI16(i int16) {
 	var index = i / B64
 	if index >= 0 && index < L16 {
@@ -46,7 +46,7 @@ func (b Bit1024) SetI16(i int16) {
 	}
 }
 
-//UnsetI16 : unset bit
+// UnsetI16 : unset bit
 func (b Bit1024) UnsetI16(i int16) {
 	var index = i / B64
 	if index >= 0 && index < L16 {
@@ -55,7 +55,7 @@ func (b Bit1024) UnsetI16(i int16) {
 	}
 }
 
-//Len : length of set bit
+// Len : length of set bit
 func (b Bit1024) Len() int {
 	var c int
 	for i := 0; i < L16; i++ {
@@ -68,7 +68,7 @@ func (b Bit1024) NLen() int {
 	return 1024 - b.Len()
 }
 
-//Reverse : reverse
+// Reverse : reverse
 func (b Bit1024) Reverse() Bit1024 {
 	var c = make([]Bit64, L16)
 	for i := 0; i < L16; i++ {
@@ -77,7 +77,7 @@ func (b Bit1024) Reverse() Bit1024 {
 	return c
 }
 
-//OrThenReverse : or operation then reverse
+// OrThenReverse : or operation then reverse
 func (b Bit1024) OrThenReverse(c Bit1024) Bit1024 {
 	var d = make([]Bit64, L16)
 	for i := 0; i < L16; i++ {
@@ -86,7 +86,7 @@ func (b Bit1024) OrThenReverse(c Bit1024) Bit1024 {
 	return d
 }
 
-//And : and
+// And : and
 func (b Bit1024) And(c Bit1024) Bit1024 {
 	var d = make([]Bit64, L16)
 	for i := 0; i < L16; i++ {
@@ -95,7 +95,7 @@ func (b Bit1024) And(c Bit1024) Bit1024 {
 	return d
 }
 
-//Or : or
+// Or : or
 func (b Bit1024) Or(c Bit1024) Bit1024 {
 	var d = make([]Bit64, L16)
 	for i := 0; i < L16; i++ {
@@ -104,7 +104,7 @@ func (b Bit1024) Or(c Bit1024) Bit1024 {
 	return d
 }
 
-//Marshal : marshal bitmap
+// Marshal : marshal bitmap
 func (b Bit1024) Marshal() []byte {
 	var n = b.Len()
 	if n == 0 {
@@ -125,7 +125,7 @@ func (b Bit1024) Marshal() []byte {
 	return buf
 }
 
-//Unmarshal : unmarshal bitmap
+// Unmarshal : unmarshal bitmap
 func (b Bit1024) Unmarshal(buf []byte) error {
 	var n = len(buf)
 	if n == 0 {
@@ -158,7 +158,7 @@ func (b Bit1024) Unmarshal(buf []byte) error {
 	return nil
 }
 
-//Equal : equal other
+// Equal : equal other
 func (b Bit1024) Equal(c Bit1024) bool {
 	for i := 0; i < L16; i++ {
 		if b[i] != c[i] {
@@ -168,52 +168,52 @@ func (b Bit1024) Equal(c Bit1024) bool {
 	return true
 }
 
-//GetNAsI64 : iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// GetNAsI64 : iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b Bit1024) GetNAsI64(n int) []int64 {
 	return b.getNAsI64(n, false)
 }
 
-//RGetNAsI64 : reverse iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// RGetNAsI64 : reverse iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b Bit1024) RGetNAsI64(n int) []int64 {
 	return b.getNAsI64(n, true)
 }
 
-//GetNAsI32 : iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// GetNAsI32 : iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b Bit1024) GetNAsI32(n int) []int32 {
 	return b.getNAsI32(n, false)
 }
 
-//RGetNAsI32 : reverse iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// RGetNAsI32 : reverse iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b Bit1024) RGetNAsI32(n int) []int32 {
 	return b.getNAsI32(n, true)
 }
 
-//GetNAsI16 : iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// GetNAsI16 : iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b Bit1024) GetNAsI16(n int) []int16 {
 	return b.getNAsI16(n, false)
 }
 
-//RGetNAsI16 : reverse iterate bitmap
-//input: n -- iter count
-//return: actually iter list
+// RGetNAsI16 : reverse iterate bitmap
+// input: n -- iter count
+// return: actually iter list
 func (b Bit1024) RGetNAsI16(n int) []int16 {
 	return b.getNAsI16(n, true)
 }
 
-//IterAsI64 : iterate bitmap
-//input: s -- an int64 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// IterAsI64 : iterate bitmap
+// input: s -- an int64 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) IterAsI64(s []int64, pos int, add int64, n int) int {
 	var (
 		iterN  = 0
@@ -233,10 +233,10 @@ func (b Bit1024) IterAsI64(s []int64, pos int, add int64, n int) int {
 	return iterN
 }
 
-//RIterAsI64 : reverse iterate bitmap
-//input: s -- an int64 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// RIterAsI64 : reverse iterate bitmap
+// input: s -- an int64 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) RIterAsI64(s []int64, pos int, add int64, n int) int {
 	var (
 		iterN  = 0
@@ -256,10 +256,10 @@ func (b Bit1024) RIterAsI64(s []int64, pos int, add int64, n int) int {
 	return iterN
 }
 
-//IterAsI32 : iterate bitmap
-//input: s -- an int32 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// IterAsI32 : iterate bitmap
+// input: s -- an int32 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) IterAsI32(s []int32, pos int, add int32, n int) int {
 	var (
 		iterN  = 0
@@ -279,10 +279,10 @@ func (b Bit1024) IterAsI32(s []int32, pos int, add int32, n int) int {
 	return iterN
 }
 
-//RIterAsI32 : reverse iterate bitmap
-//input: s -- an int32 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// RIterAsI32 : reverse iterate bitmap
+// input: s -- an int32 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) RIterAsI32(s []int32, pos int, add int32, n int) int {
 	var (
 		iterN  = 0
@@ -302,10 +302,10 @@ func (b Bit1024) RIterAsI32(s []int32, pos int, add int32, n int) int {
 	return iterN
 }
 
-//IterAsU32 : iterate bitmap
-//input: s -- an uint32 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// IterAsU32 : iterate bitmap
+// input: s -- an uint32 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) IterAsU32(s []uint32, pos int, add uint32, n int) int {
 	var (
 		iterN  = 0
@@ -325,10 +325,10 @@ func (b Bit1024) IterAsU32(s []uint32, pos int, add uint32, n int) int {
 	return iterN
 }
 
-//RIterAsU32 : reverse iterate bitmap
-//input: s -- an uint32 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// RIterAsU32 : reverse iterate bitmap
+// input: s -- an uint32 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) RIterAsU32(s []uint32, pos int, add uint32, n int) int {
 	var (
 		iterN  = 0
@@ -348,10 +348,10 @@ func (b Bit1024) RIterAsU32(s []uint32, pos int, add uint32, n int) int {
 	return iterN
 }
 
-//IterAsI16 : iterate bitmap
-//input: s -- an int32 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// IterAsI16 : iterate bitmap
+// input: s -- an int32 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) IterAsI16(s []int16, pos int, add int16, n int) int {
 	var (
 		iterN  = 0
@@ -371,10 +371,10 @@ func (b Bit1024) IterAsI16(s []int16, pos int, add int16, n int) int {
 	return iterN
 }
 
-//RIterAsI16 : reverse iterate bitmap
-//input: s -- an int32 array, add -- added number, n -- iter count
-//return:
-//actually iter count
+// RIterAsI16 : reverse iterate bitmap
+// input: s -- an int32 array, add -- added number, n -- iter count
+// return:
+// actually iter count
 func (b Bit1024) RIterAsI16(s []int16, pos int, add int16, n int) int {
 	var (
 		iterN  = 0
@@ -394,9 +394,9 @@ func (b Bit1024) RIterAsI16(s []int16, pos int, add int16, n int) int {
 	return iterN
 }
 
-//getNAsI64 : iterate bitmap
-//input: n -- iter number
-//reverse -- reverse iter or not
+// getNAsI64 : iterate bitmap
+// input: n -- iter number
+// reverse -- reverse iter or not
 func (b Bit1024) getNAsI64(n int, reverse bool) []int64 {
 	var s = make([]int64, n)
 	var iterN int
@@ -411,9 +411,9 @@ func (b Bit1024) getNAsI64(n int, reverse bool) []int64 {
 	return s[:iterN]
 }
 
-//getNAsI32 : iterate bitmap
-//input: n -- iter number
-//reverse -- reverse iter or not
+// getNAsI32 : iterate bitmap
+// input: n -- iter number
+// reverse -- reverse iter or not
 func (b Bit1024) getNAsI32(n int, reverse bool) []int32 {
 	var s = make([]int32, n)
 	var iterN int
@@ -428,9 +428,9 @@ func (b Bit1024) getNAsI32(n int, reverse bool) []int32 {
 	return s[:iterN]
 }
 
-//getNAsI16 : iterate bitmap
-//input: n -- iter number
-//reverse -- reverse iter or not
+// getNAsI16 : iterate bitmap
+// input: n -- iter number
+// reverse -- reverse iter or not
 func (b Bit1024) getNAsI16(n int, reverse bool) []int16 {
 	var s = make([]int16, n)
 	var iterN int

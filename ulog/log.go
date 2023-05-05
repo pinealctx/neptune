@@ -30,7 +30,7 @@ var (
 	ErrZapEmpty = errors.New("zap.pointer.empty")
 )
 
-//ZapConf zap configuration
+// ZapConf zap configuration
 type ZapConf struct {
 	//文件名
 	FileName string `json:"fileName" toml:"fileName"`
@@ -52,19 +52,19 @@ type ZapConf struct {
 	LogLevel string `json:"logLevel" toml:"logLevel"`
 }
 
-//zap conf string
+// zap conf string
 func (c ZapConf) String() string {
 	return fmt.Sprintf("f:%s, max:%d, age:%d, backs:%d, utc:%+v, compress:%+v, disableCaller:%+v, level:%s",
 		c.FileName, c.MaxSize, c.MaxAge, c.MaxBackups, c.UTCTime, c.Compress, c.DisableCaller, c.LogLevel)
 }
 
-//Logger 封装可以动态设置log level的logger
+// Logger 封装可以动态设置log level的logger
 type Logger struct {
 	*zap.Logger
 	atomicLevel zap.AtomicLevel
 }
 
-//SetLevel set level
+// SetLevel set level
 func (z *Logger) SetLevel(level zapcore.Level) {
 	if z == nil {
 		return
@@ -72,7 +72,7 @@ func (z *Logger) SetLevel(level zapcore.Level) {
 	z.atomicLevel.SetLevel(level)
 }
 
-//SetLevelStr set level string
+// SetLevelStr set level string
 func (z *Logger) SetLevelStr(sLevel string) {
 	if z == nil {
 		return
@@ -81,7 +81,7 @@ func (z *Logger) SetLevelStr(sLevel string) {
 	z.atomicLevel.SetLevel(level)
 }
 
-//Level get level
+// Level get level
 func (z *Logger) Level() zapcore.Level {
 	if z == nil {
 		//a strange number
@@ -90,7 +90,7 @@ func (z *Logger) Level() zapcore.Level {
 	return z.atomicLevel.Level()
 }
 
-//LevelStr get level str
+// LevelStr get level str
 func (z *Logger) LevelStr() string {
 	if z == nil {
 		return "unknown:empty"
@@ -135,7 +135,7 @@ func (z *Logger) Sync() error {
 	return z.Logger.Sync()
 }
 
-//NewFileLogger new zap logger
+// NewFileLogger new zap logger
 func NewFileLogger(cnf ZapConf) *Logger {
 	var hook = lumberjack.Logger{
 		Filename:   cnf.FileName,
@@ -168,7 +168,7 @@ func NewFileLogger(cnf ZapConf) *Logger {
 	}
 }
 
-//NewSimpleLogger new zap logger without file log
+// NewSimpleLogger new zap logger without file log
 func NewSimpleLogger(level string, options ...zap.Option) *Logger {
 	var encodeCnf = zap.NewProductionEncoderConfig()
 	encodeCnf.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -182,7 +182,7 @@ func NewSimpleLogger(level string, options ...zap.Option) *Logger {
 	}
 }
 
-//ParseLevel parse zap level
+// ParseLevel parse zap level
 func ParseLevel(level string) zapcore.Level {
 	var lLevel = strings.ToLower(level)
 	switch lLevel {
@@ -199,7 +199,7 @@ func ParseLevel(level string) zapcore.Level {
 	}
 }
 
-//Level2String extract zap level
+// Level2String extract zap level
 func Level2String(level zapcore.Level) string {
 	switch level {
 	case DebugLevel:

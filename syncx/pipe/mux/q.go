@@ -21,7 +21,7 @@ var (
 	ErrSync = errors.New("never.gonna.happen.crazy")
 )
 
-//Q actor queue structure define
+// Q actor queue structure define
 type Q struct {
 	//request queue list
 	reqList *list.List
@@ -41,7 +41,7 @@ type Q struct {
 	cond sync.Cond
 }
 
-//NewQ new queue
+// NewQ new queue
 func NewQ(reqMaxNum int) *Q {
 	var actorQ = &Q{
 		reqList:  list.New(),
@@ -55,8 +55,8 @@ func NewQ(reqMaxNum int) *Q {
 	return actorQ
 }
 
-//AddReqAnyway add normal request to the normal queue end place anyway
-//if queue full, sleep then try
+// AddReqAnyway add normal request to the normal queue end place anyway
+// if queue full, sleep then try
 func (a *Q) AddReqAnyway(req interface{}, ts time.Duration) error {
 	var err error
 	for {
@@ -69,7 +69,7 @@ func (a *Q) AddReqAnyway(req interface{}, ts time.Duration) error {
 	}
 }
 
-//AddReq add normal request to the normal queue end place.
+// AddReq add normal request to the normal queue end place.
 func (a *Q) AddReq(req interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -86,7 +86,7 @@ func (a *Q) AddReq(req interface{}) error {
 	return nil
 }
 
-//AddPriorReq add normal request to the normal queue first place.
+// AddPriorReq add normal request to the normal queue first place.
 func (a *Q) AddPriorReq(req interface{}) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -98,7 +98,7 @@ func (a *Q) AddPriorReq(req interface{}) error {
 	return nil
 }
 
-//Pop consume an item, if list is empty, it's been blocked
+// Pop consume an item, if list is empty, it's been blocked
 func (a *Q) Pop() (interface{}, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -119,7 +119,7 @@ func (a *Q) Pop() (interface{}, error) {
 	return nil, ErrSync
 }
 
-//PopAnyway consume an item like Pop, but it can consume even the queue is closed.
+// PopAnyway consume an item like Pop, but it can consume even the queue is closed.
 func (a *Q) PopAnyway() (interface{}, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -137,7 +137,7 @@ func (a *Q) PopAnyway() (interface{}, error) {
 	return nil, ErrSync
 }
 
-//Close : close the queue
+// Close : close the queue
 func (a *Q) Close() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -149,7 +149,7 @@ func (a *Q) Close() {
 	a.cond.Broadcast()
 }
 
-//WaitClose wait close, must call in another go routine
+// WaitClose wait close, must call in another go routine
 func (a *Q) WaitClose(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -159,7 +159,7 @@ func (a *Q) WaitClose(ctx context.Context) error {
 	}
 }
 
-//IsClosed is closed or not
+// IsClosed is closed or not
 func (a *Q) IsClosed() bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()

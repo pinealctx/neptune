@@ -3,7 +3,7 @@ package jsonx
 import (
 	"github.com/json-iterator/go"
 	"github.com/pinealctx/neptune/compress"
-	"io/ioutil"
+	"os"
 )
 
 const (
@@ -21,13 +21,13 @@ var (
 
 var _ = jsonDefault
 
-//标准jsoniter json库 100%兼容
+// 标准jsoniter json库 100%兼容
 var (
 	JSONMarshal   = jsonStd.Marshal
 	JSONUnmarshal = jsonStd.Unmarshal
 )
 
-//快速jsoniter json库 -- 浮点数会丢失精度，小数点最多后6位
+// 快速jsoniter json库 -- 浮点数会丢失精度，小数点最多后6位
 var (
 	JSONFastMarshal   = jsonFast.Marshal
 	JSONFastUnmarshal = jsonFast.Unmarshal
@@ -40,10 +40,10 @@ var (
 
 var _ = TrySnappyCompress
 
-//LoadJSONFile2Obj
-//读取json文件并序列化到传入的指针中
+// LoadJSONFile2Obj
+// 读取json文件并序列化到传入的指针中
 func LoadJSONFile2Obj(fileName string, v interface{}) error {
-	buf, err := ioutil.ReadFile(fileName)
+	buf, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func LoadJSONFile2Obj(fileName string, v interface{}) error {
 	return err
 }
 
-//fast json with compress
+// fast json with compress
 func fastMarshalSnappy(v interface{}) ([]byte, error) {
 	var buf, err = JSONFastMarshal(v)
 	if err != nil {
@@ -60,7 +60,7 @@ func fastMarshalSnappy(v interface{}) ([]byte, error) {
 	return compressJSON(buf), nil
 }
 
-//fast json with compress unmarshal
+// fast json with compress unmarshal
 func fastUnmarshalSnappy(data []byte, v interface{}) error {
 	var size = len(data)
 	if size == 0 {
@@ -77,7 +77,7 @@ func fastUnmarshalSnappy(data []byte, v interface{}) error {
 	}
 }
 
-//compress json
+// compress json
 func compressJSON(buf []byte) []byte {
 	var bufSize = len(buf)
 	if bufSize > CompressThreshHold {

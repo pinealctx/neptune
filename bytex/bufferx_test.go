@@ -42,7 +42,7 @@ func TestBufferX_ReWrite2(t *testing.T) {
 	t.Log(v)
 }
 
-//87ns
+// 87ns
 func TestBufferX_WriteVarI32(t *testing.T) {
 	var i []int
 	var count time.Duration = 1000000
@@ -92,7 +92,7 @@ func writeVarI32() []int {
 	return s
 }
 
-//41ns
+// 41ns
 func TestBufferX_WriteI32(t *testing.T) {
 	var i []int
 	var count time.Duration = 1000000
