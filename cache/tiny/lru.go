@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package cache implements a LRU cache.
+// Package tiny implements a LRU cache.
 //
 // The implementation borrows heavily from SmallLRUCache
 // (originally by Nathan Schrenk). The object maintains a doubly-linked list of
 // elements. When an element is accessed, it is promoted to the head of the
 // list. When space is needed, the element at the tail of the list
 // (the least recently used element) is evicted.
-package cache
+package tiny
 
 import (
 	"container/list"
@@ -45,27 +45,19 @@ type LRUCache struct {
 	evictions int64
 }
 
-// Value is the interface values that go into LRUCache need to satisfy
-type Value interface {
-	// Size returns how big this value is. If you want to just track
-	// the cache by number of objects, you may return the size as 1.
-	Size() int
-}
-
 // Item is what is stored in the cache
 type Item struct {
 	Key   interface{}
-	Value Value
+	Value interface{}
 }
 
 type entry struct {
 	key   interface{}
-	value Value
-	size  int64
+	value interface{}
 }
 
 // NewSingleLRUCache create a single lru cache
-func NewSingleLRUCache(capacity int64) LRUFacade {
+func NewSingleLRUCache(capacity int64) LRU {
 	return NewLRUCache(capacity)
 }
 
@@ -85,7 +77,7 @@ func (lru *LRUCache) Init(capacity int64) {
 
 // Get returns a value from the cache, and marks the entry as most
 // recently used.
-func (lru *LRUCache) Get(key interface{}) (v Value, ok bool) {
+func (lru *LRUCache) Get(key interface{}) (v interface{}, ok bool) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 
@@ -98,7 +90,7 @@ func (lru *LRUCache) Get(key interface{}) (v Value, ok bool) {
 }
 
 // Peek returns a value from the cache without changing the LRU order.
-func (lru *LRUCache) Peek(key interface{}) (v Value, ok bool) {
+func (lru *LRUCache) Peek(key interface{}) (v interface{}, ok bool) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 
@@ -118,7 +110,7 @@ func (lru *LRUCache) Exist(key interface{}) bool {
 }
 
 // Set sets a value in the cache.
-func (lru *LRUCache) Set(key interface{}, value Value) {
+func (lru *LRUCache) Set(key interface{}, value interface{}) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 
@@ -130,11 +122,12 @@ func (lru *LRUCache) Set(key interface{}, value Value) {
 }
 
 // SetAndGetRemoved sets a value in the cache and returns the removed value list
-func (lru *LRUCache) SetAndGetRemoved(key interface{}, value Value) (removedValueList []Value) {
+func (lru *LRUCache) SetAndGetRemoved(key interface{}, value interface{}) (removedValueList []interface{}) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 	if element := lru.table[key]; element != nil {
-		return lru.updateInPlaceAndGetRemoved(element, value)
+		lru.updateInPlace(element, value)
+		return nil
 	} else {
 		return lru.addNewAndGetRemoved(key, value)
 	}
@@ -142,7 +135,7 @@ func (lru *LRUCache) SetAndGetRemoved(key interface{}, value Value) (removedValu
 
 // SetIfAbsent will set the value in the cache if not present. If the
 // value exists in the cache, we don't set it.
-func (lru *LRUCache) SetIfAbsent(key interface{}, value Value) {
+func (lru *LRUCache) SetIfAbsent(key interface{}, value interface{}) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 
@@ -165,7 +158,7 @@ func (lru *LRUCache) Delete(key interface{}) bool {
 
 	lru.list.Remove(element)
 	delete(lru.table, key)
-	lru.size -= element.Value.(*entry).size
+	lru.size--
 	return true
 }
 
@@ -261,39 +254,24 @@ func (lru *LRUCache) Items() []Item {
 	return items
 }
 
-func (lru *LRUCache) updateInPlace(element *list.Element, value Value) {
-	valueSize := int64(value.Size())
-	sizeDiff := valueSize - element.Value.(*entry).size
+func (lru *LRUCache) updateInPlace(element *list.Element, value interface{}) {
 	element.Value.(*entry).value = value
-	element.Value.(*entry).size = valueSize
-	lru.size += sizeDiff
 	lru.list.MoveToFront(element)
+}
+
+func (lru *LRUCache) addNew(key interface{}, value interface{}) {
+	newEntry := &entry{key, value}
+	element := lru.list.PushFront(newEntry)
+	lru.table[key] = element
+	lru.size++
 	lru.checkCapacity()
 }
 
-func (lru *LRUCache) updateInPlaceAndGetRemoved(element *list.Element, value Value) []Value {
-	valueSize := int64(value.Size())
-	sizeDiff := valueSize - element.Value.(*entry).size
-	element.Value.(*entry).value = value
-	element.Value.(*entry).size = valueSize
-	lru.size += sizeDiff
-	lru.list.MoveToFront(element)
-	return lru.checkCapacityAndGetRemoved()
-}
-
-func (lru *LRUCache) addNew(key interface{}, value Value) {
-	newEntry := &entry{key, value, int64(value.Size())}
+func (lru *LRUCache) addNewAndGetRemoved(key interface{}, value interface{}) []interface{} {
+	newEntry := &entry{key, value}
 	element := lru.list.PushFront(newEntry)
 	lru.table[key] = element
-	lru.size += newEntry.size
-	lru.checkCapacity()
-}
-
-func (lru *LRUCache) addNewAndGetRemoved(key interface{}, value Value) []Value {
-	newEntry := &entry{key, value, int64(value.Size())}
-	element := lru.list.PushFront(newEntry)
-	lru.table[key] = element
-	lru.size += newEntry.size
+	lru.size++
 	return lru.checkCapacityAndGetRemoved()
 }
 
@@ -304,18 +282,18 @@ func (lru *LRUCache) checkCapacity() {
 		delValue := delElem.Value.(*entry)
 		lru.list.Remove(delElem)
 		delete(lru.table, delValue.key)
-		lru.size -= delValue.size
+		lru.size--
 		lru.evictions++
 	}
 }
 
-func (lru *LRUCache) checkCapacityAndGetRemoved() (removedValueList []Value) {
+func (lru *LRUCache) checkCapacityAndGetRemoved() (removedValueList []interface{}) {
 	for lru.size > lru.capacity {
 		delElem := lru.list.Back()
 		delValue := delElem.Value.(*entry)
 		lru.list.Remove(delElem)
 		delete(lru.table, delValue.key)
-		lru.size -= delValue.size
+		lru.size--
 		lru.evictions++
 		removedValueList = append(removedValueList, delValue.value)
 	}

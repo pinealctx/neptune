@@ -23,9 +23,9 @@ func (w *KeyLockerGrp) RLock(key interface{}) {
 	w.calculateKey(key).RLock(key)
 }
 
-// RULock read unlock
-func (w *KeyLockerGrp) RULock(key interface{}) {
-	w.calculateKey(key).RULock(key)
+// RUnlock read unlock
+func (w *KeyLockerGrp) RUnlock(key interface{}) {
+	w.calculateKey(key).RUnlock(key)
 }
 
 // calculate key

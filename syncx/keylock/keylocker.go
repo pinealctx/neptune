@@ -78,8 +78,8 @@ func (d *KeyLocker) RLock(key interface{}) {
 	wrLocker.rwLocker.RLock()
 }
 
-// RULock read unlock
-func (d *KeyLocker) RULock(key interface{}) {
+// RUnlock read unlock
+func (d *KeyLocker) RUnlock(key interface{}) {
 	var (
 		wrLocker *wrapLocker
 	)

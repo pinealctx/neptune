@@ -4,18 +4,6 @@ import (
 	"sync"
 )
 
-// MapFacade an interface to define a Map
-type MapFacade interface {
-	//Set : set key-value
-	Set(key interface{}, value interface{})
-	//Get : get value
-	Get(key interface{}) (interface{}, bool)
-	//Exist : return true if key in map
-	Exist(key interface{}) bool
-	//Delete : delete a key
-	Delete(key interface{})
-}
-
 // Map with locked map
 type Map struct {
 	m    map[interface{}]interface{}

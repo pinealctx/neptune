@@ -7,6 +7,6 @@ type Locker interface {
 	Unlock(key interface{})
 	//RLock read lock
 	RLock(key interface{})
-	//RULock read unlock
-	RULock(key interface{})
+	//RUnlock read unlock
+	RUnlock(key interface{})
 }

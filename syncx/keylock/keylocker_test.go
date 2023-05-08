@@ -49,7 +49,7 @@ func testLockerCrazy(t *testing.T, x Locker) {
 			defer wg.Done()
 			for j := int64(0); j < count; j++ {
 				x.RLock(j % 256)
-				x.RULock(j % 256)
+				x.RUnlock(j % 256)
 			}
 		}()
 	}
