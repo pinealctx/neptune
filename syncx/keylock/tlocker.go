@@ -4,35 +4,28 @@ import (
 	"sync"
 )
 
-// wrap read/write locker
-type wrapLocker struct {
-	rwLocker   sync.RWMutex
-	readCount  int
-	writeCount int
-}
-
-// KeyLocker global locker based on key
-type KeyLocker struct {
-	lockMap map[interface{}]*wrapLocker
+// TKeyLocker global locker based on key
+type TKeyLocker[T comparable] struct {
+	lockMap map[T]*wrapLocker
 	locker  sync.Mutex
 }
 
-// NewKeyLocker new key locker
-func NewKeyLocker() Locker {
-	return &KeyLocker{
-		lockMap: make(map[interface{}]*wrapLocker),
+// NewTKeyLocker new key locker
+func NewTKeyLocker[T comparable]() TLocker[T] {
+	return &TKeyLocker[T]{
+		lockMap: make(map[T]*wrapLocker),
 	}
 }
 
-// NewKeyLockerInstance new key locker instance
-func NewKeyLockerInstance() *KeyLocker {
-	return &KeyLocker{
-		lockMap: make(map[interface{}]*wrapLocker),
+// NewTKeyLockerInstance new key locker instance
+func NewTKeyLockerInstance[T comparable]() *TKeyLocker[T] {
+	return &TKeyLocker[T]{
+		lockMap: make(map[T]*wrapLocker),
 	}
 }
 
 // Lock write lock
-func (d *KeyLocker) Lock(key interface{}) {
+func (d *TKeyLocker[T]) Lock(key T) {
 	var (
 		wrLocker *wrapLocker
 		ok       bool
@@ -49,7 +42,7 @@ func (d *KeyLocker) Lock(key interface{}) {
 }
 
 // Unlock write unlock
-func (d *KeyLocker) Unlock(key interface{}) {
+func (d *TKeyLocker[T]) Unlock(key T) {
 	var (
 		wrLocker *wrapLocker
 	)
@@ -62,7 +55,7 @@ func (d *KeyLocker) Unlock(key interface{}) {
 }
 
 // RLock read lock
-func (d *KeyLocker) RLock(key interface{}) {
+func (d *TKeyLocker[T]) RLock(key T) {
 	var (
 		wrLocker *wrapLocker
 		ok       bool
@@ -79,7 +72,7 @@ func (d *KeyLocker) RLock(key interface{}) {
 }
 
 // RUnlock read unlock
-func (d *KeyLocker) RUnlock(key interface{}) {
+func (d *TKeyLocker[T]) RUnlock(key T) {
 	var (
 		wrLocker *wrapLocker
 	)
@@ -92,7 +85,7 @@ func (d *KeyLocker) RUnlock(key interface{}) {
 }
 
 // try to free a key locker from map
-func (d *KeyLocker) tryFree(key interface{}, wrLocker *wrapLocker) {
+func (d *TKeyLocker[T]) tryFree(key T, wrLocker *wrapLocker) {
 	if wrLocker.readCount == 0 && wrLocker.writeCount == 0 {
 		delete(d.lockMap, key)
 	}

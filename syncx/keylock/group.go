@@ -1,6 +1,8 @@
 package keylock
 
-import "github.com/pinealctx/neptune/remap"
+import (
+	"github.com/pinealctx/neptune/remap"
+)
 
 type KeyLockerGrp struct {
 	ls       []*KeyLocker

@@ -104,14 +104,14 @@ func TestSetUpdatesSize(t *testing.T) {
 	emptyValue := &CacheValue{0}
 	key := "key1"
 	cache.Set(key, emptyValue)
-	if _, sz, _, _ := cache.Stats(); sz != 0 {
-		t.Errorf("cache.Size() = %v, expected 0", sz)
+	if _, sz, _, _ := cache.Stats(); sz != 1 {
+		t.Errorf("cache.Size() = %v, expected 1", sz)
 	}
 	someValue := &CacheValue{20}
 	key = "key2"
 	cache.Set(key, someValue)
-	if _, sz, _, _ := cache.Stats(); sz != 20 {
-		t.Errorf("cache.Size() = %v, expected 20", sz)
+	if _, sz, _, _ := cache.Stats(); sz != 2 {
+		t.Errorf("cache.Size() = %v, expected 2", sz)
 	}
 }
 
@@ -135,13 +135,13 @@ func TestSetWithOldKeyUpdatesSize(t *testing.T) {
 	key := "key1"
 	cache.Set(key, emptyValue)
 
-	if _, sz, _, _ := cache.Stats(); sz != 0 {
-		t.Errorf("cache.Size() = %v, expected %v", sz, 0)
+	if _, sz, _, _ := cache.Stats(); sz != 1 {
+		t.Errorf("cache.Size() = %v, expected %v", sz, 1)
 	}
 
 	someValue := &CacheValue{20}
 	cache.Set(key, someValue)
-	expected := int64(someValue.size)
+	expected := int64(1)
 	if _, sz, _, _ := cache.Stats(); sz != expected {
 		t.Errorf("cache.Size() = %v, expected %v", sz, expected)
 	}
@@ -301,11 +301,13 @@ func TestLRUCache_Exist(t *testing.T) {
 	var size = int64(3)
 	cache := NewLRUCache(size)
 	cache.Set(1, Empty{})
-	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3), cache.Exist(4), cache.Exist(5))
 	cache.Set(2, Empty{})
-	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3), cache.Exist(4), cache.Exist(5))
 	cache.Set(3, Empty{})
-	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3), cache.Exist(4), cache.Exist(5))
 	cache.Set(4, Empty{})
-	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3))
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3), cache.Exist(4), cache.Exist(5))
+	cache.Set(5, Empty{})
+	t.Log(cache.Exist(1), cache.Exist(2), cache.Exist(3), cache.Exist(4), cache.Exist(5))
 }

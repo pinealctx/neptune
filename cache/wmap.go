@@ -1,6 +1,8 @@
 package cache
 
-import "github.com/pinealctx/neptune/remap"
+import (
+	"github.com/pinealctx/neptune/remap"
+)
 
 // WideMap use Map group array as a wide map
 type WideMap struct {
