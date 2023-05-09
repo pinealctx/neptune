@@ -20,4 +20,13 @@ type TLocker[T comparable] interface {
 	RLock(key T)
 	// RUnlock read unlock
 	RUnlock(key T)
+
+	// Locks write lock
+	Locks(keys []T)
+	// Unlocks write unlock
+	Unlocks(keys []T)
+	// RLocks read lock
+	RLocks(keys []T)
+	// RUnlocks read unlock
+	RUnlocks(keys []T)
 }

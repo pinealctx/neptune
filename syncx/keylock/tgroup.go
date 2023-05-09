@@ -2,8 +2,15 @@ package keylock
 
 import (
 	"github.com/pinealctx/neptune/remap"
+	"golang.org/x/exp/slices"
 )
 
+type multiKeyT[T comparable] struct {
+	index int
+	ks    []T
+}
+
+// TKeyLockerGrp wide key locker group
 type TKeyLockerGrp[T comparable] struct {
 	ls       []*TKeyLocker[T]
 	calKeyFn func(key interface{}) int
@@ -30,10 +37,72 @@ func (w *TKeyLockerGrp[T]) RUnlock(key T) {
 	w.calculateKey(key).RUnlock(key)
 }
 
+// Locks write lock
+func (w *TKeyLockerGrp[T]) Locks(keys []T) {
+	var ms = w.calculateSortedMultiKeys(keys)
+	var ws = make([]*wrapLocker, 0, len(keys))
+	for _, ks := range ms {
+		ws = append(ws, w.ls[ks.index].getWriteLocks(ks.ks)...)
+	}
+	for _, wr := range ws {
+		wr.rwLocker.Lock()
+	}
+}
+
+// Unlocks write unlock
+func (w *TKeyLockerGrp[T]) Unlocks(keys []T) {
+	var m = w.calculateSortedMultiKeys(keys)
+	for _, ks := range m {
+		w.ls[ks.index].Unlocks(ks.ks)
+	}
+}
+
+// RLocks read lock
+func (w *TKeyLockerGrp[T]) RLocks(keys []T) {
+	var ms = w.calculateSortedMultiKeys(keys)
+	var ws = make([]*wrapLocker, 0, len(keys))
+	for _, ks := range ms {
+		ws = append(ws, w.ls[ks.index].getReadLocks(ks.ks)...)
+	}
+	for _, wr := range ws {
+		wr.rwLocker.RLock()
+	}
+}
+
+// RUnlocks read unlock
+func (w *TKeyLockerGrp[T]) RUnlocks(keys []T) {
+	var m = w.calculateSortedMultiKeys(keys)
+	for _, ks := range m {
+		w.ls[ks.index].RUnlocks(ks.ks)
+	}
+}
+
 // calculate key
 func (w *TKeyLockerGrp[T]) calculateKey(key T) *TKeyLocker[T] {
 	var i = w.calKeyFn(key)
 	return w.ls[i]
+}
+
+// calculate multi keys
+func (w *TKeyLockerGrp[T]) calculateSortedMultiKeys(keys []T) []multiKeyT[T] {
+	// calculate each key hash index
+	// and group by index sorted
+	var m = make(map[int][]T)
+	for _, key := range keys {
+		var i = w.calKeyFn(key)
+		m[i] = append(m[i], key)
+	}
+
+	var ms = make([]multiKeyT[T], 0, len(m))
+	for i, ks := range m {
+		ms = append(ms, multiKeyT[T]{index: i, ks: ks})
+	}
+
+	// sort by index
+	slices.SortFunc[multiKeyT[T]](ms, func(a, b multiKeyT[T]) bool {
+		return a.index < b.index
+	})
+	return ms
 }
 
 // NewTKeyLockeGrp new wide key locker group
