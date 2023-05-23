@@ -5,30 +5,30 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/eapache/queue v1.1.0
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/snappy v0.0.4
 	github.com/json-iterator/go v1.1.12
-	github.com/nyaruka/phonenumbers v1.1.6
+	github.com/nyaruka/phonenumbers v1.1.7
+	github.com/redis/go-redis/v9 v9.0.4
 	github.com/satori/go.uuid v1.2.0
-	github.com/stretchr/testify v1.8.2
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/captcha v1.0.650
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.650
+	github.com/stretchr/testify v1.8.3
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/captcha v1.0.662
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.662
 	github.com/urfave/cli/v2 v2.25.3
 	github.com/vmihailenco/msgpack/v5 v5.3.5
-	go.etcd.io/etcd/api/v3 v3.5.8
-	go.etcd.io/etcd/client/pkg/v3 v3.5.8
-	go.etcd.io/etcd/client/v3 v3.5.8
+	go.etcd.io/etcd/api/v3 v3.5.9
+	go.etcd.io/etcd/client/pkg/v3 v3.5.9
+	go.etcd.io/etcd/client/v3 v3.5.9
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.8.0
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
+	golang.org/x/crypto v0.9.0
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gorm.io/driver/mysql v1.5.0
-	gorm.io/gorm v1.25.0
+	gorm.io/driver/mysql v1.5.1
+	gorm.io/gorm v1.25.1
 )
 
 require (
@@ -48,8 +48,8 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
