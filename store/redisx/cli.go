@@ -29,6 +29,24 @@ func NewClusterClient(opt *redis.ClusterOptions) (redis.Cmdable, error) {
 	return rds, nil
 }
 
+func NewClientV2(opt *redis.Options) (*redis.Client, error) {
+	var rds = redis.NewClient(opt)
+	var err = pingTest(rds)
+	if err != nil {
+		return nil, err
+	}
+	return rds, nil
+}
+
+func NewClusterClientV2(opt *redis.ClusterOptions) (*redis.ClusterClient, error) {
+	var rds = redis.NewClusterClient(opt)
+	var err = pingTest(rds)
+	if err != nil {
+		return nil, err
+	}
+	return rds, nil
+}
+
 func pingTest(cmd redis.Cmdable) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), pingTimeout)
 	defer cancel()
