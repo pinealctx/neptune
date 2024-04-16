@@ -1,7 +1,6 @@
 package tex
 
 import (
-	"bytes"
 	"errors"
 	"strconv"
 )
@@ -16,8 +15,7 @@ var (
 // use string to replace the number if a field is int64
 type JsInt64 int64
 
-// MarshalJSON
-// marshal json
+// MarshalJSON marshal json
 func (i JsInt64) MarshalJSON() ([]byte, error) {
 	buf := []byte(strconv.FormatInt(int64(i), 10))
 	newBuf := make([]byte, 0, len(buf)+2)
@@ -27,23 +25,28 @@ func (i JsInt64) MarshalJSON() ([]byte, error) {
 	return newBuf, nil
 }
 
-// UnmarshalJSON
-// unmarshal json
+// UnmarshalJSON unmarshal json
 func (i *JsInt64) UnmarshalJSON(b []byte) error {
 	lb := len(b)
-	if lb < 2 {
+	if lb == 0 {
 		return ErrInvalidInt64Js
 	}
 
-	if lb == 2 {
-		if bytes.Equal(b, jsonBrace) {
+	if b[0] == '"' && b[lb-1] == '"' {
+		strBuf := string(b[1 : lb-1])
+		if strBuf == "" {
 			*i = 0
 			return nil
 		}
-		return ErrInvalidInt64Js
+		t, err := strconv.Atoi(strBuf)
+		if err != nil {
+			return err
+		}
+		*i = JsInt64(t)
+		return nil
 	}
 
-	strBuf := string(b[1 : lb-1])
+	strBuf := string(b)
 	t, err := strconv.Atoi(strBuf)
 	if err != nil {
 		return err
