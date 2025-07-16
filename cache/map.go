@@ -6,7 +6,7 @@ import (
 
 // Map with locked map
 type Map struct {
-	m    map[interface{}]interface{}
+	m    map[any]any
 	lock sync.RWMutex
 }
 
@@ -22,18 +22,18 @@ func NewMap() *Map {
 }
 
 func (m *Map) Init() {
-	m.m = make(map[interface{}]interface{})
+	m.m = make(map[any]any)
 }
 
 // Set : set key-value
-func (m *Map) Set(key interface{}, value interface{}) {
+func (m *Map) Set(key any, value any) {
 	m.lock.Lock()
 	m.m[key] = value
 	m.lock.Unlock()
 }
 
 // Get : get value
-func (m *Map) Get(key interface{}) (interface{}, bool) {
+func (m *Map) Get(key any) (any, bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	var v, ok = m.m[key]
@@ -41,7 +41,7 @@ func (m *Map) Get(key interface{}) (interface{}, bool) {
 }
 
 // Exist : return true if key in map
-func (m *Map) Exist(key interface{}) bool {
+func (m *Map) Exist(key any) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	var _, ok = m.m[key]
@@ -49,7 +49,7 @@ func (m *Map) Exist(key interface{}) bool {
 }
 
 // Delete : delete a key
-func (m *Map) Delete(key interface{}) {
+func (m *Map) Delete(key any) {
 	m.lock.Lock()
 	delete(m.m, key)
 	m.lock.Unlock()

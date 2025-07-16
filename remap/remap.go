@@ -3,10 +3,11 @@ package remap
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/cespare/xxhash/v2"
 	"math"
 	"reflect"
 	"sort"
+
+	"github.com/cespare/xxhash/v2"
 )
 
 // Bs an interface can convert self to bytes
@@ -51,7 +52,7 @@ func (r *ReMap) Numbs() uint64 {
 }
 
 // SimpleIndex figure simple index
-func (r *ReMap) SimpleIndex(i interface{}) int {
+func (r *ReMap) SimpleIndex(i any) int {
 	var it uint64
 	switch v := i.(type) {
 	case byte:
@@ -83,7 +84,7 @@ func (r *ReMap) SimpleIndex(i interface{}) int {
 }
 
 // XHashIndex figure xhash index
-func (r *ReMap) XHashIndex(i interface{}) int {
+func (r *ReMap) XHashIndex(i any) int {
 	return r.SearchIndex(XXHash(i))
 }
 
@@ -102,7 +103,7 @@ func SearchUInt64s(a []uint64, x uint64) int {
 }
 
 // XXHash : use xxhash hash interface
-func XXHash(i interface{}) uint64 {
+func XXHash(i any) uint64 {
 	switch v := i.(type) {
 	case string:
 		return xxhash.Sum64String(v)
@@ -112,7 +113,7 @@ func XXHash(i interface{}) uint64 {
 }
 
 // ToBytes : convert interface to []byte
-func ToBytes(i interface{}) []byte {
+func ToBytes(i any) []byte {
 	switch v := i.(type) {
 	case byte:
 		return []byte{v}

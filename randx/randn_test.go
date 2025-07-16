@@ -8,10 +8,11 @@ func TestRandBetween(t *testing.T) {
 	testRandBetween(t, -4, 5)
 }
 
-func testRandBetween(t *testing.T, min, max int) {
+func testRandBetween(t *testing.T, minV, maxV int) {
+	t.Helper()
 	var count = 0
 	for i := 0; i < 10000; i++ {
-		var x = RandBetween(min, max)
+		var x = RandBetween(minV, maxV)
 		if x == 1 {
 			count++
 		}
@@ -25,10 +26,11 @@ func TestSimpleRandBetween(t *testing.T) {
 	testSimpleRandBetween(t, -4, 5)
 }
 
-func testSimpleRandBetween(t *testing.T, min, max int) {
+func testSimpleRandBetween(t *testing.T, minV, maxV int) {
+	t.Helper()
 	var count = 0
 	for i := 0; i < 10000; i++ {
-		var x = SimpleRandBetween(min, max)
+		var x = SimpleRandBetween(minV, maxV)
 		if x == 1 {
 			count++
 		}
@@ -42,10 +44,11 @@ func TestRandBetweenSecure(t *testing.T) {
 	testRandBetweenSecure(t, -4, 5)
 }
 
-func testRandBetweenSecure(t *testing.T, min, max int) {
+func testRandBetweenSecure(t *testing.T, minV, maxV int) {
+	t.Helper()
 	var count = 0
 	for i := 0; i < 10000; i++ {
-		var x = RandBetweenSecure(min, max)
+		var x = RandBetweenSecure(minV, maxV)
 		if x == 1 {
 			count++
 		}

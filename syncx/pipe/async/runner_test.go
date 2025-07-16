@@ -19,7 +19,7 @@ type _incTX struct {
 	x int
 }
 
-func (i *_incTX) Do(_ context.Context) (interface{}, error) {
+func (i *_incTX) Do(_ context.Context) (any, error) {
 	i.x++
 	return i.x, nil
 }
@@ -37,7 +37,7 @@ func TestRunnerQ_Call(t *testing.T) {
 
 	var t1 = time.Now()
 	for i := 0; i < size; i++ {
-		var r, err = runner.AsyncCall(xs[i].add, ctx, 0)
+		var r, err = runner.AsyncCall(ctx, xs[i].add, 0)
 		if err != nil {
 			panic(err)
 		}
@@ -52,7 +52,7 @@ func TestRunnerQ_Call(t *testing.T) {
 
 	t1 = time.Now()
 	for i := 0; i < size; i++ {
-		_, _ = xs[i].add(nil, 0)
+		_, _ = xs[i].add(context.TODO(), 0)
 	}
 	t2 = time.Now()
 	dur = t2.Sub(t1)
@@ -87,7 +87,7 @@ func TestRunnerQ_Delegate(t *testing.T) {
 
 	t1 = time.Now()
 	for i := 0; i < size; i++ {
-		_, _ = xs[i].Do(nil)
+		_, _ = xs[i].Do(context.TODO())
 	}
 	t2 = time.Now()
 	dur = t2.Sub(t1)
@@ -122,7 +122,7 @@ func TestRunnerQ_Proc(t *testing.T) {
 
 	t1 = time.Now()
 	for i := 0; i < size; i++ {
-		_, _ = xs[i].Do(nil)
+		_, _ = xs[i].Do(context.TODO())
 	}
 	t2 = time.Now()
 	dur = t2.Sub(t1)

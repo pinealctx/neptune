@@ -236,7 +236,7 @@ func TestCapacityIsObeyed(t *testing.T) {
 
 	// Check json stats
 	data := cache.StatsJSON()
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	if err := json.Unmarshal([]byte(data), &m); err != nil {
 		t.Errorf("cache.StatsJSON() returned bad json data: %v %v", data, err)
 	}

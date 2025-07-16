@@ -38,7 +38,7 @@ func (i Duration) Duration() time.Duration {
 	return time.Duration(i)
 }
 
-func (i *Duration) UnmarshalTOML(v interface{}) error {
+func (i *Duration) UnmarshalTOML(v any) error {
 	var s, ok = v.(string)
 	if !ok {
 		return ErrInvalidDuration

@@ -27,7 +27,7 @@ func New(message string) error {
 	return stderrors.New(message)
 }
 
-func Newf(format string, args ...interface{}) error {
+func Newf(format string, args ...any) error {
 	return fmt.Errorf(format, args...)
 }
 
@@ -43,7 +43,7 @@ func NewWithStack(message string) error {
 // NewfWithStack formats according to a format specifier and returns the string
 // as a value that satisfies error.
 // NewfWithStack also records the stack trace at the point it was called.
-func NewfWithStack(format string, args ...interface{}) error {
+func NewfWithStack(format string, args ...any) error {
 	return &fundamental{
 		msg:   fmt.Sprintf(format, args...),
 		stack: callers(),
@@ -135,7 +135,7 @@ func WrapWithStack(err error, message string) error {
 // WrapfWithStack returns an error annotating err with a stack trace
 // at the point WrapfWithStack is called, and the format specifier.
 // If err is nil, WrapfWithStack returns nil.
-func WrapfWithStack(err error, format string, args ...interface{}) error {
+func WrapfWithStack(err error, format string, args ...any) error {
 	if err == nil {
 		return nil
 	}
@@ -166,7 +166,7 @@ func Wrap(err error, message string) error {
 
 // Wrapf annotates err with the format specifier.
 // If err is nil, WithMessagef returns nil.
-func Wrapf(err error, format string, args ...interface{}) error {
+func Wrapf(err error, format string, args ...any) error {
 	if err == nil {
 		return nil
 	}
@@ -246,9 +246,9 @@ func GetFullStack(err error) string {
 	for err != nil {
 		switch errT := err.(type) {
 		case *withStack:
-			return errT.stack.getFullStackStr()
+			return errT.getFullStackStr()
 		case *fundamental:
-			return errT.stack.getFullStackStr()
+			return errT.getFullStackStr()
 		}
 		err = Unwrap(err)
 	}

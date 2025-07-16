@@ -1,10 +1,12 @@
 package tex
 
 import (
-	"github.com/pinealctx/neptune/jsonx"
-	"github.com/vmihailenco/msgpack/v5"
 	"reflect"
 	"testing"
+
+	"github.com/vmihailenco/msgpack/v5"
+
+	"github.com/pinealctx/neptune/jsonx"
 )
 
 type X struct {
@@ -12,7 +14,7 @@ type X struct {
 }
 
 func TestMapMarshal(t *testing.T) {
-	var m = make(map[string]interface{})
+	var m = make(map[string]any)
 	m["a"] = []string{"1", "2", "3"}
 	m["b"] = []int64{1, 2, 3}
 	m["c"] = []X{{A: 1}, {A: 2}}
@@ -20,7 +22,7 @@ func TestMapMarshal(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	var x map[string]interface{}
+	var x map[string]any
 	err = msgpack.Unmarshal(buf, &x)
 	if err != nil {
 		panic(err)
@@ -35,7 +37,7 @@ func TestMapMarshal(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	var y map[string]interface{}
+	var y map[string]any
 	err = jsonx.JSONFastUnmarshal(buf, &y)
 	if err != nil {
 		panic(err)
@@ -48,7 +50,7 @@ func TestMapMarshal(t *testing.T) {
 }
 
 func TestMapArray(t *testing.T) {
-	var m = make(map[string]interface{})
+	var m = make(map[string]any)
 	m["a"] = []string{"1", "2", "3"}
 	m["b"] = []int64{1, 2, 3}
 	m["c"] = []X{{A: 1}, {A: 2}}
@@ -56,7 +58,7 @@ func TestMapArray(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	var x map[string]interface{}
+	var x map[string]any
 	err = msgpack.Unmarshal(buf, &x)
 	if err != nil {
 		panic(err)
@@ -86,7 +88,7 @@ func TestMapArray(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	var y map[string]interface{}
+	var y map[string]any
 	err = jsonx.JSONFastUnmarshal(buf, &y)
 	if err != nil {
 		panic(err)

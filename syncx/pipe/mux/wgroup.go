@@ -56,23 +56,23 @@ func NewWorkGrpWithLRU(lruCap int64, opts ...Option) *WorkerGrp {
 }
 
 // DoGet : get from cache first if not load from db
-func (w *WorkerGrp) DoGet(ctx context.Context, loadFn RenewDataFn, k Hashed2Int) (interface{}, error) {
+func (w *WorkerGrp) DoGet(ctx context.Context, loadFn RenewDataFn, k Hashed2Int) (any, error) {
 	return w.ws[w.locHash(k)].DoGet(ctx, loadFn, k)
 }
 
 // DoAdd : add item
-func (w *WorkerGrp) DoAdd(ctx context.Context, addFn RenewDataFn, k Hashed2Int, data interface{}) (interface{}, error) {
+func (w *WorkerGrp) DoAdd(ctx context.Context, addFn RenewDataFn, k Hashed2Int, data any) (any, error) {
 	return w.ws[w.locHash(k)].DoAdd(ctx, addFn, k, data)
 }
 
 // DoUpdate : update item
 func (w *WorkerGrp) DoUpdate(ctx context.Context,
-	loadFn RenewDataFn, updFn UpdateDataFn, k Hashed2Int, data interface{}) (interface{}, error) {
+	loadFn RenewDataFn, updFn UpdateDataFn, k Hashed2Int, data any) (any, error) {
 	return w.ws[w.locHash(k)].DoUpdate(ctx, loadFn, updFn, k, data)
 }
 
 // DoDelete : delete item
-func (w *WorkerGrp) DoDelete(ctx context.Context, deleteFn DeleteFn, k Hashed2Int) (interface{}, error) {
+func (w *WorkerGrp) DoDelete(ctx context.Context, deleteFn DeleteFn, k Hashed2Int) (any, error) {
 	return w.ws[w.locHash(k)].DoDelete(ctx, deleteFn, k)
 }
 
@@ -82,7 +82,7 @@ func (w *WorkerGrp) DoDelete(ctx context.Context, deleteFn DeleteFn, k Hashed2In
 // 3. add if not existed.
 func (w *WorkerGrp) DoUpdOrAddIfNull(ctx context.Context,
 	loadFn RenewDataFn, updFn UpdateDataFn, addFn RenewDataFn, isNotFoundFn IsNotFoundFn,
-	k Hashed2Int, data interface{}) (interface{}, error) {
+	k Hashed2Int, data any) (any, error) {
 	return w.ws[w.locHash(k)].DoUpdOrAddIfNull(ctx, loadFn, updFn, addFn, isNotFoundFn, k, data)
 }
 
@@ -91,7 +91,7 @@ func (w *WorkerGrp) DoUpdOrAddIfNull(ctx context.Context,
 // 2. update cache if cache hit.
 // 3. load cache if cache miss.
 func (w *WorkerGrp) DoUpsertThenLoad(ctx context.Context,
-	upsertFn UpdateDataFn, loadFn RenewDataFn, k Hashed2Int, data interface{}) (interface{}, error) {
+	upsertFn UpdateDataFn, loadFn RenewDataFn, k Hashed2Int, data any) (any, error) {
 	return w.ws[w.locHash(k)].DoUpsertThenLoad(ctx, upsertFn, loadFn, k, data)
 }
 
@@ -99,7 +99,7 @@ func (w *WorkerGrp) DoUpsertThenLoad(ctx context.Context,
 // 1. upsert.
 // 2. update cache if cache hit.
 func (w *WorkerGrp) DoUpsertThenRenewInCache(ctx context.Context,
-	upsertFn UpdateDataFn, k Hashed2Int, data interface{}) (interface{}, error) {
+	upsertFn UpdateDataFn, k Hashed2Int, data any) (any, error) {
 	return w.ws[w.locHash(k)].DoUpsertThenRenewInCache(ctx, upsertFn, k, data)
 }
 

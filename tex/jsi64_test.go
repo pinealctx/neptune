@@ -2,8 +2,9 @@ package tex
 
 import (
 	"encoding/json"
-	"github.com/pinealctx/neptune/jsonx"
 	"testing"
+
+	"github.com/pinealctx/neptune/jsonx"
 )
 
 type T struct {
@@ -12,7 +13,7 @@ type T struct {
 }
 
 func TestInt64Json_MarshalJSON(t *testing.T) {
-	var x = map[string]interface{}{
+	var x = map[string]any{
 		`a`: int64(9223372036854775806),
 		`b`: JsInt64(9223372036854775806),
 	}
@@ -21,6 +22,10 @@ func TestInt64Json_MarshalJSON(t *testing.T) {
 	t.Log(err)
 
 	err = jsonx.JSONUnmarshal(s, &x)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 	t.Log(`x1 is `, x)
 
 	s, err = json.Marshal(x)
@@ -28,6 +33,10 @@ func TestInt64Json_MarshalJSON(t *testing.T) {
 	t.Log(err)
 
 	err = jsonx.JSONUnmarshal(s, &x)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 	t.Log(`x2 is `, x)
 
 	var y = T{
@@ -38,9 +47,17 @@ func TestInt64Json_MarshalJSON(t *testing.T) {
 	t.Log(err)
 
 	err = jsonx.JSONUnmarshal(s, &y)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 	t.Log(`y1 is `, y)
 
 	err = jsonx.JSONUnmarshal(s, &x)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 	t.Log(`x1 is `, x)
 
 	s, err = jsonx.JSONMarshal(y)
@@ -48,6 +65,10 @@ func TestInt64Json_MarshalJSON(t *testing.T) {
 	t.Log(err)
 
 	err = jsonx.JSONUnmarshal(s, &x)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 	t.Log(`x2 is `, x)
 
 }

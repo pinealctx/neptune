@@ -1,9 +1,11 @@
 package jsonx
 
 import (
-	"github.com/json-iterator/go"
-	"github.com/pinealctx/neptune/compress"
 	"os"
+
+	"github.com/json-iterator/go"
+
+	"github.com/pinealctx/neptune/compress"
 )
 
 const (
@@ -42,7 +44,7 @@ var _ = TrySnappyCompress
 
 // LoadJSONFile2Obj
 // 读取json文件并序列化到传入的指针中
-func LoadJSONFile2Obj(fileName string, v interface{}) error {
+func LoadJSONFile2Obj(fileName string, v any) error {
 	buf, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
@@ -52,7 +54,7 @@ func LoadJSONFile2Obj(fileName string, v interface{}) error {
 }
 
 // fast json with compress
-func fastMarshalSnappy(v interface{}) ([]byte, error) {
+func fastMarshalSnappy(v any) ([]byte, error) {
 	var buf, err = JSONFastMarshal(v)
 	if err != nil {
 		return nil, err
@@ -61,7 +63,7 @@ func fastMarshalSnappy(v interface{}) ([]byte, error) {
 }
 
 // fast json with compress unmarshal
-func fastUnmarshalSnappy(data []byte, v interface{}) error {
+func fastUnmarshalSnappy(data []byte, v any) error {
 	var size = len(data)
 	if size == 0 {
 		return nil
@@ -72,9 +74,8 @@ func fastUnmarshalSnappy(data []byte, v interface{}) error {
 			return err
 		}
 		return JSONFastUnmarshal(buf, v)
-	} else {
-		return JSONFastUnmarshal(data, v)
 	}
+	return JSONFastUnmarshal(data, v)
 }
 
 // compress json

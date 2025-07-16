@@ -2,8 +2,9 @@ package gormx
 
 import (
 	"errors"
-	"gorm.io/gorm"
 	"testing"
+
+	"gorm.io/gorm"
 )
 
 type TestT struct {

@@ -2,10 +2,11 @@ package remap
 
 import (
 	"fmt"
-	"github.com/pinealctx/neptune/idgen/snowflake"
 	"math"
 	"testing"
 	"time"
+
+	"github.com/pinealctx/neptune/idgen/snowflake"
 )
 
 // 测试平分
@@ -19,7 +20,7 @@ func TestUint64Split(t *testing.T) {
 	}
 	t.Log(x - y*numbs)
 	t.Log(x + 1)
-	var z int = -9223372036854775808
+	var z = -9223372036854775808
 	z *= -1
 	t.Log(z)
 	t.Log(math.MinInt64)
@@ -32,7 +33,7 @@ func TestHashKey(t *testing.T) {
 	for i := 0; i < 100000; i++ {
 		XXHash(i)
 	}
-	var d = time.Now().Sub(t1)
+	var d = time.Since(t1)
 	t.Log("use time:", d, "average:", d/100000)
 }
 

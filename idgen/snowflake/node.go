@@ -18,7 +18,7 @@ type HardNode struct {
 }
 
 // NewNode returns a new snowflake node that can be used to generate snowflake
-func NewNode(node int64, min int64) (Node, error) {
+func NewNode(node int64, minV int64) (Node, error) {
 	var nodeMax int64 = (1 << _nodeBits) - 1
 	if node < 0 || node > nodeMax {
 		return nil, errors.New("node.number.must.be.between.0.and." + strconv.FormatInt(nodeMax, 10))
@@ -26,7 +26,7 @@ func NewNode(node int64, min int64) (Node, error) {
 	var n = &HardNode{}
 	n.node = node
 	n.epoch = time.Unix(_epoch/SDivMs, (_epoch%SDivMs)*MsDivNs).UnixNano() / MsDivNs
-	n.time, _, n.step = IDFields(min)
+	n.time, _, n.step = IDFields(minV)
 	return n, nil
 }
 

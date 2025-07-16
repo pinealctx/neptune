@@ -3,12 +3,13 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"go.etcd.io/etcd/api/v3/mvccpb"
-	"go.etcd.io/etcd/client/pkg/v3/transport"
-	"go.etcd.io/etcd/client/v3"
 	"path"
 	"strings"
 	"time"
+
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/client/pkg/v3/transport"
+	"go.etcd.io/etcd/client/v3"
 )
 
 const (
@@ -85,10 +86,10 @@ func (d *DirRet) DebugInfo() string {
 	buffer.WriteString(":\n")
 	for _, kv := range d.KVS {
 		buffer.WriteString("key:")
-		buffer.WriteString(string(kv.Key))
+		buffer.Write(kv.Key)
 		buffer.WriteString(",")
 		buffer.WriteString("val:")
-		buffer.WriteString(string(kv.Value))
+		buffer.Write(kv.Value)
 		buffer.WriteString("\n")
 	}
 	return buffer.String()

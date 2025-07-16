@@ -33,7 +33,7 @@ func inValidateCache(t reflect.Type) bool {
 }
 
 // validate function
-func validateFn(fn interface{}) (reflect.Type, bool) {
+func validateFn(fn any) (reflect.Type, bool) {
 	if fn == nil {
 		return nil, false
 	}

@@ -1,9 +1,10 @@
 package bitmap1024
 
 import (
-	"github.com/pinealctx/neptune/bitmap1024/internal"
 	"testing"
 	"time"
+
+	"github.com/pinealctx/neptune/bitmap1024/internal"
 )
 
 func TestBit1024_SparseBenchIter(t *testing.T) {
@@ -32,6 +33,7 @@ func TestBit1024_SparseBenchIter(t *testing.T) {
 }
 
 func testBit1024IterSparse(t *testing.T, name string, x64s []Bit1024) {
+	t.Helper()
 	var (
 		t1    time.Time
 		t2    time.Time

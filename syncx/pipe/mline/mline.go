@@ -2,11 +2,13 @@ package mline
 
 import (
 	"context"
+	"sync"
+
+	"go.uber.org/zap"
+
 	"github.com/pinealctx/neptune/syncx/pipe"
 	"github.com/pinealctx/neptune/syncx/pipe/q"
 	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
-	"sync"
 )
 
 // MultiLine : multi-queue handler
@@ -73,7 +75,7 @@ func (c *MultiLine) IndexOf(i int) int {
 // AsyncCall : wrap call
 // ctx -- context.Context
 // callCtx -- call context
-func (c *MultiLine) AsyncCall(ctx context.Context, callCtx *CallCtx) (interface{}, error) {
+func (c *MultiLine) AsyncCall(ctx context.Context, callCtx *CallCtx) (any, error) {
 	var proc, err = c.addCallCtx(ctx, callCtx)
 	if err != nil {
 		return nil, err
@@ -115,9 +117,9 @@ func (c *MultiLine) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx
 func (c *MultiLine) popLoop(index int) {
 	var (
 		err  error
-		item interface{}
+		item any
 		ac   *AsyncCtx
-		r    interface{}
+		r    any
 		ok   bool
 
 		mq = c.qs[index]

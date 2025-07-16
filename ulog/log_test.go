@@ -2,12 +2,13 @@ package ulog
 
 import (
 	"errors"
-	"go.uber.org/zap"
 	"testing"
 	"time"
+
+	"go.uber.org/zap"
 )
 
-func TestNewZapLoggerX1(t *testing.T) {
+func TestNewZapLoggerX1(_ *testing.T) {
 	test1()
 }
 
@@ -44,7 +45,7 @@ func test1() {
 	}()
 }
 
-func TestNewZapLoggerX2(t *testing.T) {
+func TestNewZapLoggerX2(_ *testing.T) {
 	test2()
 }
 

@@ -2,10 +2,11 @@ package async
 
 import (
 	"container/list"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -60,7 +61,7 @@ func (a *Q) Size() int {
 
 // AddAnyway add normal request to the normal queue end place anyway
 // if queue full, sleep then try
-func (a *Q) AddAnyway(req interface{}, ts time.Duration) error {
+func (a *Q) AddAnyway(req any, ts time.Duration) error {
 	var err error
 	for {
 		err = a.Add(req)
@@ -73,7 +74,7 @@ func (a *Q) AddAnyway(req interface{}, ts time.Duration) error {
 }
 
 // Add : add normal request to the normal queue end place.
-func (a *Q) Add(req interface{}) error {
+func (a *Q) Add(req any) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.closed {
@@ -90,7 +91,7 @@ func (a *Q) Add(req interface{}) error {
 }
 
 // AddPrior add prior request to queue first place.
-func (a *Q) AddPrior(req interface{}) error {
+func (a *Q) AddPrior(req any) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.closed {
@@ -102,12 +103,12 @@ func (a *Q) AddPrior(req interface{}) error {
 }
 
 // Pop consume an item, if list is empty, it's been blocked
-func (a *Q) Pop() (interface{}, error) {
+func (a *Q) Pop() (any, error) {
 	return a.pop(true)
 }
 
 // PopAnyway consume an item like Pop, but it can consume even the queue is closed.
-func (a *Q) PopAnyway() (interface{}, error) {
+func (a *Q) PopAnyway() (any, error) {
 	return a.pop(false)
 }
 
@@ -126,7 +127,7 @@ func (a *Q) Close() {
 // input: checkClose
 // if true  --> when queue is closed, pop can will return error even in case someone is in queue.
 // if false --> when queue is closed, the queue also can be pop if anyone is in queue.
-func (a *Q) pop(checkClose bool) (interface{}, error) {
+func (a *Q) pop(checkClose bool) (any, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	for a.reqList.Len() == 0 {

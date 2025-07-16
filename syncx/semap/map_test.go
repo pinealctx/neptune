@@ -21,12 +21,13 @@ func TestWeightedPanic(t *testing.T) {
 	testWeightedPanic(t, sem)
 }
 
-func TestLock(t *testing.T) {
+func TestLock(_ *testing.T) {
 	var sem = NewSemMap(WithRwRatio(5))
 	testLock(sem)
 }
 
 func testWeighted(t *testing.T, sem SemMapper) {
+	t.Helper()
 	t.Parallel()
 
 	n := runtime.GOMAXPROCS(0)
@@ -44,6 +45,7 @@ func testWeighted(t *testing.T, sem SemMapper) {
 }
 
 func testWeightedPanic(t *testing.T, sem SemMapper) {
+	t.Helper()
 	t.Parallel()
 
 	defer func() {

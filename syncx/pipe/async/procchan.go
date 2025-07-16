@@ -2,9 +2,11 @@ package async
 
 import (
 	"context"
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
 	"sync"
+
+	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // procChanCtxT : proc context, interface
@@ -16,7 +18,7 @@ type procChanCtxT struct {
 	//wait -- wait chan
 	wait chan struct{}
 	//result -- exclude last arg -- (err error)
-	result interface{}
+	result any
 	//error
 	err error
 }
@@ -31,7 +33,7 @@ func newProcChanCtx(ctx context.Context, proc Proc) *procChanCtxT {
 }
 
 // r : get result with wait
-func (c *procChanCtxT) r(stopChan <-chan struct{}) (interface{}, error) {
+func (c *procChanCtxT) r(stopChan <-chan struct{}) (any, error) {
 	select {
 	case <-c.ctx.Done():
 		return nil, c.ctx.Err()
@@ -105,7 +107,7 @@ func (c *ProcChan) Size() int {
 // AsyncProc : async proc
 // ctx -- context.Context
 // proc -- proc interface
-func (c *ProcChan) AsyncProc(ctx context.Context, proc Proc) (interface{}, error) {
+func (c *ProcChan) AsyncProc(ctx context.Context, proc Proc) (any, error) {
 	var procCtx, err = c.addCallCtx(ctx, proc)
 	if err != nil {
 		return nil, err

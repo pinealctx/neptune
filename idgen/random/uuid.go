@@ -3,6 +3,7 @@ package random
 import (
 	/* #nosec */
 	"crypto/md5"
+
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/sha3"
 )

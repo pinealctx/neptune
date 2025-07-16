@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/pinealctx/neptune/remap"
 	"math"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/pinealctx/neptune/remap"
 )
 
 func Test100KMap(t *testing.T) {
@@ -20,6 +21,7 @@ func Test100KMap(t *testing.T) {
 }
 
 func test100KMap(t *testing.T, rc int, wc int) {
+	t.Helper()
 	var mp = NewSingleMap()
 	test100KPassMap(t, "one", mp, rc, wc)
 
@@ -46,6 +48,7 @@ func test100KMap(t *testing.T, rc int, wc int) {
 }
 
 func test100KPassMap(t *testing.T, name string, mp MapFacade, rc int, wc int) {
+	t.Helper()
 	var count = 100000
 	var wg sync.WaitGroup
 	wg.Add(rc + wc)
@@ -55,9 +58,9 @@ func test100KPassMap(t *testing.T, name string, mp MapFacade, rc int, wc int) {
 	var minI16 = math.MinInt16
 	var minI8 = math.MinInt8
 	var n1 = -1
-	var max uint64 = math.MaxUint64
-	var mMax = max + 1
-	var nMax = uint64(-1 * int64(max))
+	var maxV uint64 = math.MaxUint64
+	var mMax = maxV + 1
+	var nMax = uint64(-1 * int64(maxV))
 
 	var us = []uint64{
 		math.MaxUint64,

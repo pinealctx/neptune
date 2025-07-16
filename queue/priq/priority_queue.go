@@ -31,20 +31,19 @@ func (e EntryList) Less(i, j int) bool {
 	// 同样的优先级，早入队的，优先级更高
 	if pi == pj {
 		return e[i].seq < e[j].seq
-	} else {
-		return pi > pj
 	}
+	return pi > pj
 }
 
 func (e EntryList) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
-func (e *EntryList) Push(x interface{}) {
+func (e *EntryList) Push(x any) {
 	*e = append(*e, x.(*wrapEntry))
 }
 
-func (e *EntryList) Pop() interface{} {
+func (e *EntryList) Pop() any {
 	head := (*e)[len(*e)-1]
 	// 避免可能的引用内存不释放
 	(*e)[len(*e)-1] = nil

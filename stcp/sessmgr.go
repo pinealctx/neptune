@@ -1,10 +1,12 @@
 package stcp
 
 import (
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/atomic"
 	"net"
 	"time"
+
+	"go.uber.org/atomic"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // ISession session handler

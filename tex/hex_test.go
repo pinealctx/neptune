@@ -16,6 +16,7 @@ func TestI64Hex(t *testing.T) {
 }
 
 func testI64(t *testing.T, i int64) {
+	t.Helper()
 	var h1 = I64Hex(i)
 	var h2 = I64HexV2(i)
 	var h3 = U64Hex(uint64(i))

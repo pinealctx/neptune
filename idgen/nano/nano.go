@@ -38,7 +38,7 @@ func (n *UnixNanoID) GenIDByTS(ts int64) int64 {
 }
 
 // UnixNanoNoLockID lock free -- without lock
-// lock control by caller user
+// control by caller user
 type UnixNanoNoLockID struct {
 	current int64
 }

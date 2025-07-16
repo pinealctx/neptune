@@ -10,6 +10,7 @@ func TestTimerStop1(t *testing.T) {
 }
 
 func testTimerStop1(t *testing.T) {
+	t.Helper()
 	var x = NewTimer(time.Second * 2)
 	var tt, ok = <-x.C
 	t.Log(tt, ok)
@@ -22,6 +23,7 @@ func TestTimerStop2(t *testing.T) {
 }
 
 func testTimerStop2(t *testing.T) {
+	t.Helper()
 	var x = NewTimer(time.Second * 2)
 	x.Stop()
 	x.Stop()
@@ -32,6 +34,7 @@ func TestTimerReset1(t *testing.T) {
 }
 
 func testTimerReset1(t *testing.T) {
+	t.Helper()
 	var x = NewTimer(time.Second * 2)
 	var tt, ok = <-x.C
 	t.Log(tt, ok)
@@ -46,6 +49,7 @@ func TestTimerReset2(t *testing.T) {
 }
 
 func testTimerReset2(t *testing.T) {
+	t.Helper()
 	var x = NewTimer(time.Second * 2)
 	var tt, ok = <-x.C
 	t.Log(tt, ok)
@@ -62,6 +66,7 @@ func TestTimerReset3(t *testing.T) {
 }
 
 func testTimerReset3(t *testing.T) {
+	t.Helper()
 	var x = NewTimer(time.Second * 2)
 	x.Stop()
 	x.Reset(time.Second * 3)
@@ -73,6 +78,7 @@ func testTimerReset3(t *testing.T) {
 }
 
 func procTest(t *testing.T, f func(*testing.T)) {
+	t.Helper()
 	t.Log(time.Now(), "begin")
 	f(t)
 	t.Log(time.Now(), "end")

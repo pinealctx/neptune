@@ -9,7 +9,7 @@ import (
 
 type Base64Bytes []byte
 
-func (i *Base64Bytes) Scan(value interface{}) error {
+func (i *Base64Bytes) Scan(value any) error {
 	var ds string
 	switch v := value.(type) {
 	case []byte:

@@ -3,8 +3,9 @@ package syncq
 // Copy from: https://github.com/xiaonanln/go-xnsyncutil/blob/master/xnsyncutil/sync_queue.go
 
 import (
-	"github.com/eapache/queue"
 	"sync"
+
+	"github.com/eapache/queue"
 )
 
 // SyncQueue Synchronous FIFO queue
@@ -25,7 +26,7 @@ func NewSyncQueue() *SyncQueue {
 }
 
 // Pop an item from SyncQueue, will block if SyncQueue is empty
-func (q *SyncQueue) Pop() (v interface{}) {
+func (q *SyncQueue) Pop() (v any) {
 	c := q.popable
 	buffer := q.buffer
 
@@ -44,7 +45,7 @@ func (q *SyncQueue) Pop() (v interface{}) {
 }
 
 // TryPop Try to pop an item from SyncQueue, will return immediately with bool=false if SyncQueue is empty
-func (q *SyncQueue) TryPop() (v interface{}, ok bool) {
+func (q *SyncQueue) TryPop() (v any, ok bool) {
 	buffer := q.buffer
 
 	q.lock.Lock()
@@ -62,7 +63,7 @@ func (q *SyncQueue) TryPop() (v interface{}, ok bool) {
 }
 
 // Push an item to SyncQueue. Always returns immediately without blocking
-func (q *SyncQueue) Push(v interface{}) {
+func (q *SyncQueue) Push(v any) {
 	q.lock.Lock()
 	if !q.closed {
 		q.buffer.Add(v)

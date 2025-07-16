@@ -1,8 +1,9 @@
 package tree
 
 import (
-	"github.com/pinealctx/neptune/ds/tree/btree"
 	"sync"
+
+	"github.com/pinealctx/neptune/ds/tree/btree"
 )
 
 // Node : redirect btree.Item

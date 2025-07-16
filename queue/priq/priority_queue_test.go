@@ -13,6 +13,7 @@ func (qi qItem) GetPriority() int {
 }
 
 func assert(t *testing.T, expect bool) {
+	t.Helper()
 	if !expect {
 		t.FailNow()
 	}
@@ -65,16 +66,12 @@ func TestPriQueue_Use(t *testing.T) {
 	}
 
 	go func() {
-		for {
-			select {
-			case <-q.WaitCh():
-				e := q.Pop()
-				if e != nil {
-					fmt.Printf("%d\n", e.(qItem))
-				}
+		for range q.WaitCh() {
+			e := q.Pop()
+			if e != nil {
+				fmt.Printf("%d\n", e.(qItem))
 			}
 		}
-
 	}()
 
 	go func() {
@@ -131,7 +128,7 @@ func (o *TOrder) GetPriority() int {
 	return o.Pri
 }
 
-func TestOrder(t *testing.T) {
+func TestOrder(_ *testing.T) {
 	q := NewPriQueue(100)
 	for i := 0; i < 100; i++ {
 		pri := i / 10

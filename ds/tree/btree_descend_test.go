@@ -61,25 +61,31 @@ func TestBTree_DescendLteFrom5(t *testing.T) {
 }
 
 func testBTreeDescendLtNum(t *testing.T, k int) {
+	t.Helper()
 	testBTreeDescendLtFrom(t, &xCmp{x: k})
 }
 
 func testBTreeDescendLtFrom(t *testing.T, k Node) {
+	t.Helper()
 	testBTreeIter(t, testDescendLt, k)
 }
 
 func testBTreeDescendLteNum(t *testing.T, k int) {
+	t.Helper()
 	testBTreeDescendLteFrom(t, &xCmp{x: k})
 }
 
 func testBTreeDescendLteFrom(t *testing.T, k Node) {
+	t.Helper()
 	testBTreeIter(t, testDescendLte, k)
 }
 
 func testDescendLte(t *testing.T, b *BTree, k Node, n int) {
+	t.Helper()
 	testIter(t, k, b.DescendLte, n)
 }
 
 func testDescendLt(t *testing.T, b *BTree, k Node, n int) {
+	t.Helper()
 	testIter(t, k, b.DescendLt, n)
 }

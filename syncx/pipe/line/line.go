@@ -2,11 +2,13 @@ package line
 
 import (
 	"context"
+	"sync"
+
+	"go.uber.org/zap"
+
 	"github.com/pinealctx/neptune/syncx/pipe"
 	"github.com/pinealctx/neptune/syncx/pipe/q"
 	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
-	"sync"
 )
 
 type _Option struct {
@@ -81,7 +83,7 @@ func (c *Line) QSize() int {
 // AsyncCall : wrap call
 // ctx -- context.Context
 // callCtx -- call context
-func (c *Line) AsyncCall(ctx context.Context, callCtx *CallCtx) (interface{}, error) {
+func (c *Line) AsyncCall(ctx context.Context, callCtx *CallCtx) (any, error) {
 	var proc, err = c.addCallCtx(ctx, callCtx)
 	if err != nil {
 		return nil, err
@@ -115,9 +117,9 @@ func (c *Line) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, err
 func (c *Line) popLoop() {
 	var (
 		err  error
-		item interface{}
+		item any
 		ac   *AsyncCtx
-		r    interface{}
+		r    any
 		ok   bool
 	)
 

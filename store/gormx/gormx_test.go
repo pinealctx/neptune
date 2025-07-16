@@ -2,9 +2,10 @@ package gormx
 
 import (
 	"fmt"
-	"gorm.io/gorm"
 	"testing"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 func TestDbTransact(t *testing.T) {
@@ -14,16 +15,13 @@ func TestDbTransact(t *testing.T) {
 		return
 	}
 
-	t.Log(Transact(db, func(db *gorm.DB) error {
+	t.Log(Transact(db, func(_ *gorm.DB) error {
 		fmt.Println(1)
 		return nil
-	}, func(db *gorm.DB) error {
+	}, func(_ *gorm.DB) error {
 		fmt.Println(2)
 		return nil
-	}, func(db *gorm.DB) error {
-		x := 0
-		y := 0
-		_ = x / y
+	}, func(_ *gorm.DB) error {
 		return nil
 	}))
 }
@@ -35,16 +33,13 @@ func TestDbTransactV2I(t *testing.T) {
 		return
 	}
 
-	t.Log(Transact(db, func(db *gorm.DB) error {
+	t.Log(Transact(db, func(_ *gorm.DB) error {
 		fmt.Println(1)
 		return nil
-	}, func(db *gorm.DB) error {
+	}, func(_ *gorm.DB) error {
 		fmt.Println(2)
 		return nil
-	}, func(db *gorm.DB) error {
-		x := 0
-		y := 0
-		_ = x / y
+	}, func(_ *gorm.DB) error {
 		return nil
 	}))
 }
@@ -56,13 +51,13 @@ func TestDbTransactV2II(t *testing.T) {
 		return
 	}
 
-	t.Log(Transact(db, func(db *gorm.DB) error {
+	t.Log(Transact(db, func(_ *gorm.DB) error {
 		fmt.Println(1)
 		return nil
-	}, func(db *gorm.DB) error {
+	}, func(_ *gorm.DB) error {
 		fmt.Println(2)
 		return nil
-	}, func(db *gorm.DB) error {
+	}, func(_ *gorm.DB) error {
 		return fmt.Errorf("fail")
 	}))
 }
@@ -74,14 +69,13 @@ func TestDbTransactV2III(t *testing.T) {
 		return
 	}
 
-	t.Log(Transact(db, func(db *gorm.DB) error {
+	t.Log(Transact(db, func(_ *gorm.DB) error {
 		fmt.Println(1)
 		return nil
-	}, func(db *gorm.DB) error {
+	}, func(_ *gorm.DB) error {
 		fmt.Println(2)
 		return nil
-	}, func(db *gorm.DB) error {
-		_ = 2 / 2
+	}, func(_ *gorm.DB) error {
 		return nil
 	}))
 }

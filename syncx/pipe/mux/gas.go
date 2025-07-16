@@ -2,6 +2,7 @@ package mux
 
 import (
 	"context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -16,19 +17,19 @@ type OpType int
 // CacheFacade : cache facade, could be lru cache, map, or both mixed.
 type CacheFacade interface {
 	//Peek : only useful in lru cache, peek means no update LRU order.
-	Peek(key interface{}) (interface{}, bool)
+	Peek(key any) (any, bool)
 	//Get : get from cache, in lru cache, key order also be updated.
-	Get(key interface{}) (interface{}, bool)
+	Get(key any) (any, bool)
 	//Set : set to cache
-	Set(key interface{}, value interface{})
+	Set(key any, value any)
 	//Delete : delete key from cache
-	Delete(key interface{})
+	Delete(key any)
 }
 
 // R : combine interface and error, for return result
 type R struct {
 	//return value
-	r interface{}
+	r any
 	//error
 	err error
 }
@@ -53,7 +54,7 @@ func NewAsync(ctx context.Context, op OpCode) *AsyncC {
 }
 
 // SetR : set op result
-func (a *AsyncC) SetR(r interface{}, err error) {
+func (a *AsyncC) SetR(r any, err error) {
 	a.rChan <- R{
 		r:   r,
 		err: err,
@@ -61,7 +62,7 @@ func (a *AsyncC) SetR(r interface{}, err error) {
 }
 
 // R : get result
-func (a *AsyncC) R() (interface{}, error) {
+func (a *AsyncC) R() (any, error) {
 	select {
 	case <-a.ctx.Done():
 		return nil, a.ctx.Err()
@@ -73,24 +74,24 @@ func (a *AsyncC) R() (interface{}, error) {
 // RenewDataFn : renew data function, including load/add, excluding delete.
 // input: ctx->context:can be ignored in case; d->input data
 // output: v-> return cache value; err->if failed, return err
-type RenewDataFn func(ctx context.Context, d interface{}) (v interface{}, err error)
+type RenewDataFn func(ctx context.Context, d any) (v any, err error)
 
 // UpdateDataFn : update data function.
 // input: ctx->context:can be ignored in case; d->input data; e->the existed item.
 // output: v-> return cache value; err->if failed, return err.
 // actually e is from load function if it's not in cache.
-type UpdateDataFn func(ctx context.Context, d interface{}, e interface{}) (v interface{}, err error)
+type UpdateDataFn func(ctx context.Context, d any, e any) (v any, err error)
 
 // DeleteFn : delete data function.
 // input: ctx->context:can be ignored in case; d->input data.
 // output: error->if failed, return err.
-type DeleteFn func(ctx context.Context, d interface{}) error
+type DeleteFn func(ctx context.Context, d any) error
 
 // IsNotFoundFn : to detective an error is "not found" or not.
 type IsNotFoundFn func(err error) bool
 
 type OpCode interface {
-	GetK() interface{}
+	GetK() any
 }
 
 // OpLoad : wrapped load command
@@ -98,17 +99,17 @@ type OpLoad struct {
 	//loadFn: load item
 	loadFn RenewDataFn
 	//k: the key in cache
-	k interface{}
+	k any
 }
 
-func NewLoad(l RenewDataFn, k interface{}) OpCode {
+func NewLoad(l RenewDataFn, k any) OpCode {
 	return &OpLoad{
 		loadFn: l,
 		k:      k,
 	}
 }
 
-func (o *OpLoad) GetK() interface{} {
+func (o *OpLoad) GetK() any {
 	return o.k
 }
 
@@ -117,12 +118,12 @@ type OpAdd struct {
 	//addFn: add item
 	addFn RenewDataFn
 	//k: the key in cache
-	k interface{}
+	k any
 	//data: input data
-	data interface{}
+	data any
 }
 
-func NewAdd(a RenewDataFn, k interface{}, data interface{}) OpCode {
+func NewAdd(a RenewDataFn, k any, data any) OpCode {
 	return &OpAdd{
 		addFn: a,
 		k:     k,
@@ -130,7 +131,7 @@ func NewAdd(a RenewDataFn, k interface{}, data interface{}) OpCode {
 	}
 }
 
-func (o *OpAdd) GetK() interface{} {
+func (o *OpAdd) GetK() any {
 	return o.k
 }
 
@@ -142,12 +143,12 @@ type OpUpdate struct {
 	//updFn : update item
 	updFn UpdateDataFn
 	//k: the key in cache
-	k interface{}
+	k any
 	//data : input data
-	data interface{}
+	data any
 }
 
-func NewUpdate(l RenewDataFn, u UpdateDataFn, k interface{}, data interface{}) OpCode {
+func NewUpdate(l RenewDataFn, u UpdateDataFn, k any, data any) OpCode {
 	return &OpUpdate{
 		loadFn: l,
 		updFn:  u,
@@ -156,7 +157,7 @@ func NewUpdate(l RenewDataFn, u UpdateDataFn, k interface{}, data interface{}) O
 	}
 }
 
-func (o *OpUpdate) GetK() interface{} {
+func (o *OpUpdate) GetK() any {
 	return o.k
 }
 
@@ -165,17 +166,17 @@ type OpDelete struct {
 	//deleteFn : delete item
 	deleteFn DeleteFn
 	//k: the key in cache
-	k interface{}
+	k any
 }
 
-func NewDelete(d DeleteFn, k interface{}) OpCode {
+func NewDelete(d DeleteFn, k any) OpCode {
 	return &OpDelete{
 		deleteFn: d,
 		k:        k,
 	}
 }
 
-func (o *OpDelete) GetK() interface{} {
+func (o *OpDelete) GetK() any {
 	return o.k
 }
 
@@ -195,13 +196,13 @@ type OpMixUpdOrAddIfNull struct {
 	//isNotFoundFn : if not found error or not
 	isNotFoundFn IsNotFoundFn
 	//k: the key in cache
-	k interface{}
+	k any
 	//data : input data
-	data interface{}
+	data any
 }
 
 func NewMixUpdOrAddIfNull(l RenewDataFn, u UpdateDataFn, a RenewDataFn, i IsNotFoundFn,
-	k interface{}, data interface{}) OpCode {
+	k any, data any) OpCode {
 	return &OpMixUpdOrAddIfNull{
 		loadFn:       l,
 		updFn:        u,
@@ -212,7 +213,7 @@ func NewMixUpdOrAddIfNull(l RenewDataFn, u UpdateDataFn, a RenewDataFn, i IsNotF
 	}
 }
 
-func (o *OpMixUpdOrAddIfNull) GetK() interface{} {
+func (o *OpMixUpdOrAddIfNull) GetK() any {
 	return o.k
 }
 
@@ -228,12 +229,12 @@ type OpMixUpsertThenLoad struct {
 	//loadFn : load item
 	loadFn RenewDataFn
 	//k: the key in cache
-	k interface{}
+	k any
 	//data : input data
-	data interface{}
+	data any
 }
 
-func NewMixUpsertThenLoad(p UpdateDataFn, l RenewDataFn, k interface{}, data interface{}) OpCode {
+func NewMixUpsertThenLoad(p UpdateDataFn, l RenewDataFn, k any, data any) OpCode {
 	return &OpMixUpsertThenLoad{
 		upsertFn: p,
 		loadFn:   l,
@@ -242,7 +243,7 @@ func NewMixUpsertThenLoad(p UpdateDataFn, l RenewDataFn, k interface{}, data int
 	}
 }
 
-func (o *OpMixUpsertThenLoad) GetK() interface{} {
+func (o *OpMixUpsertThenLoad) GetK() any {
 	return o.k
 }
 
@@ -256,12 +257,12 @@ type OpMixUpsertThenRenewInCache struct {
 	//upsertFn : upsert item
 	upsertFn UpdateDataFn
 	//k: the key in cache
-	k interface{}
+	k any
 	//data : input data
-	data interface{}
+	data any
 }
 
-func NewMixUpsertThenRenewInCache(p UpdateDataFn, k interface{}, data interface{}) OpCode {
+func NewMixUpsertThenRenewInCache(p UpdateDataFn, k any, data any) OpCode {
 	return &OpMixUpsertThenRenewInCache{
 		upsertFn: p,
 		k:        k,
@@ -269,6 +270,6 @@ func NewMixUpsertThenRenewInCache(p UpdateDataFn, k interface{}, data interface{
 	}
 }
 
-func (o *OpMixUpsertThenRenewInCache) GetK() interface{} {
+func (o *OpMixUpsertThenRenewInCache) GetK() any {
 	return o.k
 }

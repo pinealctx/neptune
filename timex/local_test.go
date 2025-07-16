@@ -1,9 +1,10 @@
 package timex
 
 import (
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestLocalDiff(t *testing.T) {

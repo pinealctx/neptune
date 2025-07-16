@@ -1,8 +1,9 @@
 package timex
 
 import (
-	"github.com/urfave/cli/v2"
 	"time"
+
+	"github.com/urfave/cli/v2"
 )
 
 // LocalTime parse time from command line

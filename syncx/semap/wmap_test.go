@@ -11,7 +11,7 @@ func TestWeightedPanicW(t *testing.T) {
 	testWeightedPanic(t, sem)
 }
 
-func TestLockW(t *testing.T) {
+func TestLockW(_ *testing.T) {
 	var sem = NewWideSemMap(WithRwRatio(5))
 	testLock(sem)
 }

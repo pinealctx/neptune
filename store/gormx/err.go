@@ -2,11 +2,12 @@ package gormx
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
-	"strings"
 )
 
 // IsDupError is duplicated key error

@@ -2,12 +2,14 @@ package alioss
 
 import (
 	"bytes"
-	aliOss "github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/pinealctx/neptune/store/oss"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"io"
 	"net/http"
+
+	aliOss "github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/pinealctx/neptune/store/oss"
 )
 
 // OneBucketOss all oss store into one bucket

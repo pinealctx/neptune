@@ -10,12 +10,12 @@ import "context"
 // Output:
 // r -- 回调函数调用后的返回值
 // err - 回调函数调用失败后返回error
-type CallFn func(ctx context.Context, sIndex int, req interface{}) (rsp interface{}, err error)
+type CallFn func(ctx context.Context, sIndex int, req any) (rsp any, err error)
 
 // CallCtx : call context, function and param
 type CallCtx struct {
 	call      CallFn
-	param     interface{}
+	param     any
 	hashIndex int
 }
 
@@ -25,7 +25,7 @@ type CallCtx struct {
 // 断不可在别的请求中使用类似xxhash这样别的散列方式。
 // call : 回调函数
 // param : 函数参数
-func NewCallCtx(hashIndex int, call CallFn, param interface{}) *CallCtx {
+func NewCallCtx(hashIndex int, call CallFn, param any) *CallCtx {
 	return &CallCtx{
 		call:      call,
 		param:     param,
@@ -36,7 +36,7 @@ func NewCallCtx(hashIndex int, call CallFn, param interface{}) *CallCtx {
 // AsyncR : async call result.
 type AsyncR struct {
 	//result
-	r interface{}
+	r any
 	//error
 	err error
 }
@@ -48,7 +48,7 @@ type AsyncCtx struct {
 	//async call function:
 	call CallFn
 	//call param
-	param interface{}
+	param any
 	//return chan
 	rChan chan AsyncR
 }
@@ -58,7 +58,7 @@ type AsyncCtx struct {
 // sIndex -- slot index
 // call -- async call function
 // param -- async call param
-func newAsyncCtx(ctx context.Context, call CallFn, param interface{}) *AsyncCtx {
+func newAsyncCtx(ctx context.Context, call CallFn, param any) *AsyncCtx {
 	return &AsyncCtx{
 		ctx:   ctx,
 		call:  call,
@@ -68,7 +68,7 @@ func newAsyncCtx(ctx context.Context, call CallFn, param interface{}) *AsyncCtx 
 }
 
 // SetR : set return
-func (m *AsyncCtx) SetR(r interface{}, err error) {
+func (m *AsyncCtx) SetR(r any, err error) {
 	m.rChan <- AsyncR{
 		r:   r,
 		err: err,
@@ -76,7 +76,7 @@ func (m *AsyncCtx) SetR(r interface{}, err error) {
 }
 
 // R : get response with wait
-func (m *AsyncCtx) R() (interface{}, error) {
+func (m *AsyncCtx) R() (any, error) {
 	select {
 	case <-m.ctx.Done():
 		return nil, m.ctx.Err()

@@ -7,7 +7,7 @@ import (
 // WideMap use Map group array as a wide map
 type WideMap struct {
 	ms       []*Map
-	calKeyFn func(key interface{}) int
+	calKeyFn func(key any) int
 	rehash   *remap.ReMap
 }
 
@@ -39,27 +39,27 @@ func newWideMap(useXHash bool, opts ...remap.Option) MapFacade {
 }
 
 // Set : set key-value
-func (w *WideMap) Set(key interface{}, value interface{}) {
+func (w *WideMap) Set(key any, value any) {
 	w.calculateKey(key).Set(key, value)
 }
 
 // Get : get value
-func (w *WideMap) Get(key interface{}) (interface{}, bool) {
+func (w *WideMap) Get(key any) (any, bool) {
 	return w.calculateKey(key).Get(key)
 }
 
 // Exist : return true if key in map
-func (w *WideMap) Exist(key interface{}) bool {
+func (w *WideMap) Exist(key any) bool {
 	return w.calculateKey(key).Exist(key)
 }
 
 // Delete : delete a key
-func (w *WideMap) Delete(key interface{}) {
+func (w *WideMap) Delete(key any) {
 	w.calculateKey(key).Delete(key)
 }
 
 // calculate key
-func (w *WideMap) calculateKey(key interface{}) *Map {
+func (w *WideMap) calculateKey(key any) *Map {
 	var i = w.calKeyFn(key)
 	return w.ms[i]
 }

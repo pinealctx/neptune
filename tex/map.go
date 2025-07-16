@@ -5,13 +5,13 @@ import (
 )
 
 // KeyInMap : Map中是否包含了key
-func KeyInMap(m map[string]interface{}, k string) bool {
+func KeyInMap(m map[string]any, k string) bool {
 	_, ok := m[k]
 	return ok
 }
 
 // MapVal2Bool : 将map中的value转换为bool
-func MapVal2Bool(m map[string]interface{}, k string) bool {
+func MapVal2Bool(m map[string]any, k string) bool {
 	x, ok := m[k]
 	if !ok {
 		return false
@@ -20,7 +20,7 @@ func MapVal2Bool(m map[string]interface{}, k string) bool {
 }
 
 // MapVal2Int : 将map中的value转换为int
-func MapVal2Int(m map[string]interface{}, k string) int {
+func MapVal2Int(m map[string]any, k string) int {
 	x, ok := m[k]
 	if !ok {
 		return 0
@@ -29,7 +29,7 @@ func MapVal2Int(m map[string]interface{}, k string) int {
 }
 
 // MapVal2Int64 : 将map中的value转换为int64
-func MapVal2Int64(m map[string]interface{}, k string) int64 {
+func MapVal2Int64(m map[string]any, k string) int64 {
 	x, ok := m[k]
 	if !ok {
 		return 0
@@ -38,7 +38,7 @@ func MapVal2Int64(m map[string]interface{}, k string) int64 {
 }
 
 // MapVal2JsInt64 : 将map中的value转换为 json int64
-func MapVal2JsInt64(m map[string]interface{}, k string) JsInt64 {
+func MapVal2JsInt64(m map[string]any, k string) JsInt64 {
 	x, ok := m[k]
 	if !ok {
 		return 0
@@ -47,7 +47,7 @@ func MapVal2JsInt64(m map[string]interface{}, k string) JsInt64 {
 }
 
 // MapVal2Int32 : 将map中的value转换为int32
-func MapVal2Int32(m map[string]interface{}, k string) int32 {
+func MapVal2Int32(m map[string]any, k string) int32 {
 	x, ok := m[k]
 	if !ok {
 		return 0
@@ -56,7 +56,7 @@ func MapVal2Int32(m map[string]interface{}, k string) int32 {
 }
 
 // MapVal2Float64 : 将map中的value转换为float64
-func MapVal2Float64(m map[string]interface{}, k string) float64 {
+func MapVal2Float64(m map[string]any, k string) float64 {
 	x, ok := m[k]
 	if !ok {
 		return 0
@@ -65,7 +65,7 @@ func MapVal2Float64(m map[string]interface{}, k string) float64 {
 }
 
 // MapVal2String : 将map中的value转换为string
-func MapVal2String(m map[string]interface{}, k string) string {
+func MapVal2String(m map[string]any, k string) string {
 	x, ok := m[k]
 	if !ok {
 		return ""
@@ -74,7 +74,7 @@ func MapVal2String(m map[string]interface{}, k string) string {
 }
 
 // MapVal2Bytes : 将map中的value转换为[]byte
-func MapVal2Bytes(m map[string]interface{}, k string) []byte {
+func MapVal2Bytes(m map[string]any, k string) []byte {
 	x, ok := m[k]
 	if !ok {
 		return nil
@@ -93,7 +93,7 @@ func MapVal2StringList(m map[string]interface{}, k string) []string {
 */
 
 // MapVal2Time : 将map中的value转换为time
-func MapVal2Time(m map[string]interface{}, k string) (time.Time, bool) {
+func MapVal2Time(m map[string]any, k string) (time.Time, bool) {
 	x, ok := m[k]
 	if !ok {
 		return time.Time{}, false
@@ -102,7 +102,7 @@ func MapVal2Time(m map[string]interface{}, k string) (time.Time, bool) {
 }
 
 // MapVal2Duration : 将map中的value转换为Duration
-func MapVal2Duration(m map[string]interface{}, k string) (time.Duration, bool) {
+func MapVal2Duration(m map[string]any, k string) (time.Duration, bool) {
 	x, ok := m[k]
 	if !ok {
 		return 0, false
@@ -112,7 +112,7 @@ func MapVal2Duration(m map[string]interface{}, k string) (time.Duration, bool) {
 
 // MapMerge : merge map
 // merge diff to base, return a new cloned map.
-func MapMerge(base map[string]interface{}, diff map[string]interface{}) map[string]interface{} {
+func MapMerge(base map[string]any, diff map[string]any) map[string]any {
 	var c = MapClone(base)
 	mapMerge(c, diff)
 	return c
@@ -121,8 +121,8 @@ func MapMerge(base map[string]interface{}, diff map[string]interface{}) map[stri
 // MapClone : clone a new map from old
 // Attention: deeply clone only support map[string]interface{}, can not deeply clone pointer or other pointer like type.
 // 只支持值为map[string]interface{}类型的深度克隆，不支持类似指针类型或切片类型的深度克隆
-func MapClone(base map[string]interface{}) map[string]interface{} {
-	var c = make(map[string]interface{})
+func MapClone(base map[string]any) map[string]any {
+	var c = make(map[string]any)
 	mapCopy(base, c)
 	return c
 }
@@ -130,10 +130,10 @@ func MapClone(base map[string]interface{}) map[string]interface{} {
 // mapMerge : merge map
 // base -- map[string]interface{}, cannot be nil, if nil will panic
 // diff -- map[string]interface{}
-func mapMerge(base map[string]interface{}, diff map[string]interface{}) {
+func mapMerge(base map[string]any, diff map[string]any) {
 	var (
-		src interface{}
-		mc  map[string]interface{}
+		src any
+		mc  map[string]any
 		ok  bool
 	)
 	for k, v := range diff {
@@ -142,14 +142,14 @@ func mapMerge(base map[string]interface{}, diff map[string]interface{}) {
 			base[k] = v
 			continue
 		}
-		mc, ok = src.(map[string]interface{})
+		mc, ok = src.(map[string]any)
 		if !ok || mc == nil {
 			base[k] = v
 			continue
 		}
 
 		switch val := v.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			if val == nil {
 				continue
 			}
@@ -163,15 +163,15 @@ func mapMerge(base map[string]interface{}, diff map[string]interface{}) {
 // mapCopy : clone map
 // input -- input map to clone.
 // clone -- cloned map, clone map must be empty map but not nil.
-func mapCopy(input map[string]interface{}, clone map[string]interface{}) {
+func mapCopy(input map[string]any, clone map[string]any) {
 	var (
-		mc map[string]interface{}
+		mc map[string]any
 		ok bool
 	)
 	for k, v := range input {
-		mc, ok = v.(map[string]interface{})
+		mc, ok = v.(map[string]any)
 		if ok {
-			var nc = make(map[string]interface{})
+			var nc = make(map[string]any)
 			mapCopy(mc, nc)
 			clone[k] = nc
 		} else {

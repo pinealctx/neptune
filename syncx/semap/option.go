@@ -6,31 +6,31 @@ const (
 )
 
 // remap option: use a prime number as group number
-type _Option struct {
+type Option struct {
 	prime   uint64
 	rwRatio int
 }
 
-// Option : option function
-type Option func(o *_Option)
+// OptionFn : option function
+type OptionFn func(o *Option)
 
 // WithPrime : setup prime number
-func WithPrime(prime uint64) Option {
-	return func(o *_Option) {
+func WithPrime(prime uint64) OptionFn {
+	return func(o *Option) {
 		o.prime = prime
 	}
 }
 
 // WithRwRatio : setup read write ratio
-func WithRwRatio(rwRatio int) Option {
-	return func(o *_Option) {
+func WithRwRatio(rwRatio int) OptionFn {
+	return func(o *Option) {
 		o.rwRatio = rwRatio
 	}
 }
 
 // RangeOption : range option
-func RangeOption(opts ...Option) *_Option {
-	var o = &_Option{
+func RangeOption(opts ...OptionFn) *Option {
+	var o = &Option{
 		rwRatio: DefaultRWRatio,
 	}
 	for _, opt := range opts {

@@ -2,11 +2,13 @@ package vcode
 
 import (
 	"fmt"
-	"github.com/pinealctx/neptune/cache"
-	"github.com/pinealctx/neptune/idgen/random"
+	"time"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"time"
+
+	"github.com/pinealctx/neptune/cache"
+	"github.com/pinealctx/neptune/idgen/random"
 )
 
 const (
@@ -29,9 +31,9 @@ type smsModule interface {
 }
 
 type CacheModule interface {
-	Get(key interface{}) (v interface{}, ok bool)
-	Peek(key interface{}) (v interface{}, ok bool)
-	Set(key interface{}, value interface{})
+	Get(key any) (v any, ok bool)
+	Peek(key any) (v any, ok bool)
+	Set(key any, value any)
 }
 
 type simpleCache struct {
@@ -42,15 +44,15 @@ func NewSimpleCache(c int64) CacheModule {
 	return &simpleCache{lru: cache.NewLRUCache(c)}
 }
 
-func (s simpleCache) Get(key interface{}) (v interface{}, ok bool) {
+func (s simpleCache) Get(key any) (v any, ok bool) {
 	return s.lru.Get(key)
 }
 
-func (s simpleCache) Peek(key interface{}) (v interface{}, ok bool) {
+func (s simpleCache) Peek(key any) (v any, ok bool) {
 	return s.lru.Peek(key)
 }
 
-func (s simpleCache) Set(key interface{}, value interface{}) {
+func (s simpleCache) Set(key any, value any) {
 	var v, ok = value.(cache.Value)
 	if ok {
 		s.lru.Set(key, v)

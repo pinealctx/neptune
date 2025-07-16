@@ -2,9 +2,11 @@ package gormx
 
 import (
 	"fmt"
-	"github.com/pinealctx/neptune/ulog"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // GormProcFn gorm func

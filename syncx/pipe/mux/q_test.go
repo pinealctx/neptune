@@ -29,7 +29,7 @@ func (c *_Cond) Wakeup() {
 	c.cond.Broadcast()
 }
 
-func TestCondCase1(t *testing.T) {
+func TestCondCase1(_ *testing.T) {
 	var x = &_Cond{}
 	x.Init()
 	x.Wakeup()
@@ -38,7 +38,7 @@ func TestCondCase1(t *testing.T) {
 	x.Wait()
 }
 
-func TestCondCase2(t *testing.T) {
+func TestCondCase2(_ *testing.T) {
 	var x = &_Cond{}
 	x.Init()
 	x.Wakeup()
@@ -58,17 +58,17 @@ func TestCondCase2(t *testing.T) {
 	wait.Wait()
 }
 
-func TestActorQ_RandomAdd(t *testing.T) {
+func TestActorQ_RandomAdd(_ *testing.T) {
 	var q = NewQ(0)
 	testActorQ(q, time.Minute*5, false)
 }
 
-func TestActorQ_RandomAdd_PopAny(t *testing.T) {
+func TestActorQ_RandomAdd_PopAny(_ *testing.T) {
 	var q = NewQ(0)
 	testActorQ(q, time.Minute*5, true)
 }
 
-func TestActorQ_RandomAddWithReqMax(t *testing.T) {
+func TestActorQ_RandomAddWithReqMax(_ *testing.T) {
 	var q = NewQ(5)
 	testActorQ(q, time.Minute*5, false)
 }
@@ -127,7 +127,7 @@ func testActorQ(q *Q, maxWaitTime time.Duration, popAny bool) {
 				fmt.Println("consume return by error1:", err)
 				return
 			}
-			var i interface{}
+			var i any
 			i, err = fn()
 			if err != nil {
 				fmt.Println("consume return by error2:", err)

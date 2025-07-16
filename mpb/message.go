@@ -2,13 +2,15 @@ package mpb
 
 import (
 	"encoding/binary"
-	"github.com/pinealctx/neptune/errorx"
-	"github.com/pinealctx/neptune/tex"
+	"reflect"
+
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"reflect"
+
+	"github.com/pinealctx/neptune/errorx"
+	"github.com/pinealctx/neptune/tex"
 )
 
 const (

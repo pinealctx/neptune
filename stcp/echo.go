@@ -1,13 +1,15 @@
 package stcp
 
 import (
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"io"
 	"net"
 	"sync"
 	"time"
+
+	"go.uber.org/atomic"
+	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // Echo 应答式session
@@ -47,12 +49,12 @@ func (s *Echo) ReleaseRef() {
 }
 
 // Set :
-func (s *Echo) Set(v interface{}) {
+func (s *Echo) Set(v any) {
 	s.value.Store(v)
 }
 
 // Get :
-func (s *Echo) Get() interface{} {
+func (s *Echo) Get() any {
 	return s.value.Load()
 }
 

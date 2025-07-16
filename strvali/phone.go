@@ -2,8 +2,9 @@ package strvali
 
 import (
 	"fmt"
-	"github.com/nyaruka/phonenumbers"
 	"regexp"
+
+	"github.com/nyaruka/phonenumbers"
 )
 
 var (

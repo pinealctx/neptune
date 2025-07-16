@@ -1,10 +1,11 @@
 package tree
 
 import (
-	"github.com/pinealctx/neptune/ds/tree/btree"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/pinealctx/neptune/ds/tree/btree"
 )
 
 type X struct {
@@ -107,7 +108,7 @@ func TestBtreeLock(t *testing.T) {
 	}()
 
 	for i := 0; i < c-1; i++ {
-		go func(index int) {
+		go func(_ int) {
 			defer func() {
 				wg.Done()
 			}()
@@ -152,7 +153,7 @@ func TestBtreeWLock(t *testing.T) {
 	}()
 
 	for i := 0; i < c-1; i++ {
-		go func(index int) {
+		go func(_ int) {
 			defer func() {
 				wg.Done()
 			}()
@@ -189,7 +190,7 @@ func TestBtreeNoLockRead(t *testing.T) {
 	}
 
 	for i := 0; i < c-1; i++ {
-		go func(index int) {
+		go func(_ int) {
 			defer func() {
 				wg.Done()
 			}()
@@ -225,7 +226,7 @@ func TestBtreeLockRead(t *testing.T) {
 	}
 
 	for i := 0; i < c-1; i++ {
-		go func(index int) {
+		go func(_ int) {
 			defer func() {
 				wg.Done()
 			}()
@@ -269,6 +270,7 @@ func TestBtreeWalk(t *testing.T) {
 }
 
 func insertX(t *testing.T, b *btree.BTree, x *X) {
+	t.Helper()
 	var y = b.ReplaceOrInsert(x)
 	if y != nil {
 		t.Log("already:", y.(*X).a)

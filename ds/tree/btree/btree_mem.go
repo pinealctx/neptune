@@ -38,7 +38,7 @@ var (
 func main() {
 	flag.Parse()
 	vals := rand.Perm(*size)
-	var t, v interface{}
+	var t, v any
 	v = vals
 	var stats runtime.MemStats
 	for i := 0; i < 10; i++ {

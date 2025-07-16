@@ -2,9 +2,10 @@ package snowflake
 
 import (
 	"fmt"
-	"github.com/pinealctx/neptune/tex"
 	"strconv"
 	"time"
+
+	"github.com/pinealctx/neptune/tex"
 )
 
 /*
@@ -156,29 +157,29 @@ func IDParseEx(id int64) (t time.Time, node, step int64) {
 
 // TimeIDRange figure out a specific time min and max id
 // The calculation is based on second
-func TimeIDRange(t time.Time) (min, max int64) {
+func TimeIDRange(t time.Time) (minV, maxV int64) {
 	var timeShift = _nodeBits + StepBits
 	var ts = t.Unix()
 	var timeMs = ts*SDivMs - _epoch
 	timeMs <<= timeShift
-	min = timeMs
+	minV = timeMs
 	var reMax int64 = (1 << timeShift) - 1
-	max = timeMs | reMax
-	return min, max
+	maxV = timeMs | reMax
+	return minV, maxV
 }
 
 // TimeBetweenID figure out a specific [after time, before time]
 // The calculation is based on second
-func TimeBetweenID(begin time.Time, end time.Time) (min, max int64) {
+func TimeBetweenID(begin time.Time, end time.Time) (minV, maxV int64) {
 	var timeShift = _nodeBits + StepBits
 	var beginTS = begin.Unix()
 	var beginMs = beginTS*SDivMs - _epoch
-	min = beginMs << timeShift
+	minV = beginMs << timeShift
 	var reMax int64 = (1 << timeShift) - 1
 	var endTS = end.Unix()
 	var endMs = endTS*SDivMs - _epoch
-	max = (endMs << timeShift) | reMax
-	return min, max
+	maxV = (endMs << timeShift) | reMax
+	return minV, maxV
 }
 
 // CnStyle
@@ -193,14 +194,14 @@ func CnStyle(id int64) string {
 	var buf = tex.NewSizedBuffer(TimeStrLen)
 	var mask int64 = (1 << timeShift) - 1
 	var left = id & mask
-	_, _ = buf.WriteString(fmt.Sprintf("%04d", t.Year()))
-	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Month()))
-	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Day()))
-	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Hour()))
-	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Minute()))
-	_, _ = buf.WriteString(fmt.Sprintf("%02d", t.Second()))
-	_, _ = buf.WriteString(fmt.Sprintf("%03d", t.Nanosecond()/MsDivNs))
-	_, _ = buf.WriteString(fmt.Sprintf("%07d", left))
+	_, _ = fmt.Fprintf(buf, "%04d", t.Year())
+	_, _ = fmt.Fprintf(buf, "%02d", t.Month())
+	_, _ = fmt.Fprintf(buf, "%02d", t.Day())
+	_, _ = fmt.Fprintf(buf, "%02d", t.Hour())
+	_, _ = fmt.Fprintf(buf, "%02d", t.Minute())
+	_, _ = fmt.Fprintf(buf, "%02d", t.Second())
+	_, _ = fmt.Fprintf(buf, "%03d", t.Nanosecond()/MsDivNs)
+	_, _ = fmt.Fprintf(buf, "%07d", left)
 	return buf.String()
 }
 

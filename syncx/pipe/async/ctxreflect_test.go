@@ -27,7 +27,7 @@ func (w dWrapFuncT) validFn(_ context.Context, _ int) (int, error) {
 	return 0, nil
 }
 
-func incAdd(inc interface{}, ctx context.Context) (int, error) {
+func incAdd(ctx context.Context, inc any) (int, error) {
 	var call = reflect.ValueOf(inc)
 	var params [1]reflect.Value
 
@@ -113,7 +113,7 @@ func TestReflect(t *testing.T) {
 
 	var t1 = time.Now()
 	for i := 0; i < size; i++ {
-		var r, err = incAdd(xs[i].Do, ctx)
+		var r, err = incAdd(ctx, xs[i].Do)
 		if err != nil {
 			panic(err)
 		}

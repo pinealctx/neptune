@@ -1,8 +1,9 @@
 package gormx
 
 import (
-	"github.com/pinealctx/neptune/jsonx"
 	"gorm.io/gorm"
+
+	"github.com/pinealctx/neptune/jsonx"
 )
 
 // Dsn2DB from dsn json string to db
@@ -15,7 +16,6 @@ func Dsn2DB(dsnURL string, withLog bool) (*gorm.DB, error) {
 
 	if withLog {
 		return New(dsn.String(), WithLog())
-	} else {
-		return New(dsn.String())
 	}
+	return New(dsn.String())
 }

@@ -30,7 +30,7 @@ func (c *_Cond) Wakeup() {
 	c.cond.Broadcast()
 }
 
-func TestCondCase1(t *testing.T) {
+func TestCondCase1(_ *testing.T) {
 	var x = &_Cond{}
 	x.Init()
 	x.Wakeup()
@@ -39,7 +39,7 @@ func TestCondCase1(t *testing.T) {
 	x.Wait()
 }
 
-func TestCondCase2(t *testing.T) {
+func TestCondCase2(_ *testing.T) {
 	var x = &_Cond{}
 	x.Init()
 	x.Wakeup()
@@ -94,38 +94,38 @@ func TestActorQ_AddCtrl(t *testing.T) {
 	t.Log("10 -->", i)
 }
 
-func TestActorQ_RandomAdd(t *testing.T) {
+func TestActorQ_RandomAdd(_ *testing.T) {
 	var q = NewMQ()
 	testActorQ(q, time.Minute*5, false)
 }
 
-func TestActorQ_RandomAdd_PopAny(t *testing.T) {
+func TestActorQ_RandomAdd_PopAny(_ *testing.T) {
 	var q = NewMQ()
 	testActorQ(q, time.Minute*5, true)
 }
 
-func TestActorQ_RandomAddWithCtrlMax(t *testing.T) {
+func TestActorQ_RandomAddWithCtrlMax(_ *testing.T) {
 	var q = NewMQ(WithQCtrlSize(5))
 	testActorQ(q, time.Minute*5, false)
 }
 
-func TestActorQ_RandomAddWithReqMax(t *testing.T) {
+func TestActorQ_RandomAddWithReqMax(_ *testing.T) {
 	var q = NewMQ(WithQReqSize(5))
 	testActorQ(q, time.Minute*5, false)
 }
 
-func TestActorQ_RandomAddWithCtrlReqMax(t *testing.T) {
+func TestActorQ_RandomAddWithCtrlReqMax(_ *testing.T) {
 	var q = NewMQ(WithQReqSize(5), WithQCtrlSize(5))
 	testActorQ(q, time.Minute*5, true)
 }
 
-func TestActorQ_WaitClose(t *testing.T) {
+func TestActorQ_WaitClose(_ *testing.T) {
 	var q = NewMQ()
 	testActorNotify(q)
 	_ = q.WaitClose(context.Background())
 }
 
-func TestActorQ_WaitClear(t *testing.T) {
+func TestActorQ_WaitClear(_ *testing.T) {
 	var q = NewMQ()
 	testActorNotify(q)
 	_ = q.WaitClear(context.Background())
@@ -189,7 +189,7 @@ func testActorQ(q *MQ, maxWaitTime time.Duration, popAny bool) {
 				fmt.Println("consume return by error1:", err)
 				return
 			}
-			var i interface{}
+			var i any
 			i, err = fn()
 			if err != nil {
 				fmt.Println("consume return by error2:", err)
@@ -253,7 +253,7 @@ func testActorNotify(q *MQ) {
 				fmt.Println("consume return by error1:", err)
 				return
 			}
-			var i interface{}
+			var i any
 			i, err = q.PopAnyway()
 			if err != nil {
 				fmt.Println("consume return by error2:", err)

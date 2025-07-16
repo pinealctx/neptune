@@ -2,12 +2,14 @@ package tc
 
 import (
 	"errors"
-	"github.com/pinealctx/neptune/ulog"
+
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/captcha/v20190722"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	tErr "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 var ErrCaptchaVerify = errors.New("captcha.verify.error")

@@ -1,8 +1,9 @@
 package ulog
 
 import (
-	"go.uber.org/zap/zapcore"
 	"time"
+
+	"go.uber.org/zap/zapcore"
 )
 
 //Implement basic types array encoding for zap.

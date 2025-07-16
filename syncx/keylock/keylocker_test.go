@@ -25,6 +25,7 @@ func TestKeyLocker_Crazy3(t *testing.T) {
 }
 
 func testLockerCrazy(t *testing.T, x Locker) {
+	t.Helper()
 	var wg sync.WaitGroup
 	wg.Add(200)
 

@@ -3,10 +3,11 @@ package gormx
 import (
 	"context"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
-	"golang.org/x/crypto/ssh"
 	"net"
 	"os"
+
+	"github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/ssh"
 )
 
 type SSHConfig struct {
@@ -21,7 +22,7 @@ type SSHDialer struct {
 }
 
 func (d *SSHDialer) Dial(ctx context.Context, addr string) (net.Conn, error) {
-	return d.client.Dial("tcp", addr)
+	return d.client.DialContext(ctx, "tcp", addr)
 }
 
 func (d *SSHDialer) Register() {
@@ -42,7 +43,7 @@ func CreateSSHConn(cnf *SSHConfig) (*ssh.Client, error) {
 	var snf = &ssh.ClientConfig{
 		User: cnf.User,
 		Auth: []ssh.AuthMethod{ssh.PublicKeys(signer)},
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		HostKeyCallback: func(_ string, _ net.Addr, _ ssh.PublicKey) error {
 			return nil
 		},
 	}

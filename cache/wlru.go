@@ -7,7 +7,7 @@ import (
 // WideLRUCache use LruCache group array as a wide lru cache
 type WideLRUCache struct {
 	ls       []*LRUCache
-	calKeyFn func(key interface{}) int
+	calKeyFn func(key any) int
 	rehash   *remap.ReMap
 }
 
@@ -40,32 +40,32 @@ func newWideLRUCache(capacity int64, useXHash bool, opts ...remap.Option) LRUFac
 }
 
 // Get returns a value from the cache, and marks the entry as most recently used.
-func (w *WideLRUCache) Get(key interface{}) (v Value, ok bool) {
+func (w *WideLRUCache) Get(key any) (v Value, ok bool) {
 	return w.calculateKey(key).Get(key)
 }
 
 // Peek returns a value from the cache without changing the LRU order.
-func (w *WideLRUCache) Peek(key interface{}) (v Value, ok bool) {
+func (w *WideLRUCache) Peek(key any) (v Value, ok bool) {
 	return w.calculateKey(key).Peek(key)
 }
 
 // Exist : return true if key in map
-func (w *WideLRUCache) Exist(key interface{}) bool {
+func (w *WideLRUCache) Exist(key any) bool {
 	return w.calculateKey(key).Exist(key)
 }
 
 // Set sets a value in the cache.
-func (w *WideLRUCache) Set(key interface{}, value Value) {
+func (w *WideLRUCache) Set(key any, value Value) {
 	w.calculateKey(key).Set(key, value)
 }
 
 // Delete removes an entry from the cache, and returns if the entry existed.
-func (w *WideLRUCache) Delete(key interface{}) bool {
+func (w *WideLRUCache) Delete(key any) bool {
 	return w.calculateKey(key).Delete(key)
 }
 
 // calculate key
-func (w *WideLRUCache) calculateKey(key interface{}) *LRUCache {
+func (w *WideLRUCache) calculateKey(key any) *LRUCache {
 	var i = w.calKeyFn(key)
 	return w.ls[i]
 }

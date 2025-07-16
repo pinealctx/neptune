@@ -11,7 +11,7 @@ import (
 type UnixNano2Time time.Time
 
 // Scan : sql scan
-func (s *UnixNano2Time) Scan(value interface{}) error {
+func (s *UnixNano2Time) Scan(value any) error {
 	var ts int64
 	switch v := value.(type) {
 	case int32:
@@ -40,7 +40,7 @@ func (s UnixNano2Time) Value() (driver.Value, error) {
 type Unix2Time time.Time
 
 // Scan : sql scan
-func (s *Unix2Time) Scan(value interface{}) error {
+func (s *Unix2Time) Scan(value any) error {
 	var ts int64
 	switch v := value.(type) {
 	case int32:
@@ -69,7 +69,7 @@ func (s Unix2Time) Value() (driver.Value, error) {
 type UnixStamp int64
 
 // Scan : sql scan
-func (i *UnixStamp) Scan(value interface{}) error {
+func (i *UnixStamp) Scan(value any) error {
 	var t, ok = value.(time.Time)
 	if ok {
 		*i = UnixStamp(t.Unix())
@@ -114,7 +114,7 @@ func (i *UnixStamp) UnmarshalJSON(b []byte) error {
 type SQLTime2Unix int64
 
 // Scan : sql scan
-func (i *SQLTime2Unix) Scan(value interface{}) error {
+func (i *SQLTime2Unix) Scan(value any) error {
 	var t, ok = value.(time.Time)
 	if ok {
 		*i = SQLTime2Unix(t.Unix())

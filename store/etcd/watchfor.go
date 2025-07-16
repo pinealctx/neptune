@@ -5,10 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pinealctx/neptune/ulog"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 const (

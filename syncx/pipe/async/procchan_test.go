@@ -34,7 +34,7 @@ func TestProcChan_Call(t *testing.T) {
 
 	t1 = time.Now()
 	for i := 0; i < size; i++ {
-		_, _ = xs[i].Do(nil)
+		_, _ = xs[i].Do(context.Background())
 	}
 	t2 = time.Now()
 	dur = t2.Sub(t1)

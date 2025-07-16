@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"go.uber.org/atomic"
 	"math/bits"
+
+	"go.uber.org/atomic"
 )
 
 var (

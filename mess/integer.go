@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/binary"
+
 	"github.com/btcsuite/btcutil/base58"
 )
 

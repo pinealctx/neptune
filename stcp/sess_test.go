@@ -1,10 +1,12 @@
 package stcp
 
 import (
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
 	"sync"
 	"testing"
+
+	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 func TestSession_RemoteAddr(t *testing.T) {
@@ -15,7 +17,7 @@ func TestSession_RemoteAddr(t *testing.T) {
 	ulog.Error("sess", s.KeyZaps()...)
 }
 
-func TestSession_Recover(t *testing.T) {
+func TestSession_Recover(_ *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	var b = NewSessionMgr(nil)
@@ -35,7 +37,7 @@ func TestSession_Recover(t *testing.T) {
 	wg.Wait()
 }
 
-func TestSession_Recover1(t *testing.T) {
+func TestSession_Recover1(_ *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
@@ -51,7 +53,7 @@ func TestSession_Recover1(t *testing.T) {
 	wg.Wait()
 }
 
-func TestSession_Recover2(t *testing.T) {
+func TestSession_Recover2(_ *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {

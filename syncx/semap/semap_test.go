@@ -3,11 +3,12 @@ package semap
 import (
 	"context"
 	"fmt"
-	"go.uber.org/atomic"
 	"math"
 	"sync"
 	"testing"
 	"time"
+
+	"go.uber.org/atomic"
 )
 
 func Test1KLock(t *testing.T) {
@@ -68,7 +69,7 @@ func Test100KLockXHash(t *testing.T) {
 	test100KXHashLockRcWc(t, 10, 9, 1)
 }
 
-func TestNotAcquired(t *testing.T) {
+func TestNotAcquired(_ *testing.T) {
 	var sem = NewSemMap(WithRwRatio(5))
 	testNotAcquired(sem, 200, 50)
 	sem = NewWideSemMap(WithRwRatio(5))
@@ -124,7 +125,8 @@ func testNotAcquired(sem SemMapper, rc int, wc int) {
 }
 
 func test100KLockRcWc(t *testing.T, rwRation int, rc int, wc int) {
-	var opts = []Option{
+	t.Helper()
+	var opts = []OptionFn{
 		WithRwRatio(rwRation),
 	}
 
@@ -154,7 +156,8 @@ func test100KLockRcWc(t *testing.T, rwRation int, rc int, wc int) {
 }
 
 func test100KXHashLockRcWc(t *testing.T, rwRation int, rc int, wc int) {
-	var opts = []Option{
+	t.Helper()
+	var opts = []OptionFn{
 		WithRwRatio(rwRation),
 	}
 	var sem = NewSemMap(opts...)
@@ -183,6 +186,7 @@ func test100KXHashLockRcWc(t *testing.T, rwRation int, rc int, wc int) {
 }
 
 func test100KLock(t *testing.T, name string, sem SemMapper, rc int, wc int) {
+	t.Helper()
 	var count = 100000
 	var wg sync.WaitGroup
 	wg.Add(rc + wc)
@@ -192,9 +196,9 @@ func test100KLock(t *testing.T, name string, sem SemMapper, rc int, wc int) {
 	var minI16 = math.MinInt16
 	var minI8 = math.MinInt8
 	var n1 = -1
-	var max uint64 = math.MaxUint64
-	var mMax = max + 1
-	var nMax = uint64(-1 * int64(max))
+	var maxV uint64 = math.MaxUint64
+	var mMax = maxV + 1
+	var nMax = uint64(-1 * int64(maxV))
 
 	var us = []uint64{
 		math.MaxUint64,

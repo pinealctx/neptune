@@ -2,9 +2,11 @@ package mux
 
 import (
 	"context"
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
 	"sync"
+
+	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // Worker : a go routine to handle queue work
@@ -23,7 +25,7 @@ func NewWorker(qSize int, wg *sync.WaitGroup, ca CacheFacade) *Worker {
 }
 
 // DoGet : get from cache first if not load from db
-func (w *Worker) DoGet(ctx context.Context, loadFn RenewDataFn, k interface{}) (interface{}, error) {
+func (w *Worker) DoGet(ctx context.Context, loadFn RenewDataFn, k any) (any, error) {
 	var v, ok = w.ca.Get(k)
 	if ok {
 		//hit in cache
@@ -33,18 +35,18 @@ func (w *Worker) DoGet(ctx context.Context, loadFn RenewDataFn, k interface{}) (
 }
 
 // DoAdd : add item
-func (w *Worker) DoAdd(ctx context.Context, addFn RenewDataFn, k interface{}, data interface{}) (interface{}, error) {
+func (w *Worker) DoAdd(ctx context.Context, addFn RenewDataFn, k any, data any) (any, error) {
 	return w.asyncCall(ctx, NewAdd(addFn, k, data))
 }
 
 // DoUpdate : update item
 func (w *Worker) DoUpdate(ctx context.Context,
-	loadFn RenewDataFn, updFn UpdateDataFn, k interface{}, data interface{}) (interface{}, error) {
+	loadFn RenewDataFn, updFn UpdateDataFn, k any, data any) (any, error) {
 	return w.asyncCall(ctx, NewUpdate(loadFn, updFn, k, data))
 }
 
 // DoDelete : delete item
-func (w *Worker) DoDelete(ctx context.Context, deleteFn DeleteFn, k interface{}) (interface{}, error) {
+func (w *Worker) DoDelete(ctx context.Context, deleteFn DeleteFn, k any) (any, error) {
 	return w.asyncCall(ctx, NewDelete(deleteFn, k))
 }
 
@@ -54,7 +56,7 @@ func (w *Worker) DoDelete(ctx context.Context, deleteFn DeleteFn, k interface{})
 // 3. add if not existed.
 func (w *Worker) DoUpdOrAddIfNull(ctx context.Context,
 	loadFn RenewDataFn, updFn UpdateDataFn, addFn RenewDataFn, isNotFoundFn IsNotFoundFn,
-	k interface{}, data interface{}) (interface{}, error) {
+	k any, data any) (any, error) {
 	return w.asyncCall(ctx, NewMixUpdOrAddIfNull(loadFn, updFn, addFn, isNotFoundFn, k, data))
 }
 
@@ -63,7 +65,7 @@ func (w *Worker) DoUpdOrAddIfNull(ctx context.Context,
 // 2. update cache if cache hit.
 // 3. load cache if cache miss.
 func (w *Worker) DoUpsertThenLoad(ctx context.Context,
-	upsertFn UpdateDataFn, loadFn RenewDataFn, k interface{}, data interface{}) (interface{}, error) {
+	upsertFn UpdateDataFn, loadFn RenewDataFn, k any, data any) (any, error) {
 	return w.asyncCall(ctx, NewMixUpsertThenLoad(upsertFn, loadFn, k, data))
 }
 
@@ -71,7 +73,7 @@ func (w *Worker) DoUpsertThenLoad(ctx context.Context,
 // 1. upsert.
 // 2. update cache if cache hit.
 func (w *Worker) DoUpsertThenRenewInCache(ctx context.Context,
-	upsertFn UpdateDataFn, k interface{}, data interface{}) (interface{}, error) {
+	upsertFn UpdateDataFn, k any, data any) (any, error) {
 	return w.asyncCall(ctx, NewMixUpsertThenRenewInCache(upsertFn, k, data))
 }
 
@@ -86,7 +88,7 @@ func (w *Worker) Stop() {
 }
 
 // async call
-func (w *Worker) asyncCall(ctx context.Context, op OpCode) (interface{}, error) {
+func (w *Worker) asyncCall(ctx context.Context, op OpCode) (any, error) {
 	var c = NewAsync(ctx, op)
 	var err = w.workQ.AddReq(c)
 	if err != nil {
@@ -98,7 +100,7 @@ func (w *Worker) asyncCall(ctx context.Context, op OpCode) (interface{}, error) 
 // loop go routine to handle async call
 func (w *Worker) runLoop() {
 	var (
-		e   interface{}
+		e   any
 		c   *AsyncC
 		err error
 	)
@@ -296,7 +298,7 @@ func (w *Worker) handleMixUpsertThenLoad(c *AsyncC, op *OpMixUpsertThenLoad) {
 		c.SetR(nil, err)
 		return
 	}
-	var v interface{}
+	var v any
 	v, err = op.loadFn(c.ctx, op.k)
 	if err != nil {
 		//load error

@@ -2,13 +2,13 @@ package keylock
 
 type Locker interface {
 	// Lock write lock
-	Lock(key interface{})
+	Lock(key any)
 	// Unlock write unlock
-	Unlock(key interface{})
+	Unlock(key any)
 	// RLock read lock
-	RLock(key interface{})
+	RLock(key any)
 	// RUnlock read unlock
-	RUnlock(key interface{})
+	RUnlock(key any)
 }
 
 type TLocker[T comparable] interface {

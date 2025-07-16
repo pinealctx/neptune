@@ -46,22 +46,22 @@ func TestShuffleY(t *testing.T) {
 		var y = make(btsT, 3)
 		copy(y, x1)
 		Shuffle(y)
-		if bytes.Compare(x1, y) == 0 {
+		if bytes.Equal(x1, y) {
 			c1++
 		}
-		if bytes.Compare(x2, y) == 0 {
+		if bytes.Equal(x2, y) {
 			c2++
 		}
-		if bytes.Compare(x3, y) == 0 {
+		if bytes.Equal(x3, y) {
 			c3++
 		}
-		if bytes.Compare(x4, y) == 0 {
+		if bytes.Equal(x4, y) {
 			c4++
 		}
-		if bytes.Compare(x5, y) == 0 {
+		if bytes.Equal(x5, y) {
 			c5++
 		}
-		if bytes.Compare(x6, y) == 0 {
+		if bytes.Equal(x6, y) {
 			c6++
 		}
 	}

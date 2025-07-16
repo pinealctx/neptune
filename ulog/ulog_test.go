@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSetLogLevelStr(t *testing.T) {
+func TestSetLogLevelStr(_ *testing.T) {
 	Debug("debug - debug level")
 	Info("info - debug level")
 	Warn("warn - debug level")

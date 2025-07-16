@@ -80,9 +80,8 @@ func TestQ_Pop(t *testing.T) {
 			if err != nil {
 				t.Log(time.Now(), err)
 				return
-			} else {
-				t.Log(time.Now(), r)
 			}
+			t.Log(time.Now(), r)
 		}
 	}()
 	wg.Wait()

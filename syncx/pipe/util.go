@@ -1,9 +1,10 @@
 package pipe
 
 import (
-	"github.com/pinealctx/neptune/syncx/pipe/q"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/pinealctx/neptune/syncx/pipe/q"
 )
 
 var (

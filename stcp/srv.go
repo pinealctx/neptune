@@ -1,10 +1,12 @@
 package stcp
 
 import (
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
 	"net"
 	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // IConnMgr interface

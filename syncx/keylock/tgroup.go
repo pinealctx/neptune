@@ -1,8 +1,9 @@
 package keylock
 
 import (
+	"slices"
+
 	"github.com/pinealctx/neptune/remap"
-	"golang.org/x/exp/slices"
 )
 
 type multiKeyT[T comparable] struct {
@@ -13,7 +14,7 @@ type multiKeyT[T comparable] struct {
 // TKeyLockerGrp wide key locker group
 type TKeyLockerGrp[T comparable] struct {
 	ls       []*TKeyLocker[T]
-	calKeyFn func(key interface{}) int
+	calKeyFn func(key any) int
 	rehash   *remap.ReMap
 }
 
@@ -99,8 +100,8 @@ func (w *TKeyLockerGrp[T]) calculateSortedMultiKeys(keys []T) []multiKeyT[T] {
 	}
 
 	// sort by index
-	slices.SortFunc[multiKeyT[T]](ms, func(a, b multiKeyT[T]) bool {
-		return a.index < b.index
+	slices.SortFunc(ms, func(a, b multiKeyT[T]) int {
+		return a.index - b.index
 	})
 	return ms
 }

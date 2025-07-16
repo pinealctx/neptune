@@ -71,6 +71,7 @@ func TestTKeyLocker_RandCrazyC3(t *testing.T) {
 }
 
 func testTLockerCrazy(t *testing.T, x TLocker[int]) {
+	t.Helper()
 	var wg sync.WaitGroup
 	wg.Add(200)
 
@@ -107,6 +108,7 @@ func testTLockerCrazy(t *testing.T, x TLocker[int]) {
 }
 
 func testTLockerRandCrazyA(t *testing.T, x TLocker[int]) {
+	t.Helper()
 	var ks = make([][]int, 32)
 	var index = int(0)
 	for i := 0; i < 32; i++ {
@@ -121,6 +123,7 @@ func testTLockerRandCrazyA(t *testing.T, x TLocker[int]) {
 }
 
 func testTLockerRandCrazyB(t *testing.T, x TLocker[int]) {
+	t.Helper()
 	var iter = [][]int{
 		{0, 1, 2, 3, 4, 5, 6, 7},
 		{1, 2, 3, 4, 5, 6, 7, 0},
@@ -147,6 +150,7 @@ func testTLockerRandCrazyB(t *testing.T, x TLocker[int]) {
 }
 
 func testTLockerRandCrazyC(t *testing.T, x TLocker[int]) {
+	t.Helper()
 	var iter = [][]int{
 		{0, 1, 2, 3, 4, 5, 6, 7},
 		{1, 2, 3, 4, 5, 6, 7, 0},
@@ -174,6 +178,7 @@ func testTLockerRandCrazyC(t *testing.T, x TLocker[int]) {
 }
 
 func testTLockerRandCrazy(t *testing.T, x TLocker[int], ks [][]int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	wg.Add(200)
 

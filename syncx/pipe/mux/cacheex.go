@@ -15,12 +15,12 @@ func NewFacadeMap() CacheFacade {
 	return m
 }
 
-func (m *FacadeMap) Peek(key interface{}) (interface{}, bool) {
+func (m *FacadeMap) Peek(key any) (any, bool) {
 	return m.Get(key)
 }
 
 type _wrapper struct {
-	v interface{}
+	v any
 }
 
 func (w _wrapper) Size() int {
@@ -44,7 +44,7 @@ func NewFacadeLRU(capacity int64) CacheFacade {
 }
 
 // Peek : only useful in lru cache, peek means no update LRU order.
-func (m *FacadeLRU) Peek(key interface{}) (interface{}, bool) {
+func (m *FacadeLRU) Peek(key any) (any, bool) {
 	var w, ok = m.LRUCache.Peek(key)
 	if !ok {
 		return nil, false
@@ -53,7 +53,7 @@ func (m *FacadeLRU) Peek(key interface{}) (interface{}, bool) {
 }
 
 // Get : get from cache, in lru cache, key order also be updated.
-func (m *FacadeLRU) Get(key interface{}) (interface{}, bool) {
+func (m *FacadeLRU) Get(key any) (any, bool) {
 	var w, ok = m.LRUCache.Get(key)
 	if !ok {
 		return nil, false
@@ -62,11 +62,11 @@ func (m *FacadeLRU) Get(key interface{}) (interface{}, bool) {
 }
 
 // Set : set to cache
-func (m *FacadeLRU) Set(key interface{}, value interface{}) {
+func (m *FacadeLRU) Set(key any, value any) {
 	m.LRUCache.Set(key, _wrapper{v: value})
 }
 
 // Delete : delete key from cache
-func (m *FacadeLRU) Delete(key interface{}) {
+func (m *FacadeLRU) Delete(key any) {
 	m.LRUCache.Delete(key)
 }

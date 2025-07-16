@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestInsert(t *testing.T) {
+func TestInsert(_ *testing.T) {
 	var a []int
 	Insert[int](&a, 1, 10)
 	Insert[int](&a, 1, 11)

@@ -1,23 +1,25 @@
 package stcp
 
 import (
-	"github.com/pinealctx/neptune/syncx/pipe/q"
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/atomic"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"io"
 	"net"
 	"sync"
 	"time"
+
+	"go.uber.org/atomic"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
+	"github.com/pinealctx/neptune/syncx/pipe/q"
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // NetIO : net io
 type NetIO interface {
 	//Set set session related value
-	Set(v interface{})
+	Set(v any)
 	//Get get session related value
-	Get() interface{}
+	Get() any
 	//SetRemoteAddr :
 	SetRemoteAddr(addr string)
 	//RemoteAddr :
@@ -90,12 +92,12 @@ func (s *Session) UpdateHandler(rh ISession) {
 }
 
 // Set :
-func (s *Session) Set(v interface{}) {
+func (s *Session) Set(v any) {
 	s.value.Store(v)
 }
 
 // Get :
-func (s *Session) Get() interface{} {
+func (s *Session) Get() any {
 	return s.value.Load()
 }
 
@@ -145,7 +147,7 @@ func (s *Session) KeyZaps(ext ...zap.Field) []zap.Field {
 func (s *Session) loopSend() {
 	var (
 		err   error
-		qItem interface{}
+		qItem any
 		bs    []byte
 		ok    bool
 	)
@@ -270,11 +272,10 @@ func absSessionInfo(value atomic.Value, ext ...zap.Field) []zap.Field {
 			return ext
 		}
 		return sessInfo.KeyZaps(ext...)
-	} else {
-		var l = len(ext)
-		var c = make([]zap.Field, l+1)
-		c[0] = zap.Any("unknown.sessionInfo", info)
-		copy(c[1:], ext)
-		return c
 	}
+	var l = len(ext)
+	var c = make([]zap.Field, l+1)
+	c[0] = zap.Any("unknown.sessionInfo", info)
+	copy(c[1:], ext)
+	return c
 }

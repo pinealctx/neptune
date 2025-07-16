@@ -98,7 +98,7 @@ func NewMQ(options ...Option) *MQ {
 
 // AddCtrlAnyway dd control request to the control queue end place anyway
 // if queue full, sleep then try
-func (a *MQ) AddCtrlAnyway(cmd interface{}, ts time.Duration) error {
+func (a *MQ) AddCtrlAnyway(cmd any, ts time.Duration) error {
 	var err error
 	for {
 		err = a.AddCtrl(cmd)
@@ -111,7 +111,7 @@ func (a *MQ) AddCtrlAnyway(cmd interface{}, ts time.Duration) error {
 }
 
 // AddCtrl add control request to the control queue end place.
-func (a *MQ) AddCtrl(cmd interface{}) error {
+func (a *MQ) AddCtrl(cmd any) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.closed {
@@ -128,7 +128,7 @@ func (a *MQ) AddCtrl(cmd interface{}) error {
 }
 
 // AddPriorCtrl add control request to the control queue first place.
-func (a *MQ) AddPriorCtrl(cmd interface{}) error {
+func (a *MQ) AddPriorCtrl(cmd any) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.closed {
@@ -141,7 +141,7 @@ func (a *MQ) AddPriorCtrl(cmd interface{}) error {
 
 // AddReqAnyway add normal request to the normal queue end place anyway
 // if queue full, sleep then try
-func (a *MQ) AddReqAnyway(req interface{}, ts time.Duration) error {
+func (a *MQ) AddReqAnyway(req any, ts time.Duration) error {
 	var err error
 	for {
 		err = a.AddReq(req)
@@ -154,7 +154,7 @@ func (a *MQ) AddReqAnyway(req interface{}, ts time.Duration) error {
 }
 
 // AddReq add normal request to the normal queue end place.
-func (a *MQ) AddReq(req interface{}) error {
+func (a *MQ) AddReq(req any) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.closed {
@@ -171,7 +171,7 @@ func (a *MQ) AddReq(req interface{}) error {
 }
 
 // AddPriorReq add normal request to the normal queue first place.
-func (a *MQ) AddPriorReq(req interface{}) error {
+func (a *MQ) AddPriorReq(req any) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.closed {
@@ -183,7 +183,7 @@ func (a *MQ) AddPriorReq(req interface{}) error {
 }
 
 // Pop consume an item, if list is empty, it's been blocked
-func (a *MQ) Pop() (interface{}, error) {
+func (a *MQ) Pop() (any, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	for a.ctrlList.Len() == 0 && a.reqList.Len() == 0 {
@@ -210,7 +210,7 @@ func (a *MQ) Pop() (interface{}, error) {
 }
 
 // PopAnyway consume an item like Pop, but it can consume even the queue is closed.
-func (a *MQ) PopAnyway() (interface{}, error) {
+func (a *MQ) PopAnyway() (any, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	for a.ctrlList.Len() == 0 && a.reqList.Len() == 0 {

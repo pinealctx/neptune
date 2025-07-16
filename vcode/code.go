@@ -1,8 +1,9 @@
 package vcode
 
 import (
-	"github.com/pinealctx/neptune/idgen/random"
 	"time"
+
+	"github.com/pinealctx/neptune/idgen/random"
 )
 
 type vCache struct {

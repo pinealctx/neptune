@@ -34,10 +34,10 @@ func (w *DirEvent) DebugInfo() string {
 		buffer.WriteString("type:")
 		buffer.WriteString(event.Type.String())
 		buffer.WriteString("key:")
-		buffer.WriteString(string(event.Kv.Key))
+		buffer.Write(event.Kv.Key)
 		buffer.WriteString(",")
 		buffer.WriteString("val:")
-		buffer.WriteString(string(event.Kv.Value))
+		buffer.Write(event.Kv.Value)
 	}
 	return buffer.String()
 }
@@ -46,7 +46,7 @@ func (w *DirEvent) DebugInfo() string {
 // ctx -- cancel controller, it's a parent context for watch
 // nodePath -- path
 // timeout -- get dir timeout
-// ignoreEmpty -- if ignore, even get nothing from dir, watch still continue to work
+// ignoreEmpty -- if ignored, even get nothing from dir, watch still continue to work
 // return first get dir content/dir watch event/current watch session cancel
 func (c *Client) WatchDir(ctx context.Context,
 	nodePath string, timeout time.Duration, ignoreEmpty bool) (DirRet, <-chan DirEvent, context.CancelFunc) {

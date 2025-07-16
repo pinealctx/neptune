@@ -1,9 +1,10 @@
 package mess
 
 import (
-	"github.com/btcsuite/btcutil/base58"
 	"testing"
 	"time"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 func TestIntCypher_DecryptU32(t *testing.T) {
@@ -168,6 +169,7 @@ func TestBase58Decode(t *testing.T) {
 }
 
 func cypherU32N0(t *testing.T, x *IntCypher, number uint32) {
+	t.Helper()
 	var y = x.EncU32[0](number)
 	var z = x.DecU32[0](y)
 	if z != number {
@@ -176,6 +178,7 @@ func cypherU32N0(t *testing.T, x *IntCypher, number uint32) {
 }
 
 func cypherU32N1(t *testing.T, x *IntCypher, number uint32) {
+	t.Helper()
 	var y = x.EncU32[1](number)
 	var z = x.DecU32[1](y)
 	if z != number {
@@ -184,6 +187,7 @@ func cypherU32N1(t *testing.T, x *IntCypher, number uint32) {
 }
 
 func cypherU32N2(t *testing.T, x *IntCypher, number uint32) {
+	t.Helper()
 	var y = x.EncU32[2](number)
 	var z = x.DecU32[2](y)
 	if z != number {
@@ -192,6 +196,7 @@ func cypherU32N2(t *testing.T, x *IntCypher, number uint32) {
 }
 
 func cypherUs32N20(t *testing.T, x *IntCypher, number uint32) {
+	t.Helper()
 	var y = x.EncU32ToStr[20](number)
 	var z = x.DecStrToU32[20](y)
 	if z != number {
@@ -200,6 +205,7 @@ func cypherUs32N20(t *testing.T, x *IntCypher, number uint32) {
 }
 
 func cypherUs32ExN20(t *testing.T, x *IntCypher, number uint32) {
+	t.Helper()
 	var y = x.EncU32ToStrEx[20](number)
 	var z = x.DecStrToU32Ex[20](y)
 	if z != number {
@@ -221,9 +227,8 @@ func calculateOutput(input uint32) uint32 {
 
 	if mod == 0 || mod > 4 {
 		return input*diff + 1992294400
-	} else {
-		return input*diff - 1992294400
 	}
+	return input*diff - 1992294400
 }
 
 func feed4Byte(buf []byte) {

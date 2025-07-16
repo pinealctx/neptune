@@ -2,9 +2,10 @@ package tex
 
 import (
 	"encoding/json"
-	"github.com/pinealctx/neptune/jsonx"
 	"testing"
 	"time"
+
+	"github.com/pinealctx/neptune/jsonx"
 )
 
 type TJT struct {

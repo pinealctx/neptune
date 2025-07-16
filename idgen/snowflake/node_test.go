@@ -13,9 +13,12 @@ func TestNewHardNode(t *testing.T) {
 	)
 	n1, err = NewMonoNode(0)
 	if err != nil {
-		panic(err)
+		t.Errorf("NewMonoNode failed: %v", err)
 	}
 	n2, err = NewNode(0, 0)
+	if err != nil {
+		t.Errorf("NewNode error: %v", err)
+	}
 
 	id1, id2 = n1.Generate(), n2.Generate()
 	t.Log(id1)

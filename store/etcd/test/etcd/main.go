@@ -2,10 +2,12 @@ package main
 
 import (
 	"errors"
-	"github.com/pinealctx/neptune/store/etcd"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+
+	"github.com/urfave/cli/v2"
+
+	"github.com/pinealctx/neptune/store/etcd"
 )
 
 var (

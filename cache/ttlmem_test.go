@@ -2,9 +2,10 @@ package cache
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTTLCache_Normal(t *testing.T) {

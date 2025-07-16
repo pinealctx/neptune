@@ -5,10 +5,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/pinealctx/neptune/store/etcd"
 	"github.com/urfave/cli/v2"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/client/v3"
+
+	"github.com/pinealctx/neptune/store/etcd"
 )
 
 func createNode(c *cli.Context) error {
@@ -104,7 +105,7 @@ func watchDir(c *cli.Context) error {
 }
 
 func printItem(i *mvccpb.KeyValue) {
-	log.Println("key:", i.Key, " version:", i.Version, "mod version", i.ModRevision, " value:", string(i.Value))
+	log.Println("key:", string(i.Key), " version:", i.Version, "mod version", i.ModRevision, " value:", string(i.Value))
 }
 
 func printEvent(i *clientv3.Event) {

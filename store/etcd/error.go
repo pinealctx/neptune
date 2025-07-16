@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,8 +16,8 @@ const (
 	Unavailable
 	//Timeout rpc timeout
 	Timeout
-	//Cancelled rpc cancelled
-	Cancelled
+	//Canceled rpc
+	Canceled
 	//NodeExist node not exist
 	NodeExist
 	//NodeNotFound node not found
@@ -31,7 +32,7 @@ const (
 	WatchUnexpected
 	//WatchClosed watch closed
 	WatchClosed
-	//Unknown unknown error
+	//Unknown error
 	Unknown
 )
 
@@ -106,7 +107,7 @@ func convertErr(nodePath string, err error) error {
 		case codes.NotFound:
 			return genErr(nodePath, NodeNotFound)
 		case codes.Canceled:
-			return genErr(nodePath, Cancelled)
+			return genErr(nodePath, Canceled)
 		case codes.DeadlineExceeded:
 			return genErr(nodePath, Timeout)
 		}
@@ -118,7 +119,7 @@ func convertErr(nodePath string, err error) error {
 
 	switch err {
 	case context.Canceled:
-		return genErr(nodePath, Cancelled)
+		return genErr(nodePath, Canceled)
 	case context.DeadlineExceeded:
 		return genErr(nodePath, Timeout)
 	}
@@ -138,7 +139,7 @@ func genErr(node string, code Code) error {
 		msg = fmt.Sprintf("%s: unavailable", node)
 	case Timeout:
 		msg = fmt.Sprintf("%s: timeout", node)
-	case Cancelled:
+	case Canceled:
 		msg = fmt.Sprintf("%s: cancalled", node)
 	case NodeExist:
 		msg = fmt.Sprintf("%s: already exists", node)

@@ -115,22 +115,27 @@ func TestBTree_AscendGteFrom5(t *testing.T) {
 }
 
 func testBTreeAscendGtNum(t *testing.T, k int) {
+	t.Helper()
 	testBTreeAscendGtFrom(t, &xCmp{x: k})
 }
 
 func testBTreeAscendGtFrom(t *testing.T, k Node) {
+	t.Helper()
 	testBTreeIter(t, testAscendGt, k)
 }
 
 func testBTreeAscendGteNum(t *testing.T, k int) {
+	t.Helper()
 	testBTreeAscendGteFrom(t, &xCmp{x: k})
 }
 
 func testBTreeAscendGteFrom(t *testing.T, k Node) {
+	t.Helper()
 	testBTreeIter(t, testAscendGte, k)
 }
 
 func testBTreeIter(t *testing.T, fn _testIterProc, k Node) {
+	t.Helper()
 	var bt = NewBTree()
 	for i := 1; i <= 3; i++ {
 		var x = &xCmp{
@@ -150,16 +155,19 @@ func testBTreeIter(t *testing.T, fn _testIterProc, k Node) {
 type _testIterProc func(t *testing.T, b *BTree, k Node, n int)
 
 func testAscendGt(t *testing.T, b *BTree, k Node, n int) {
+	t.Helper()
 	testIter(t, k, b.AscendGt, n)
 }
 
 func testAscendGte(t *testing.T, b *BTree, k Node, n int) {
+	t.Helper()
 	testIter(t, k, b.AscendGte, n)
 }
 
 type _testIterFn func(k Node, filter FilterFn, n int) []Node
 
 func testIter(t *testing.T, k Node, ifn _testIterFn, n int) {
+	t.Helper()
 	var ffn = func(_ Node) bool {
 		return true
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 func TestCompressJson1(t *testing.T) {
-	var x = map[string]interface{}{
+	var x = map[string]any{
 		"a": "int64(9223372036854775806)",
 		"b": "JsInt64(9223372036854775806)",
 		"c": "JsInt64(9223372036854775806)",
@@ -18,7 +18,7 @@ func TestCompressJson1(t *testing.T) {
 	}
 	t.Log("len:", len(buf1), " first:", buf1[0])
 
-	var y map[string]interface{}
+	var y map[string]any
 	err = JSONFastUnmarshalSnappy(buf1, &y)
 	if err != nil {
 		t.Error(err)
@@ -28,7 +28,7 @@ func TestCompressJson1(t *testing.T) {
 }
 
 func TestCompressJson2(t *testing.T) {
-	var x = map[string]interface{}{
+	var x = map[string]any{
 		"a": "int64(9223372036854775806)",
 		"b": "JsInt64(9223372036854775806)",
 		"c": "JsInt64(9223372036854775806)",
@@ -46,7 +46,7 @@ func TestCompressJson2(t *testing.T) {
 	}
 	t.Log("len:", len(buf1), " first:", buf1[0])
 
-	var y map[string]interface{}
+	var y map[string]any
 	err = JSONFastUnmarshalSnappy(buf1, &y)
 	if err != nil {
 		t.Error(err)

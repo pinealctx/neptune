@@ -13,26 +13,26 @@ type wrapLocker struct {
 
 // KeyLocker global locker based on key
 type KeyLocker struct {
-	lockMap map[interface{}]*wrapLocker
+	lockMap map[any]*wrapLocker
 	locker  sync.Mutex
 }
 
 // NewKeyLocker new key locker
 func NewKeyLocker() Locker {
 	return &KeyLocker{
-		lockMap: make(map[interface{}]*wrapLocker),
+		lockMap: make(map[any]*wrapLocker),
 	}
 }
 
 // NewKeyLockerInstance new key locker instance
 func NewKeyLockerInstance() *KeyLocker {
 	return &KeyLocker{
-		lockMap: make(map[interface{}]*wrapLocker),
+		lockMap: make(map[any]*wrapLocker),
 	}
 }
 
 // Lock write lock
-func (d *KeyLocker) Lock(key interface{}) {
+func (d *KeyLocker) Lock(key any) {
 	var (
 		wrLocker *wrapLocker
 		ok       bool
@@ -49,7 +49,7 @@ func (d *KeyLocker) Lock(key interface{}) {
 }
 
 // Unlock write unlock
-func (d *KeyLocker) Unlock(key interface{}) {
+func (d *KeyLocker) Unlock(key any) {
 	var (
 		wrLocker *wrapLocker
 	)
@@ -62,7 +62,7 @@ func (d *KeyLocker) Unlock(key interface{}) {
 }
 
 // RLock read lock
-func (d *KeyLocker) RLock(key interface{}) {
+func (d *KeyLocker) RLock(key any) {
 	var (
 		wrLocker *wrapLocker
 		ok       bool
@@ -79,7 +79,7 @@ func (d *KeyLocker) RLock(key interface{}) {
 }
 
 // RUnlock read unlock
-func (d *KeyLocker) RUnlock(key interface{}) {
+func (d *KeyLocker) RUnlock(key any) {
 	var (
 		wrLocker *wrapLocker
 	)
@@ -92,7 +92,7 @@ func (d *KeyLocker) RUnlock(key interface{}) {
 }
 
 // try to free a key locker from map
-func (d *KeyLocker) tryFree(key interface{}, wrLocker *wrapLocker) {
+func (d *KeyLocker) tryFree(key any, wrLocker *wrapLocker) {
 	if wrLocker.readCount == 0 && wrLocker.writeCount == 0 {
 		delete(d.lockMap, key)
 	}

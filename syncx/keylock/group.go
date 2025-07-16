@@ -6,32 +6,32 @@ import (
 
 type KeyLockerGrp struct {
 	ls       []*KeyLocker
-	calKeyFn func(key interface{}) int
+	calKeyFn func(key any) int
 	rehash   *remap.ReMap
 }
 
 // Lock write lock
-func (w *KeyLockerGrp) Lock(key interface{}) {
+func (w *KeyLockerGrp) Lock(key any) {
 	w.calculateKey(key).Lock(key)
 }
 
 // Unlock write unlock
-func (w *KeyLockerGrp) Unlock(key interface{}) {
+func (w *KeyLockerGrp) Unlock(key any) {
 	w.calculateKey(key).Unlock(key)
 }
 
 // RLock read lock
-func (w *KeyLockerGrp) RLock(key interface{}) {
+func (w *KeyLockerGrp) RLock(key any) {
 	w.calculateKey(key).RLock(key)
 }
 
 // RUnlock read unlock
-func (w *KeyLockerGrp) RUnlock(key interface{}) {
+func (w *KeyLockerGrp) RUnlock(key any) {
 	w.calculateKey(key).RUnlock(key)
 }
 
 // calculate key
-func (w *KeyLockerGrp) calculateKey(key interface{}) *KeyLocker {
+func (w *KeyLockerGrp) calculateKey(key any) *KeyLocker {
 	var i = w.calKeyFn(key)
 	return w.ls[i]
 }

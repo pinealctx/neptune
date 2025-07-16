@@ -89,10 +89,10 @@ func TestTimeIDRange(t *testing.T) {
 	var ts = now.UnixNano()
 	t.Logf("%064b\n", ts)
 	t.Logf("%064b\n", ts/MsDivNs)
-	var min, max = TimeIDRange(now)
+	var minV, maxV = TimeIDRange(now)
 	t.Logf("%064b\n", id)
-	t.Logf("%064b\n", min)
-	t.Logf("%064b\n", max)
+	t.Logf("%064b\n", minV)
+	t.Logf("%064b\n", maxV)
 
 	var ms, n1, step1 = IDParse(id)
 	t.Logf("%064b\n", ms)
@@ -102,9 +102,9 @@ func TestTimeIDRange(t *testing.T) {
 	var t2, n2, s2 = IDParseEx(id)
 	t.Log(t2, n2, s2)
 
-	t2, n2, s2 = IDParseEx(min)
+	t2, n2, s2 = IDParseEx(minV)
 	t.Log(t2, n2, s2)
-	t2, n2, s2 = IDParseEx(max)
+	t2, n2, s2 = IDParseEx(maxV)
 	t.Log(t2, n2, s2)
 
 	var timeShift = _nodeBits + StepBits
@@ -121,12 +121,12 @@ func TestTimeBetweenID(t *testing.T) {
 	var now = time.Now()
 	t.Log(now)
 	t.Logf("%064b\n", id)
-	var min, max = TimeBetweenID(now, now.Add(time.Second*10))
-	t.Logf("%064b\n", min)
-	t.Logf("%064b\n", max)
+	var minV, maxV = TimeBetweenID(now, now.Add(time.Second*10))
+	t.Logf("%064b\n", minV)
+	t.Logf("%064b\n", maxV)
 
-	var t2, n2, s2 = IDParseEx(min)
+	var t2, n2, s2 = IDParseEx(minV)
 	t.Log(t2, n2, s2)
-	t2, n2, s2 = IDParseEx(max)
+	t2, n2, s2 = IDParseEx(maxV)
 	t.Log(t2, n2, s2)
 }

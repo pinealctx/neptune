@@ -2,13 +2,14 @@ package dl
 
 import (
 	"fmt"
-	"github.com/pinealctx/neptune/tex"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/pinealctx/neptune/tex"
 )
 
 const (
@@ -47,7 +48,7 @@ func DownloadObj(uri string) (*HTTPObj, error) {
 		return nil, fmt.Errorf("invalid.url:%s", uri)
 	}
 	var hc = http.Client{
-		CheckRedirect: func(r *http.Request, via []*http.Request) error {
+		CheckRedirect: func(r *http.Request, _ []*http.Request) error {
 			r.URL.Opaque = r.URL.Path
 			return nil
 		},

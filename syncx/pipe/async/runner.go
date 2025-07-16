@@ -2,9 +2,11 @@ package async
 
 import (
 	"context"
-	"github.com/pinealctx/neptune/ulog"
-	"go.uber.org/zap"
 	"sync"
+
+	"go.uber.org/zap"
+
+	"github.com/pinealctx/neptune/ulog"
 )
 
 // RunnerQ : async runner
@@ -51,7 +53,7 @@ func (c *RunnerQ) Size() int {
 // AsyncCall : async call
 // ctx -- context.Context
 // callCtxT -- call context
-func (c *RunnerQ) AsyncCall(fn interface{}, ctx context.Context, arg interface{}) (interface{}, error) {
+func (c *RunnerQ) AsyncCall(ctx context.Context, fn any, arg any) (any, error) {
 	var proc, err = c.addCallCtx(ctx, fn, arg)
 	if err != nil {
 		return nil, err
@@ -62,7 +64,7 @@ func (c *RunnerQ) AsyncCall(fn interface{}, ctx context.Context, arg interface{}
 // AsyncDelegate : async delegate
 // ctx -- context.Context
 // delegate -- delegate function
-func (c *RunnerQ) AsyncDelegate(ctx context.Context, delegate Delegate) (interface{}, error) {
+func (c *RunnerQ) AsyncDelegate(ctx context.Context, delegate Delegate) (any, error) {
 	var procCtx, err = c.addDelegateCtx(ctx, delegate)
 	if err != nil {
 		return nil, err
@@ -73,7 +75,7 @@ func (c *RunnerQ) AsyncDelegate(ctx context.Context, delegate Delegate) (interfa
 // AsyncProc : async proc
 // ctx -- context.Context
 // proc -- proc interface
-func (c *RunnerQ) AsyncProc(ctx context.Context, proc Proc) (interface{}, error) {
+func (c *RunnerQ) AsyncProc(ctx context.Context, proc Proc) (any, error) {
 	var procCtx, err = c.addProcCtx(ctx, proc)
 	if err != nil {
 		return nil, err
@@ -104,7 +106,7 @@ func (c *RunnerQ) WaitStop() {
 }
 
 // addCallCtx : add call context
-func (c *RunnerQ) addCallCtx(ctx context.Context, fn interface{}, arg interface{}) (*callCtxT, error) {
+func (c *RunnerQ) addCallCtx(ctx context.Context, fn any, arg any) (*callCtxT, error) {
 	var callCtx = newCallCtx(ctx, fn, arg)
 	var err = c.q.Add(callCtx)
 	return callCtx, err
@@ -128,7 +130,7 @@ func (c *RunnerQ) addProcCtx(ctx context.Context, proc Proc) (*procCtxT, error) 
 func (c *RunnerQ) popLoop() {
 	var (
 		err  error
-		item interface{}
+		item any
 		cc   ctxRunnerI
 		ok   bool
 	)

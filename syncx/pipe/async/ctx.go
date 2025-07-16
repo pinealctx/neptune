@@ -6,12 +6,12 @@ import (
 )
 
 // Delegate : proc delegate function
-type Delegate func(ctx context.Context) (interface{}, error)
+type Delegate func(ctx context.Context) (any, error)
 
 // Proc : proc interface
 type Proc interface {
 	//Do : do proc
-	Do(ctx context.Context) (interface{}, error)
+	Do(ctx context.Context) (any, error)
 }
 
 // ctx runner
@@ -19,7 +19,7 @@ type ctxRunnerI interface {
 	//run
 	run()
 	//get result
-	r() (interface{}, error)
+	r() (any, error)
 }
 
 // callCtxT call function context
@@ -34,17 +34,17 @@ type callCtxT struct {
 	//call function value -- pointer
 	functionValue reflect.Value
 	//call arg -- exclude first arg --- (ctx context)
-	arg interface{}
+	arg any
 	//wait -- wait chan
 	wait chan struct{}
 	//result -- exclude last arg -- (err error)
-	result interface{}
+	result any
 	//error
 	err error
 }
 
 // new call context
-func newCallCtx(ctx context.Context, fn interface{}, arg interface{}) *callCtxT {
+func newCallCtx(ctx context.Context, fn any, arg any) *callCtxT {
 	var fnType, valid = validateFn(fn)
 	if !valid {
 		panic("new async call in case function is nil")
@@ -59,7 +59,7 @@ func newCallCtx(ctx context.Context, fn interface{}, arg interface{}) *callCtxT 
 }
 
 // r : get result with wait
-func (c *callCtxT) r() (interface{}, error) {
+func (c *callCtxT) r() (any, error) {
 	select {
 	case <-c.ctx.Done():
 		return nil, c.ctx.Err()
@@ -100,7 +100,7 @@ type delegateCtxT struct {
 	//wait -- wait chan
 	wait chan struct{}
 	//result -- exclude last arg -- (err error)
-	result interface{}
+	result any
 	//error
 	err error
 }
@@ -115,7 +115,7 @@ func newDelegateCtx(ctx context.Context, delegate Delegate) *delegateCtxT {
 }
 
 // r : get result with wait
-func (c *delegateCtxT) r() (interface{}, error) {
+func (c *delegateCtxT) r() (any, error) {
 	select {
 	case <-c.ctx.Done():
 		return nil, c.ctx.Err()
@@ -147,7 +147,7 @@ type procCtxT struct {
 	//wait -- wait chan
 	wait chan struct{}
 	//result -- exclude last arg -- (err error)
-	result interface{}
+	result any
 	//error
 	err error
 }
@@ -162,7 +162,7 @@ func newProcCtx(ctx context.Context, proc Proc) *procCtxT {
 }
 
 // r : get result with wait
-func (c *procCtxT) r() (interface{}, error) {
+func (c *procCtxT) r() (any, error) {
 	select {
 	case <-c.ctx.Done():
 		return nil, c.ctx.Err()

@@ -51,10 +51,7 @@
 package btree
 
 import (
-	"fmt"
-	"io"
 	"sort"
-	"strings"
 	"sync"
 )
 
@@ -307,7 +304,7 @@ func (n *node) maybeSplitChild(i, maxItems int) bool {
 
 // insert inserts an item into the subtree rooted at this node, making sure
 // no nodes in the subtree exceed maxItems items.  Should an equivalent item be
-// be found/replaced by insert, it will be returned.
+// found/replaced by insert, it will be returned.
 func (n *node) insert(item Item, maxItems int) Item {
 	i, found := n.items.find(item)
 	if found {
@@ -346,8 +343,8 @@ func (n *node) get(key Item) Item {
 	return nil
 }
 
-// min returns the first item in the subtree.
-func min(n *node) Item {
+// minItem returns the first item in the subtree.
+func minItem(n *node) Item {
 	if n == nil {
 		return nil
 	}
@@ -360,8 +357,8 @@ func min(n *node) Item {
 	return n.items[0]
 }
 
-// max returns the last item in the subtree.
-func max(n *node) Item {
+// maxItem returns the last item in the subtree.
+func maxItem(n *node) Item {
 	if n == nil {
 		return nil
 	}
@@ -576,12 +573,12 @@ func (n *node) iterate(dir direction, start, stop Item, includeStart bool, hit b
 }
 
 // Used for testing/debugging purposes.
-func (n *node) print(w io.Writer, level int) {
-	fmt.Fprintf(w, "%sNODE:%v\n", strings.Repeat("  ", level), n.items)
-	for _, c := range n.children {
-		c.print(w, level+1)
-	}
-}
+//func (n *node) print(w io.Writer, level int) {
+//	fmt.Fprintf(w, "%sNODE:%v\n", strings.Repeat("  ", level), n.items)
+//	for _, c := range n.children {
+//		c.print(w, level+1)
+//	}
+//}
 
 // BTree is an implementation of a B-Tree.
 //
@@ -639,12 +636,12 @@ func (t *BTree) Clone() (t2 *BTree) {
 	return &out
 }
 
-// maxItems returns the max number of items to allow per node.
+// maxItems returns the maxItem number of items to allow per node.
 func (t *BTree) maxItems() int {
 	return t.degree*2 - 1
 }
 
-// minItems returns the min number of items to allow per node (ignored for the
+// minItems returns the minItem number of items to allow per node (ignored for the
 // root node).
 func (t *BTree) minItems() int {
 	return t.degree - 1
@@ -675,12 +672,10 @@ func (c *copyOnWriteContext) freeNode(n *node) freeType {
 		n.cow = nil
 		if c.freelist.freeNode(n) {
 			return ftStored
-		} else {
-			return ftFreelistFull
 		}
-	} else {
-		return ftNotOwned
+		return ftFreelistFull
 	}
+	return ftNotOwned
 }
 
 // ReplaceOrInsert adds the given item to the tree.  If an item in the tree
@@ -697,15 +692,14 @@ func (t *BTree) ReplaceOrInsert(item Item) Item {
 		t.root.items = append(t.root.items, item)
 		t.length++
 		return nil
-	} else {
-		t.root = t.root.mutableFor(t.cow)
-		if len(t.root.items) >= t.maxItems() {
-			item2, second := t.root.split(t.maxItems() / 2)
-			oldroot := t.root
-			t.root = t.cow.newNode()
-			t.root.items = append(t.root.items, item2)
-			t.root.children = append(t.root.children, oldroot, second)
-		}
+	}
+	t.root = t.root.mutableFor(t.cow)
+	if len(t.root.items) >= t.maxItems() {
+		item2, second := t.root.split(t.maxItems() / 2)
+		oldroot := t.root
+		t.root = t.cow.newNode()
+		t.root.items = append(t.root.items, item2)
+		t.root.children = append(t.root.children, oldroot, second)
 	}
 	out := t.root.insert(item, t.maxItems())
 	if out == nil {
@@ -832,12 +826,12 @@ func (t *BTree) Get(key Item) Item {
 
 // Min returns the smallest item in the tree, or nil if the tree is empty.
 func (t *BTree) Min() Item {
-	return min(t.root)
+	return minItem(t.root)
 }
 
 // Max returns the largest item in the tree, or nil if the tree is empty.
 func (t *BTree) Max() Item {
-	return max(t.root)
+	return maxItem(t.root)
 }
 
 // Has returns true if the given key is in the tree.
