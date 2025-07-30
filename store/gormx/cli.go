@@ -23,6 +23,7 @@ type _Option struct {
 	maxIdle     int
 	maxLifeTime time.Duration
 	log         bool
+	logger      logger.Interface
 }
 
 type Option func(*_Option)
@@ -57,6 +58,13 @@ func WithLogSwitch(on bool) Option {
 	}
 }
 
+// WithLogger : set logger
+func WithLogger(logger logger.Interface) Option {
+	return func(o *_Option) {
+		o.logger = logger
+	}
+}
+
 // New : new *gorm.DB
 func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	var option = &_Option{
@@ -67,8 +75,8 @@ func New(dsn string, opts ...Option) (*gorm.DB, error) {
 	for _, opt := range opts {
 		opt(option)
 	}
-	var config = &gorm.Config{}
-	if option.log {
+	var config = &gorm.Config{Logger: option.logger}
+	if config.Logger == nil && option.log {
 		config.Logger = logger.Default.LogMode(logger.Info)
 	}
 	var gormDB, err = gorm.Open(mysql.Open(dsn), config)
