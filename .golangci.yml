@@ -1,230 +1,398 @@
 ---
-# golangci-lint configuration file made by @ccoVeille
-# Source: https://github.com/ccoVeille/golangci-lint-config-examples/
-# Author: @ccoVeille
-# License: MIT
-# Variant: 03-safe
-# Version: v2.0.0
+# golangci-lint configuration file for Neptune project
+# Updated for Go 1.24.4 and golangci-lint v1.64.8
+# Optimized for modern Go development practices
 #
-version: "2"
+run:
+  # Timeout for analysis
+  timeout: 5m
+  # Exit code when at least one issue was found
+  issues-exit-code: 1
+  # Include test files in analysis
+  tests: true
+  # Allow multiple parallel golangci-lint instances
+  allow-parallel-runners: true
 
-formatters:
-  enable:
-    # format the code
-    - gofmt
-    # format the block of imports
-    - gci
-
-  settings:
-    # format the code with Go standard library
-    gofmt:
-      # simplify the code
-      # https://pkg.go.dev/cmd/gofmt#hdr-The_simplify_command
-      simplify: true
-      rewrite-rules:
-        # replace `interface{}` with `any` in the code on format
-        - pattern: 'interface{}'
-          replacement: 'any'
-
-    # make sure imports are always in a deterministic order
-    # https://github.com/daixiang0/gci/
-    gci:  # define the section orders for imports
-      sections:
-        # Standard section: captures all standard packages.
-        - standard
-        # Default section: catchall that is not standard or custom
-        - default
-        # linters that related to local tool, so they should be separated
-        - localmodule
-
-linters:
-  exclusions:
-    # these presets where present in the v1 version of golangci-lint
-    # it's interesting to keep them when migrating, but removing them should be the goal
-    presets:
-      # exclude check on comments format in godoc
-      # These are common false positives in poor code
-      # you should not use this on recent code you write from scratch
-      # More information: https://golangci-lint.run/usage/false-positives/#comments
-      #
-      # Please uncomment the following line if your code is not using the godoc format
-      - comments
-
-      # Common false positives
-      # feel free to remove this if you don't have any false positives
-      # More information: https://golangci-lint.run/usage/false-positives/#common-false-positives
-      - common-false-positives
-
-      # Legacy preset is not recommended anymore
-      # More information: https://golangci-lint.run/usage/false-positives/#legacy
-      - legacy
-
-      # std-error-handling is a set of rules that avoid reporting unhandled errors on common functions/methods
-      # More information: https://golangci-lint.run/usage/false-positives/#std-error-handling
-      - std-error-handling
-
-  # some linters are enabled by default
-  # https://golangci-lint.run/usage/linters/
-  #
-  # enable some extra linters
-  enable:
-    # Errcheck is a program for checking for unchecked errors in Go code.
-    - errcheck
-
-    # Vet examines Go source code and reports suspicious constructs.
-    - govet
-
-    # Detects when assignments to existing variables are not used.
-    - ineffassign
-
-    # It's a set of rules from staticcheck. See https://staticcheck.io/
-    - staticcheck
-
-    # Checks Go code for unused constants, variables, functions and types.
-    - unused
-
-    # Fast, configurable, extensible, flexible, and beautiful linter for Go.
-    # Drop-in replacement of golint.
-    - revive
-
-    # make sure to use t.Helper() when needed
-    - thelper
-
-    # mirror suggests rewrites to avoid unnecessary []byte/string conversion
-    - mirror
-
-    # detect the possibility to use variables/constants from the Go standard library.
-    - usestdlibvars
-
-    # Finds commonly misspelled English words.
-    - misspell
-
-    # Checks for duplicate words in the source code.
-    - dupword
-
-    # linter to detect errors invalid key values count
-    - loggercheck
-
-    # detect when a package or method could be replaced by one from the standard library
-    - exptostd
-
-    # detects nested contexts in loops or function literals
-    - fatcontext
-
-    # Reports uses of functions with replacement inside the testing package.
-    - usetesting
-
-  settings:
-    revive:
-      rules:
-        # these are the default revive rules
-        # you can remove the whole "rules" node if you want
-        # BUT
-        # ! /!\ they all need to be present when you want to add more rules than the default ones
-        # otherwise, you won't have the default rules, but only the ones you define in the "rules" node
-
-        # Blank import should be only in a main or test package, or have a comment justifying it.
-        - name: blank-imports
-
-        # context.Context() should be the first parameter of a function when provided as argument.
-        - name: context-as-argument
-          arguments:
-            - allowTypesBefore: "*testing.T"
-
-        # Basic types should not be used as a key in `context.WithValue`
-        - name: context-keys-type
-
-        # Importing with `.` makes the programs much harder to understand
-        - name: dot-imports
-
-        # Empty blocks make code less readable and could be a symptom of a bug or unfinished refactoring.
-        - name: empty-block
-
-        # for better readability, variables of type `error` must be named with the prefix `err`.
-        - name: error-naming
-
-        # for better readability, the errors should be last in the list of returned values by a function.
-        - name: error-return
-
-        # for better readability, error messages should not be capitalized or end with punctuation or a newline.
-        - name: error-strings
-
-        # report when replacing `errors.New(fmt.Sprintf())` with `fmt.Errorf()` is possible
-        - name: errorf
-
-        # check naming and commenting conventions on exported symbols.
-        - name: exported
-          arguments:
-            # make error messages clearer
-            - "sayRepetitiveInsteadOfStutters"
-
-        # incrementing an integer variable by 1 is recommended to be done using the `++` operator
-        - name: increment-decrement
-
-        # highlights redundant else-blocks that can be eliminated from the code
-        - name: indent-error-flow
-
-        # This rule suggests a shorter way of writing ranges that do not use the second value.
-        - name: range
-
-        # receiver names in a method should reflect the struct name (p for Person, for example)
-        - name: receiver-naming
-
-        # redefining built in names (true, false, append, make) can lead to bugs very difficult to detect.
-        - name: redefines-builtin-id
-
-        # redundant else-blocks that can be eliminated from the code.
-        - name: superfluous-else
-
-        # prevent confusing name for variables when using `time` package
-        - name: time-naming
-
-        # warns when an exported function or method returns a value of an un-exported type.
-        - name: unexported-return
-
-        # spots and proposes to remove unreachable code. also helps to spot errors
-        - name: unreachable-code
-
-        # Functions or methods with unused parameters can be a symptom of an unfinished refactoring or a bug.
-        - name: unused-parameter
-
-        # report when a variable declaration can be simplified
-        - name: var-declaration
-
-        # warns when initialism, variable or package naming conventions are not followed.
-        - name: var-naming
-
-    misspell:
-      # Correct spellings using locale preferences for US or UK.
-      # Setting locale to US will correct the British spelling of 'colour' to 'color'.
-      # Default ("") is to use a neutral variety of English.
-      locale: US
-
-      # List of words to ignore
-      # among the one defined in https://github.com/golangci/misspell/blob/master/words.go
-      ignore-rules: []
-      #  - valor
-      #  - and
-
-      # Extra word corrections.
-      extra-words: []
-      #  - typo: "whattever"
-      #    correction: "whatever"
-
+# Output configuration
 output:
-  # Order to use when sorting results.
-  # Possible values: `file`, `linter`, and `severity`.
-  #
-  # If the severity values are inside the following list, they are ordered in this order:
-  #   1. error
-  #   2. warning
-  #   3. high
-  #   4. medium
-  #   5. low
-  # Either they are sorted alphabetically.
-  #
-  # Default: ["file"]
+  # Formats: colored-line-number|line-number|json|colored-tab|tab|checkstyle|code-climate|junit-xml|github-actions|teamcity
+  formats:
+    - format: colored-line-number
+  
+  # Print lines of code with issue
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text
+  print-linter-name: true
+  
+  # Sort results by: filepath, line and column
+  sort-results: true
+  
+  # Order to use when sorting results
   sort-order:
     - linter
     - severity
-    - file # filepath, line, and column.
+    - file
+
+linters:
+  # Disable all default linters for explicit control
+  disable-all: true
+  
+  # Enable specific linters
+  enable:
+    # Core analysis linters (essential)
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Suggest code simplifications  
+    - govet         # Go vet tool built into Go
+    - ineffassign   # Detect when assignments to existing variables are not used
+    - staticcheck   # Set of rules from staticcheck.io
+    - typecheck     # Parse and type-check Go code
+    - unused        # Check for unused constants, variables, functions and types
+    
+    # Code quality linters
+    - revive        # Fast, configurable replacement for golint
+    - gofmt         # Check whether code was gofmt-ed
+    - goimports     # Check import lines and format them
+    - misspell      # Find commonly misspelled English words
+    - unparam       # Report unused function parameters
+    - unconvert     # Remove unnecessary type conversions
+    - wastedassign  # Find wasted assignment statements
+    
+    # Security linters  
+    - gosec         # Inspect source code for security problems
+    
+    # Performance linters
+    - prealloc      # Find slice declarations that could potentially be pre-allocated
+    
+    # Style linters
+    - gci           # Control package import order and make it deterministic
+    - godot         # Check if comments end in a period
+    - gofumpt       # Stricter gofmt
+    
+    # Bug detection linters
+    - gocritic      # Provides diagnostics that check for bugs, performance and style issues
+    - nilerr        # Find the code that returns nil even if it checks that the error is not nil
+    - nilnil        # Check that there is no simultaneous return of nil error and nil value
+    - testableexamples # Check if examples are testable (have an expected output)
+    - thelper       # Detect golang.org/x/tools/go/analysis/passes/tests helpers
+    
+    # Modern Go linters (Go 1.18+)
+    - errname       # Check that error types have "Error" suffix
+    - errorlint     # Find code that will cause problems with the error wrapping scheme
+    - wrapcheck     # Check that errors returned from external packages are wrapped
+    
+    # Additional useful linters
+    - asciicheck    # Check that your code does not contain non-ASCII identifiers
+    - bidichk       # Check for dangerous unicode character sequences
+    - durationcheck # Check for two durations multiplied together
+    - forcetypeassert # Find forced type assertions
+    - makezero      # Find slice declarations with non-zero initial length
+    - noctx         # Find sending http request without context.Context
+    - rowserrcheck  # Check whether Err of rows is checked successfully
+    - sqlclosecheck # Check that sql.Rows and sql.Stmt are closed
+    
+    # Go 1.22+ specific linters
+    - intrange      # Find misuse of integer range loops
+    - copyloopvar   # Check for loop variable capturing issues
+    
+    # Additional quality linters
+    - bodyclose     # Check whether HTTP response body is closed successfully
+    - contextcheck  # Check whether the function uses a non-inherited context
+    - dupl          # Tool for code clone detection
+    - exhaustive    # Check exhaustiveness of enum switch statements
+    - funlen        # Tool for detection of long functions
+    - gocognit      # Compute and check the cognitive complexity of functions
+    - goconst       # Find repeated strings that could be replaced by a constant
+    - gocyclo       # Compute and check the cyclomatic complexity of functions
+    - grouper       # Analyze expression groups
+    - importas      # Enforces consistent import aliases
+    - lll           # Report long lines
+    - maintidx      # Measure the maintainability index of each function
+    - nestif        # Report deeply nested if statements
+    - paralleltest  # Detect missing usage of t.Parallel() method in tests
+    - predeclared   # Find code that shadows one of Go's predeclared identifiers
+    - whitespace    # Tool for detection of leading and trailing whitespace
+
+linters-settings:
+  # Settings for errcheck
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`;
+    # default is false: such cases aren't reported by default.
+    check-type-assertions: true
+    
+    # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
+    # default is false: such cases aren't reported by default.
+    check-blank: true
+
+  # Configuration for specific linters
+  gci:
+    # Define the section orders for imports
+    sections:
+      - standard                    # Standard Go packages
+      - default                     # Third-party packages  
+      - prefix(github.com/pinealctx/neptune) # Local module packages
+    skip-generated: true
+    custom-order: true
+  
+  govet:
+    # Enable all available checks (best practice approach)
+    enable-all: true
+    # Disable specific checks if needed
+    disable:
+      - fieldalignment  # Too noisy for existing code
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+      shadow:
+        # Whether to be strict about shadowing; can be noisy
+        strict: false
+  
+  staticcheck:
+    # Enable specific staticcheck rules for concurrency
+    checks: 
+      - "all"
+      - "-ST1000"  # Disable package comment check for internal packages
+      # Concurrency-specific checks are included in "all"
+      # SA1000-SA1030: Concurrent programming issues
+      # SA2000-SA2003: Goroutine and channel issues
+  
+  gofmt:
+    # Simplify code (make it more idiomatic)
+    simplify: true
+    # Replace interface{} with any
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+  
+  gofumpt:
+    # Choose whether to use the extra rules
+    extra-rules: true
+  
+  gocritic:
+    # Settings passed to gocritic
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - commentedOutCode # Commented code is common in development
+  
+  gosec:
+    # To select a subset of rules to run
+    severity: "medium"
+    confidence: "medium"
+    # No excludes - enforce all security checks for maximum security
+  
+  revive:
+    # Maximum number of open files at the same time (best practice)
+    max-open-files: 2048
+    # When set to false, ignores files with "GENERATED" header, similar to golint
+    ignore-generated-header: true
+    # Sets the default severity
+    severity: "warning"
+    # Enable all available rules
+    enable-all-rules: false
+    # Rules configuration
+    rules:
+      # Basic rules
+      - name: blank-imports
+      - name: context-as-argument
+        arguments:
+          - allowTypesBefore: "*testing.T,*github.com/stretchr/testify/suite.Suite"
+      - name: context-keys-type
+      - name: dot-imports
+      - name: empty-block
+      - name: error-naming
+      - name: error-return
+      - name: error-strings
+      - name: errorf  
+      - name: exported
+        arguments:
+          - "sayRepetitiveInsteadOfStutters"
+      - name: increment-decrement
+      - name: indent-error-flow
+      - name: range
+      - name: receiver-naming
+      - name: redefines-builtin-id
+      - name: superfluous-else
+      - name: time-naming
+      - name: unexported-return
+      - name: unreachable-code
+      - name: unused-parameter
+      - name: var-declaration
+      - name: var-naming
+      
+      # Additional useful rules
+      - name: atomic
+      - name: bool-literal-in-expr
+      - name: confusing-naming
+      - name: confusing-results
+      - name: constant-logical-expr
+      - name: deep-exit
+      - name: defer
+      - name: duplicated-imports
+      - name: early-return
+      - name: empty-lines
+      - name: get-return
+      - name: if-return
+      - name: import-shadowing
+      - name: modifies-parameter
+      - name: modifies-value-receiver
+      - name: package-comments
+      - name: range-val-in-closure
+      - name: range-val-address
+      - name: string-of-int
+      - name: struct-tag
+      - name: unhandled-error
+        arguments:
+          - "fmt.Printf"
+          - "fmt.Print"
+          - "fmt.Println"
+      - name: unnecessary-stmt
+      - name: useless-break
+      - name: waitgroup-by-value
+  
+  misspell:
+    # Correct spellings using locale preferences for US or UK
+    locale: US
+    # List of words to ignore
+    ignore-words: []
+    # Extra word corrections
+    extra-words: []
+  
+  unused:
+    # Mark all struct fields that have been written to as used
+    field-writes-are-uses: true
+    # Mark all struct fields that have been read from as used  
+    post-statements-are-reads: true
+    # Mark all struct fields with tags as used
+    parameters-are-used: true
+    # Mark all local variables that have been assigned to as used
+    local-variables-are-used: true
+    # Mark all function parameters as used
+    generated-is-used: true
+  
+  funlen:
+    # Maximum function length in lines (best practice: 100)
+    lines: 100
+    # Maximum function length in statements
+    statements: 50
+  
+  gocognit:
+    # Minimal cognitive complexity to report (stricter: 15 instead of 20)
+    min-complexity: 15
+  
+  gocyclo:
+    # Minimal cyclomatic complexity to report (stricter: 10 instead of 15)  
+    min-complexity: 10
+  
+  lll:
+    # Maximum line length
+    line-length: 120
+  
+  nestif:
+    # Minimal complexity of if statements to report (stricter: 4 instead of 5)
+    min-complexity: 4
+  
+  wrapcheck:
+    # Minimal error wrapping configuration for strictest checking
+    # Only ignore basic error creation functions
+    ignoreSigs:
+      - errors.New(
+      - errors.Unwrap(
+    # No regex patterns ignored
+    ignoreSigRegexps: []
+    # Only ignore standard library encoding packages
+    ignorePackageGlobs:
+      - encoding/*
+
+issues:
+  # Directories to skip during analysis
+  exclude-dirs:
+    - vendor
+    - .git
+  
+  # Files to skip during analysis
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+  
+  # Make issues output unique by line
+  uniq-by-line: true
+  
+  # List of regexps of issue texts to exclude
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gosec      # Security checks too strict for tests
+        - funlen     # Test functions can be long
+        - gocognit   # Test cognitive complexity can be higher
+        - maintidx   # Test maintainability requirements are lower
+    
+    # Exclude some linters from running on example files
+    - path: example_.*\.go
+      linters:
+        - gosec      # Security checks not needed in examples
+        - gocritic   # Style checks less important in examples  
+        - funlen     # Example functions can be long
+    
+    # Exclude shadow checking on err variables in short variable declarations
+    - linters:
+        - govet
+      text: 'shadow: declaration of "(err|ctx)"'
+    
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+    
+    # Exclude gosec for test files that use weak random number generator
+    - path: _test\.go
+      linters:
+        - gosec
+      text: "G404:"
+    
+    # Exclude some revive rules for test files
+    - path: _test\.go
+      linters:
+        - revive
+      text: "exported function .* should have comment or be unexported"
+  
+  # Independently of option `exclude` golangci-lint will not report an issue if it is not on this list
+  include:
+    - EXC0012  # Exported (.+) should have comment or be unexported
+    - EXC0013  # Package comment should be of the form "Package X ..."
+    - EXC0014  # Comment on exported (.+) should be of the form "(.+)..."
+    - EXC0015  # Should have a package comment
+
+  # Show only new issues: if there are unstaged changes or untracked files,
+  # only those changes are analyzed, e.g. running golangci-lint with
+  # uncommitted changes will only show issues in those changes.
+  new: false
+
+  # Show issues in any part of update files (requires new to be true).
+  # Possible values: "", "rev", "patch"
+  new-from-rev: ""
+
+  # Fix found issues (if it's supported by the linter).
+  fix: false
+
+  # Maximum issues count per one linter
+  max-issues-per-linter: 0
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+
+# Disable specific issues by their ID
+# Example:
+# disable:
+#   - name: "ineffassign"
+#     reason: "Too many false positives for this project"

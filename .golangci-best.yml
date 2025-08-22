@@ -1,0 +1,344 @@
+---
+# golangci-lint configuration file for Neptune project
+# Updated for Go 1.24.4 and golangci-lint v1.64.8
+# Based on official best practices and community standards
+#
+# References:
+# - https://golangci-lint.run/usage/configuration/
+# - https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
+# - https://github.com/uber-go/guide/blob/master/style.md
+
+run:
+  # Timeout for analysis, use 5m for large projects
+  timeout: 5m
+  
+  # Exit code when at least one issue was found, default is 1
+  issues-exit-code: 1
+  
+  # Include test files in analysis
+  tests: true
+  
+  # Allow multiple parallel golangci-lint instances running
+  allow-parallel-runners: true
+  
+  # Skip directories
+  skip-dirs:
+    - "vendor"
+    - "third_party"
+  
+  # Skip files
+  skip-files:
+    - "\\.pb\\.go$"
+    - "\\.gen\\.go$"
+
+# Output configuration
+output:
+  # Format: colored-line-number|line-number|json|colored-tab|tab|checkstyle|code-climate|junit-xml|github-actions|teamcity
+  formats:
+    - format: colored-line-number
+  
+  # Print lines of code with issue
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text
+  print-linter-name: true
+  
+  # Make issues output unique by line
+  uniq-by-line: true
+  
+  # Sort results by: filepath, line and column
+  sort-results: true
+  
+  # Order to use when sorting results
+  sort-order:
+    - linter
+    - severity
+    - file
+
+# All available settings of specific linters
+linters-settings:
+  # Settings for errcheck
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`;
+    # default is false: such cases aren't reported by default.
+    check-type-assertions: true
+    
+    # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
+    # default is false: such cases aren't reported by default.
+    check-blank: true
+
+  # Settings for gci (import grouping and ordering)
+  gci:
+    sections:
+      - standard  # Standard section: captures all standard packages
+      - default   # Default section: catchall that is not standard or custom
+      - prefix(github.com/pinealctx/neptune)  # Custom section: groups all imports with the specified prefix
+    skip-generated: true
+    custom-order: true
+
+  # Settings for gofmt
+  gofmt:
+    simplify: true
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+
+  # Settings for gofumpt (stricter gofmt)
+  gofumpt:
+    extra-rules: true
+
+  # Settings for govet
+  govet:
+    # Enable all available checks
+    enable-all: true
+    # Disable specific checks if needed
+    disable:
+      - fieldalignment  # Too noisy for existing code
+    settings:
+      shadow:
+        strict: false
+
+  # Settings for staticcheck
+  staticcheck:
+    checks: ["all"]
+
+  # Settings for revive (golint replacement)
+  revive:
+    # Maximum number of open files at the same time
+    max-open-files: 2048
+    # When set to false, ignores files with "GENERATED" header, similar to golint
+    ignore-generated-header: true
+    # Sets the default severity
+    severity: "warning"
+    # Enable all available rules
+    enable-all-rules: false
+    # Rules configuration
+    rules:
+      # Basic rules
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: empty-block
+      - name: error-naming
+      - name: error-return
+      - name: error-strings
+      - name: errorf
+      - name: exported
+      - name: increment-decrement
+      - name: indent-error-flow
+      - name: range
+      - name: receiver-naming
+      - name: redefines-builtin-id
+      - name: superfluous-else
+      - name: time-naming
+      - name: unexported-return
+      - name: unreachable-code
+      - name: unused-parameter
+      - name: var-declaration
+      - name: var-naming
+      
+      # Additional useful rules
+      - name: atomic
+      - name: bool-literal-in-expr
+      - name: constant-logical-expr
+      - name: defer
+      - name: duplicated-imports
+      - name: early-return
+      - name: if-return
+      - name: modifies-parameter
+      - name: modifies-value-receiver
+      - name: package-comments
+      - name: range-val-in-closure
+      - name: range-val-address
+      - name: string-of-int
+      - name: struct-tag
+      - name: unnecessary-stmt
+      - name: useless-break
+      - name: waitgroup-by-value
+
+  # Settings for gosec (security)
+  gosec:
+    severity: "medium"
+    confidence: "medium"
+    excludes:
+      - G104  # Unhandled errors (covered by errcheck)
+
+  # Settings for gocritic
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - singleCaseSwitch
+
+  # Settings for complexity linters
+  funlen:
+    lines: 100
+    statements: 50
+
+  gocognit:
+    min-complexity: 20
+
+  gocyclo:
+    min-complexity: 15
+
+  nestif:
+    min-complexity: 5
+
+  # Settings for line length
+  lll:
+    line-length: 120
+
+  # Settings for misspell
+  misspell:
+    locale: US
+
+  # Settings for unused
+  unused:
+    field-writes-are-uses: true
+    post-statements-are-reads: true
+    exported-is-used: true
+    exported-fields-are-used: true
+    parameters-are-used: true
+    local-variables-are-used: true
+    generated-is-used: true
+
+# Linters configuration
+linters:
+  # Disable all linters as it's more stable than not use it
+  disable-all: true
+  
+  # Enable specific linters
+  enable:
+    # Essential linters (always recommended)
+    - errcheck      # Checking for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detects unused assignments
+    - staticcheck   # Set of rules from staticcheck
+    - typecheck     # Parse and type-check Go code
+    - unused        # Checks for unused constants, variables, functions and types
+
+    # Code quality
+    - revive        # Fast, configurable, extensible, flexible, and beautiful linter for Go
+    - gofmt         # Gofmt checks whether code was gofmt-ed
+    - goimports     # Check import lines are formatted according to the 'goimports' command
+    - gci           # Control package import order and make it always deterministic
+    - gofumpt       # Gofumpt checks whether code was gofumpt-ed
+    - misspell      # Finds commonly misspelled English words in comments
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Reports unused function parameters
+    - wastedassign  # Finds wasted assignment statements
+
+    # Security
+    - gosec         # Inspects source code for security problems
+
+    # Performance
+    - prealloc      # Finds slice declarations that could potentially be pre-allocated
+
+    # Bug detection
+    - gocritic      # Provides diagnostics that check for bugs, performance and style issues
+    - nilerr        # Finds the code that returns nil even if it checks that the error is not nil
+    - nilnil        # Checks that there is no simultaneous return of nil error and nil value
+
+    # Modern Go features (Go 1.18+)
+    - errname       # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
+    - errorlint     # Find code that will cause problems with the error wrapping scheme introduced in Go 1.13
+    - wrapcheck     # Checks that errors returned from external packages are wrapped
+
+    # Go 1.22+ specific
+    - intrange      # Intrange is a linter to find places where for loops could make use of an integer range
+    - copyloopvar   # A linter detects places where loop variables are copied
+
+    # Additional useful linters
+    - asciicheck    # Simple linter to check that your code does not contain non-ASCII identifiers
+    - bidichk       # Checks for dangerous unicode character sequences
+    - bodyclose     # Checks whether HTTP response body is closed successfully
+    - contextcheck  # Check whether the function uses a non-inherited context
+    - durationcheck # Check for two durations multiplied together
+    - forcetypeassert # Finds forced type assertions
+    - makezero      # Finds slice declarations with non-zero initial length
+    - noctx         # Finds sending http request without context.Context
+    - rowserrcheck  # Checks whether Err of rows is checked successfully
+    - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed
+    - testableexamples # Linter checks if examples are testable (have an expected output)
+    - thelper       # Thelper detects golang.org/x/tools/go/analysis/passes/tests helpers
+
+    # Code complexity
+    - funlen        # Tool for detection of long functions
+    - gocognit      # Computes and checks the cognitive complexity of functions
+    - gocyclo       # Computes and checks the cyclomatic complexity of functions
+    - nestif        # Reports deeply nested if statements
+
+    # Style
+    - godot         # Check if comments end in a period
+    - whitespace    # Tool for detection of leading and trailing whitespace
+
+    # Additional quality checks
+    - dupl          # Tool for code clone detection
+    - goconst       # Finds repeated strings that could be replaced by a constant
+    - lll           # Reports long lines
+    - paralleltest  # Detects missing usage of t.Parallel() method in your Go test codes
+    - predeclared   # Find code that shadows one of Go's predeclared identifiers
+
+# Issues configuration
+issues:
+  # List of regexps of issue texts to exclude, empty list by default
+  exclude: []
+
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gosec
+        - dupl
+        - funlen
+        - gocognit
+        - gocyclo
+
+    # Exclude some linters from running on example files
+    - path: example_.*\.go
+      linters:
+        - gosec
+        - funlen
+
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+
+    # Exclude some govet issues
+    - linters:
+        - govet
+      text: 'shadow: declaration of "(err|ctx)"'
+
+  # Independently of option `exclude` golangci-lint will not report an issue if it is not on this list
+  include:
+    - EXC0012  # EXC0012 revive: Exported (.+) should have comment or be unexported
+    - EXC0013  # EXC0013 revive: Package comment should be of the form "Package X ..."
+    - EXC0014  # EXC0014 revive: Comment on exported (.+) should be of the form "(.+)..."
+    - EXC0015  # EXC0015 revive: Should have a package comment
+
+  # Show only new issues: if there are unstaged changes or untracked files
+  new: false
+
+  # Fix found issues (if it's supported by the linter)
+  fix: false
+
+  # Maximum issues count per one linter. Set to 0 to disable
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text. Set to 0 to disable
+  max-same-issues: 0
