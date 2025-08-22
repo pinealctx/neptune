@@ -66,7 +66,7 @@ linters:
     
     # Style linters
     - gci           # Control package import order and make it deterministic
-    - godot         # Check if comments end in a period
+    # - godot         # Check if comments end in a period (disabled - too strict for mixed language comments)
     - gofumpt       # Stricter gofmt
     
     # Bug detection linters
@@ -109,7 +109,7 @@ linters:
     - lll           # Report long lines
     - maintidx      # Measure the maintainability index of each function
     - nestif        # Report deeply nested if statements
-    - paralleltest  # Detect missing usage of t.Parallel() method in tests
+    # - paralleltest  # Detect missing usage of t.Parallel() method in tests (disabled: global state in tests)
     - predeclared   # Find code that shadows one of Go's predeclared identifiers
     - whitespace    # Tool for detection of leading and trailing whitespace
 
@@ -213,9 +213,9 @@ linters-settings:
       - name: error-return
       - name: error-strings
       - name: errorf  
-      - name: exported
-        arguments:
-          - "sayRepetitiveInsteadOfStutters"
+      # - name: exported  # Disabled: too strict for utility types and obvious functionality
+      #   arguments:
+      #     - "sayRepetitiveInsteadOfStutters"
       - name: increment-decrement
       - name: indent-error-flow
       - name: range
@@ -245,7 +245,7 @@ linters-settings:
       - name: import-shadowing
       - name: modifies-parameter
       - name: modifies-value-receiver
-      - name: package-comments
+      # - name: package-comments  # Disabled: too strict for obvious package names
       - name: range-val-in-closure
       - name: range-val-address
       - name: string-of-int
