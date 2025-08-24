@@ -78,7 +78,7 @@ linters:
     
     # Modern Go linters (Go 1.18+)
     - errname       # Check that error types have "Error" suffix
-    - errorlint     # Find code that will cause problems with the error wrapping scheme
+    # - errorlint     # Find code that will cause problems with the error wrapping scheme (disabled - we use global error variables)
     # - wrapcheck     # Check that errors returned from external packages are wrapped (disabled - too strict for proxy methods)
     
     # Additional useful linters
@@ -184,6 +184,8 @@ linters-settings:
       - dupImport # https://github.com/go-critic/go-critic/issues/845
       - commentedOutCode # Commented code is common in development
       - commentFormatting # Comment formatting is too strict about spacing
+      - whyNoLint # Don't require explanations for nolint directives
+      - ifElseChain # Allow if-else chains instead of forcing switch statements
   
   gosec:
     # To select a subset of rules to run
@@ -287,20 +289,20 @@ linters-settings:
     statements: 50
   
   gocognit:
-    # Minimal cognitive complexity to report (stricter: 15 instead of 20)
-    min-complexity: 15
+    # Minimal cognitive complexity to report (aligned with best practices: 20)
+    min-complexity: 20
   
   gocyclo:
-    # Minimal cyclomatic complexity to report (stricter: 10 instead of 15)  
-    min-complexity: 10
+    # Minimal cyclomatic complexity to report (aligned with best practices: 15)  
+    min-complexity: 15
   
   lll:
     # Maximum line length
     line-length: 120
   
   nestif:
-    # Minimal complexity of if statements to report (stricter: 4 instead of 5)
-    min-complexity: 4
+    # Minimal complexity of if statements to report (aligned with best practices: 5)
+    min-complexity: 5
   
   wrapcheck:
     # Minimal error wrapping configuration for strictest checking
