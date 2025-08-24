@@ -19,7 +19,7 @@ type MultiLine struct {
 	qSize int
 
 	//multi queues
-	qs []*q.Q
+	qs []*q.Q[*AsyncCtx]
 
 	//wait group
 	wg *sync.WaitGroup
@@ -46,9 +46,9 @@ func newMux(slotSize int, qSizeInSlot int) *MultiLine {
 	c.exitChan = make(chan struct{}, 1)
 	c.wg.Add(c.slotSize)
 
-	c.qs = make([]*q.Q, c.slotSize)
+	c.qs = make([]*q.Q[*AsyncCtx], c.slotSize)
 	for i := 0; i < c.slotSize; i++ {
-		c.qs[i] = q.NewQ(q.WithSize(c.qSize))
+		c.qs[i] = q.NewQ[*AsyncCtx](c.qSize)
 	}
 	return c
 }
@@ -109,37 +109,27 @@ func (c *MultiLine) WaitStop(ctx context.Context) error {
 func (c *MultiLine) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, error) {
 	var slotIndex = pipe.NormalizeSlotIndex(callCtx.hashIndex, c.slotSize)
 	var proc = newAsyncCtx(ctx, callCtx.call, callCtx.param)
-	var err = pipe.ConvertQueueErr(c.qs[slotIndex].AddReq(proc))
+	var err = pipe.ConvertQueueErr(c.qs[slotIndex].Push(proc))
 	return proc, err
 }
 
 // pop msg loop
 func (c *MultiLine) popLoop(index int) {
 	var (
-		err  error
-		item any
-		ac   *AsyncCtx
-		r    any
-		ok   bool
+		err error
+		ac  *AsyncCtx
+		r   any
 
 		mq = c.qs[index]
 	)
 
 	defer c.wg.Done()
 	for {
-
-		item, err = mq.PopAnyway()
+		ac, err = mq.Pop()
 		if err != nil {
 			ulog.Debug("q.quit.in.raw.handler",
 				zap.Int("index", index),
 				zap.Error(err))
-			return
-		}
-		ac, ok = item.(*AsyncCtx)
-		if !ok {
-			ulog.Error("invalid.async.call.context",
-				zap.Int("index", index),
-				zap.Reflect("context", item))
 			return
 		}
 
