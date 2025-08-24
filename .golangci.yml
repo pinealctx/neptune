@@ -186,6 +186,7 @@ linters-settings:
       - commentFormatting # Comment formatting is too strict about spacing
       - whyNoLint # Don't require explanations for nolint directives
       - ifElseChain # Allow if-else chains instead of forcing switch statements
+      - paramTypeCombine # Allow explicit parameter types for clarity
   
   gosec:
     # To select a subset of rules to run
@@ -236,6 +237,7 @@ linters-settings:
       - name: atomic
       - name: bool-literal-in-expr
       - name: confusing-naming
+        disabled: true  # Disabled: newLine vs NewLine is a standard Go pattern
       - name: confusing-results
       - name: constant-logical-expr
       - name: deep-exit
