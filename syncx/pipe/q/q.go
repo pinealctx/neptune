@@ -2,156 +2,148 @@ package q
 
 import (
 	"container/list"
-	"errors"
 	"sync"
-	"time"
 )
 
-var (
-	//ErrClosed close
-	ErrClosed = errors.New("pipe.q.closed")
-
-	//ErrReqQFull req q full
-	ErrReqQFull = errors.New("pipe.q.req.full")
-
-	//ErrSync never gonna happen
-	ErrSync = errors.New("never.gonna.happen.crazy")
-)
-
-// option for queue
-type _Option struct {
-	reqMaxNum int
-}
-
-// Option : option function
-type Option func(o *_Option)
-
-// WithSize setup max queue number of request queue
-// if max is 0, which means no limit
-func WithSize(num int) Option {
-	return func(o *_Option) {
-		o.reqMaxNum = num
-	}
-}
-
-// Q actor queue structure define
-type Q struct {
-	//request queue list
-	reqList *list.List
-	//request pipe size max number
-	reqMaxNum int
-	//is closed
+// Q represents a thread-safe queue with dynamic capacity using linked list
+// It provides the same interface as SliceQueue but uses container/list for storage
+type Q[T any] struct {
+	// items holds the queue data using linked list
+	items *list.List
+	// capacity is the maximum number of items the queue can hold (0 means unlimited)
+	capacity int
+	// closed indicates if the queue is closed
 	closed bool
 
-	//queue lock
+	// lock protects all queue operations
 	lock sync.Mutex
-	//queue condition
+	// cond is used to signal waiting goroutines
 	cond sync.Cond
 }
 
-// NewQ new queue
-func NewQ(options ...Option) *Q {
-	var actorQ = &Q{
-		reqList: list.New(),
+// NewQ creates a new list-based queue with specified capacity
+// If capacity is 0, the queue has unlimited capacity
+func NewQ[T any](capacity int) *Q[T] {
+	if capacity < 0 {
+		panic("queue capacity must be non-negative")
 	}
-	var option = &_Option{}
-	for _, opt := range options {
-		opt(option)
+
+	q := &Q[T]{
+		items:    list.New(),
+		capacity: capacity,
 	}
-	if option.reqMaxNum > 0 {
-		actorQ.reqMaxNum = option.reqMaxNum
-	}
-	actorQ.cond.L = &actorQ.lock
-	return actorQ
+	q.cond.L = &q.lock
+	return q
 }
 
-// AddReqAnyway add normal request to the normal queue end place anyway
-// if queue full, sleep then try
-func (a *Q) AddReqAnyway(req any, ts time.Duration) error {
-	var err error
-	for {
-		err = a.AddReq(req)
-		if err == ErrReqQFull {
-			time.Sleep(ts)
-		} else {
-			return err
-		}
-	}
-}
+// Push adds an item to the end of the queue
+// Returns ErrQueueFull if queue is at capacity (when capacity > 0)
+func (q *Q[T]) Push(item T) error {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 
-// AddReq add normal request to the normal queue end place.
-func (a *Q) AddReq(req any) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	if a.closed {
+	if q.closed {
 		return ErrClosed
 	}
-	if a.reqMaxNum > 0 {
-		if a.reqList.Len() >= a.reqMaxNum {
-			return ErrReqQFull
-		}
+	if q.capacity > 0 && q.items.Len() >= q.capacity {
+		return ErrQueueFull
 	}
-	a.reqList.PushBack(req)
-	a.cond.Broadcast()
+
+	q.items.PushBack(item)
+	q.cond.Signal()
 	return nil
 }
 
-// AddPriorReq add normal request to the normal queue first place.
-func (a *Q) AddPriorReq(req any) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	if a.closed {
-		return ErrClosed
+// Pop removes and returns an item from the front of the queue
+// Blocks if queue is empty until an item is available or queue is closed
+func (q *Q[T]) Pop() (T, error) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	// Wait until queue has data or is closed
+	for q.items.Len() == 0 && !q.closed {
+		q.cond.Wait()
 	}
-	a.reqList.PushFront(req)
-	a.cond.Broadcast()
-	return nil
+
+	var zero T
+	// After wait loop exits, either we have data OR queue is closed
+	// If queue is closed and no data, return error
+	if q.closed {
+		return zero, ErrClosed
+	}
+
+	// We have data (since !q.closed and loop exited)
+	front := q.items.Front()
+	if front != nil {
+		q.items.Remove(front)
+		if value, ok := front.Value.(T); ok {
+			return value, nil
+		}
+		// This should never happen if our code is correct
+		panic("queue: unexpected type in list element")
+	}
+
+	// Should not reach here, but safety fallback
+	return zero, ErrClosed
 }
 
-// Pop consume an item, if list is empty, it's been blocked
-func (a *Q) Pop() (any, error) {
-	return a.pop(true)
-}
+// Close closes the queue, all subsequent operations will return ErrClosed
+func (q *Q[T]) Close() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 
-// PopAnyway consume an item like Pop, but it can consume even the queue is closed.
-func (a *Q) PopAnyway() (any, error) {
-	return a.pop(false)
-}
-
-// Close : close the queue
-func (a *Q) Close() {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	if a.closed {
+	if q.closed {
 		return
 	}
-	a.closed = true
-	a.cond.Broadcast()
+	q.closed = true
+	q.cond.Broadcast()
 }
 
-// pop : pop item
-// input: checkClose
-// if true  --> when queue is closed, pop can will return error even in case someone is in queue.
-// if false --> when queue is closed, the queue also can be pop if anyone is in queue.
-func (a *Q) pop(checkClose bool) (any, error) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	for a.reqList.Len() == 0 {
-		if a.closed {
-			return nil, ErrClosed
-		}
-		a.cond.Wait()
+// Len returns the current number of items in the queue
+func (q *Q[T]) Len() int {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	return q.items.Len()
+}
+
+// Cap returns the maximum capacity of the queue (0 means unlimited)
+func (q *Q[T]) Cap() int {
+	return q.capacity
+}
+
+// IsClosed returns true if the queue is closed
+func (q *Q[T]) IsClosed() bool {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	return q.closed
+}
+
+// IsFull returns true if the queue is at capacity (always false for unlimited capacity)
+func (q *Q[T]) IsFull() bool {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	if q.capacity == 0 {
+		return false // unlimited capacity
 	}
-	if checkClose {
-		if a.closed {
-			return nil, ErrClosed
-		}
+	return q.items.Len() >= q.capacity
+}
+
+// IsEmpty returns true if the queue has no items
+func (q *Q[T]) IsEmpty() bool {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	return q.items.Len() == 0
+}
+
+// Reset clears all items from the queue (useful for reusing the queue)
+func (q *Q[T]) Reset() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	if q.closed {
+		return
 	}
-	//pop req
-	var front = a.reqList.Front()
-	if front != nil {
-		a.reqList.Remove(front)
-		return front.Value, nil
-	}
-	return nil, ErrSync
+
+	// Clear all items
+	q.items.Init()
 }

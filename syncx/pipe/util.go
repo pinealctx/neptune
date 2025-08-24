@@ -25,7 +25,7 @@ func ConvertQueueErr(err error) error {
 	if err == nil {
 		return nil
 	}
-	if err == q.ErrReqQFull {
+	if err == q.ErrQueueFull {
 		return ErrQueueFull
 	}
 	if err == q.ErrClosed {
