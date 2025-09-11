@@ -12,6 +12,12 @@ var (
 	ErrNotRegularEncoding = errors.New("not.regular.varint.encoding")
 )
 
+// AppendVarint64 appends a varint-encoded int64 to the given byte slice
+func AppendVarint64(buf []byte, value int64) []byte {
+	// nolint:gosec // intentional int64->uint64 conversion for varint encoding
+	return protowire.AppendVarint(buf, uint64(value))
+}
+
 // EncodeVarint64 encodes an int64 value using variable-length encoding (same as protobuf)
 // Returns the encoded bytes
 func EncodeVarint64(value int64) []byte {
@@ -31,6 +37,11 @@ func DecodeVarint64(buf []byte) (value int64, bytesRead int, err error) {
 	}
 	// nolint:gosec // intentional uint64->int64 conversion for varint decoding
 	return int64(u), n, nil
+}
+
+// AppendUvarint64 appends a varint-encoded uint64 to the given byte slice
+func AppendUvarint64(buf []byte, value uint64) []byte {
+	return protowire.AppendVarint(buf, value)
 }
 
 // EncodeUvarint64 encodes a uint64 value using variable-length encoding (same as protobuf)
