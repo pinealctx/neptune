@@ -59,7 +59,7 @@ type Session struct {
 	value atomic.Value
 	//发送q
 	//queue -- actually the queue is bytes
-	sendQ *q.Q
+	sendQ *q.Q[[]byte]
 	//remote addr
 	remoteAddr atomic.String
 	//start once
@@ -68,12 +68,21 @@ type Session struct {
 	exitOnce sync.Once
 }
 
-// NewSession :
+// NewSession : new session
 func NewSession(b *SessionMgr, conn net.Conn) *Session {
 	return &Session{
 		b:     b,
 		conn:  conn,
-		sendQ: q.NewQ(),
+		sendQ: q.NewQ[[]byte](0),
+	}
+}
+
+// NewSessionV2 : new session with queue capacity
+func NewSessionV2(b *SessionMgr, conn net.Conn, qCap int) *Session {
+	return &Session{
+		b:     b,
+		conn:  conn,
+		sendQ: q.NewQ[[]byte](qCap),
 	}
 }
 
@@ -113,7 +122,7 @@ func (s *Session) RemoteAddr() string {
 
 // Send : send bytes, put bytes to queue, not send directly
 func (s *Session) Send(bs []byte) error {
-	return s.sendQ.AddReq(bs)
+	return s.sendQ.Push(bs)
 }
 
 // Read : read specific bytes
@@ -155,7 +164,7 @@ func (s *Session) loopSend() {
 	defer s.quit()
 
 	for {
-		qItem, err = s.sendQ.PopAnyway()
+		qItem, err = s.sendQ.Pop()
 		if err != nil {
 			s.b.Logger().Debug("quit.in.send.q", s.KeyZaps(zap.Error(err))...)
 			return

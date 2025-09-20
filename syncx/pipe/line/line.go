@@ -39,7 +39,7 @@ type Line struct {
 	qSize int
 
 	//queue
-	q *q.Q
+	q *q.Q[*AsyncCtx]
 
 	//wait group
 	wg *sync.WaitGroup
@@ -70,7 +70,7 @@ func newLine(name string, qSize int, wg *sync.WaitGroup) *Line {
 	var c = &Line{}
 	c.name = name
 	c.qSize = qSize
-	c.q = q.NewQ(q.WithSize(c.qSize))
+	c.q = q.NewQ[*AsyncCtx](qSize)
 	c.wg = wg
 	return c
 }
@@ -109,35 +109,25 @@ func (c *Line) Stop() {
 // addCallCtx : add call context
 func (c *Line) addCallCtx(ctx context.Context, callCtx *CallCtx) (*AsyncCtx, error) {
 	var proc = newAsyncCtx(ctx, callCtx.Call, callCtx.Param)
-	var err = pipe.ConvertQueueErr(c.q.AddReq(proc))
+	var err = pipe.ConvertQueueErr(c.q.Push(proc))
 	return proc, err
 }
 
 // pop call loop
 func (c *Line) popLoop() {
 	var (
-		err  error
-		item any
-		ac   *AsyncCtx
-		r    any
-		ok   bool
+		err error
+		ac  *AsyncCtx
+		r   any
 	)
 
 	defer c.wg.Done()
 	for {
-
-		item, err = c.q.PopAnyway()
+		ac, err = c.q.Pop()
 		if err != nil {
 			ulog.Debug("quit.in.line.handler",
 				zap.String("name", c.name),
 				zap.Error(err))
-			return
-		}
-		ac, ok = item.(*AsyncCtx)
-		if !ok {
-			ulog.Error("invalid.async.line.call.context",
-				zap.String("name", c.name),
-				zap.Reflect("context", item))
 			return
 		}
 
