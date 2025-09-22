@@ -43,17 +43,22 @@ type Server struct {
 	address         string
 }
 
-// Address :
-func (s *Server) Address() string {
-	return s.address
-}
-
 // NewTCPSrv :
 func NewTCPSrv(address string, incomingHook IncomingHook) *Server {
 	return &Server{
 		address:      address,
 		incomingHook: incomingHook,
 	}
+}
+
+// Address :
+func (s *Server) Address() string {
+	return s.address
+}
+
+// ConnectionCount :
+func (s *Server) ConnectionCount() int32 {
+	return s.connectionCount.Load()
 }
 
 // RunWithOption : loop start server
