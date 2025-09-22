@@ -47,104 +47,163 @@ type ConnStartEvent func(metaInfo MetaInfo)
 // ConnExitEvent on connection exit
 type ConnExitEvent func(conn net.Conn, metaInfo MetaInfo)
 
-// IncomingHook incoming hook function
-type IncomingHook func(handler *ConnHandler, conn net.Conn, metaInfo MetaInfo) error
+// CommonIncomingHook incoming hook function
+type CommonIncomingHook func(handler *CommonConnHandler, conn net.Conn, metaInfo MetaInfo) error
 
-// ConnHandler connection handler
-type ConnHandler struct {
-	// connection
-	conn net.Conn
-	// send queue -- actually the queue is bytes
-	sendQ *q.Q[[]byte]
+// ConnHandlerRunner connection handler runner
+type ConnHandlerRunner struct {
+	IConnHandler
 	//start once
 	startOnce sync.Once
-	//exit once
-	exitOnce sync.Once
+}
 
+// NewConnHandlerRunner : new connection handler runner
+func NewConnHandlerRunner(handler IConnHandler) *ConnHandlerRunner {
+	return &ConnHandlerRunner{
+		IConnHandler: handler,
+	}
+}
+
+// Start : start connection handler
+func (x *ConnHandlerRunner) Start() {
+	x.startOnce.Do(func() {
+		go x.LoopReceive()
+		go x.LoopSend()
+		startHooks := x.StartHooks()
+		metaInfo := x.MetaInfo()
+		for _, hook := range startHooks {
+			hook(metaInfo)
+		}
+	})
+}
+
+// IConnHandler connection handler interface
+type IConnHandler interface {
+	// AddStartHook add start hook
+	AddStartHook(hook ConnStartEvent)
+	// AddExitHook add exit hook
+	AddExitHook(hook ConnExitEvent)
+	// LoopReceive : loop receive
+	LoopReceive()
+	// LoopSend : loop to send bytes
+	LoopSend()
+	// SetMetaInfo set meta info
+	SetMetaInfo(m MetaInfo)
+	// MetaInfo get meta info
+	MetaInfo() MetaInfo
+	// StartHooks get start hooks
+	StartHooks() []ConnStartEvent
+	// ExitHooks get exit hooks
+	ExitHooks() []ConnExitEvent
+}
+
+// BasicConnHandler basic connection handler
+type BasicConnHandler struct {
+	// connection
+	Conn net.Conn
 	// meta info
 	metaInfo atomic.Value
-
 	// hook functions
 	// start hook
 	startHooks []ConnStartEvent
 	// exit hook
 	exitHooks []ConnExitEvent
-	// incoming hook
-	incomingHook IncomingHook
 }
 
-// NewConnHandler : new connection handler
-func NewConnHandler(conn net.Conn, qSize int, incomingHook IncomingHook) *ConnHandler {
+// NewBasicConnHandler : new basic connection handler
+func NewBasicConnHandler(conn net.Conn) *BasicConnHandler {
 	basicMeta := &BasicMetaInfo{
 		RemoteAddr: conn.RemoteAddr().String(),
 	}
-	x := &ConnHandler{
-		conn:         conn,
-		sendQ:        q.NewQ[[]byte](qSize),
-		incomingHook: incomingHook,
+	x := &BasicConnHandler{
+		Conn: conn,
 	}
 	x.metaInfo.Store(basicMeta)
+	x.startHooks = make([]ConnStartEvent, 0, 1)
+	x.exitHooks = make([]ConnExitEvent, 0, 1)
 	return x
 }
 
-// NewConnHandlerV2 : new connection handler with exit hooks
-func NewConnHandlerV2(conn net.Conn, qSize int, incomingHook IncomingHook, exitHook ConnExitEvent) *ConnHandler {
-	x := NewConnHandler(conn, qSize, incomingHook)
-	x.exitHooks = []ConnExitEvent{exitHook}
-	return x
+// SetMetaInfo set meta info
+func (x *BasicConnHandler) SetMetaInfo(m MetaInfo) {
+	x.metaInfo.Store(m)
 }
 
-// NewConnHandlerV3 : new connection handler with start and exit hooks
-func NewConnHandlerV3(conn net.Conn, qSize int, incomingHook IncomingHook,
-	startHook ConnStartEvent, exitHook ConnExitEvent) *ConnHandler {
-	x := NewConnHandler(conn, qSize, incomingHook)
-	x.startHooks = []ConnStartEvent{startHook}
-	x.exitHooks = []ConnExitEvent{exitHook}
-	return x
+// MetaInfo get meta info
+func (x *BasicConnHandler) MetaInfo() MetaInfo {
+	return x.metaInfo.Load().(MetaInfo)
 }
 
 // AddStartHook add start hook
-func (x *ConnHandler) AddStartHook(hook ConnStartEvent) {
+func (x *BasicConnHandler) AddStartHook(hook ConnStartEvent) {
 	x.startHooks = append(x.startHooks, hook)
 }
 
 // AddExitHook add exit hook
-func (x *ConnHandler) AddExitHook(hook ConnExitEvent) {
+func (x *BasicConnHandler) AddExitHook(hook ConnExitEvent) {
 	x.exitHooks = append(x.exitHooks, hook)
 }
 
-// Start : start connection handler
-func (x *ConnHandler) Start() {
-	x.startOnce.Do(func() {
-		go x.loopReceive()
-		go x.loopSend()
-		for _, hook := range x.startHooks {
-			hook(x.metaInfo.Load().(MetaInfo))
-		}
-	})
+// StartHooks get start hooks
+func (x *BasicConnHandler) StartHooks() []ConnStartEvent {
+	return x.startHooks
+}
+
+// ExitHooks get exit hooks
+func (x *BasicConnHandler) ExitHooks() []ConnExitEvent {
+	return x.exitHooks
+}
+
+// Send bytes to connection with timeout
+func (x *BasicConnHandler) Send(bs []byte, timeout time.Duration) error {
+	err := x.Conn.SetWriteDeadline(time.Now().Add(timeout))
+	if err != nil {
+		ulog.Info("BasicConnHandler.set.write.conn.deadline",
+			zap.Error(err), zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
+		return err
+	}
+	_, err = x.Conn.Write(bs)
+	return err
+}
+
+// CommonConnHandler connection handler
+type CommonConnHandler struct {
+	*BasicConnHandler
+	// send queue -- actually the queue is bytes
+	sendQ *q.Q[[]byte]
+	//exit once
+	exitOnce sync.Once
+	// incoming hook
+	incomingHook CommonIncomingHook
+}
+
+// NewCommonConnHandler : new connection handler
+func NewCommonConnHandler(conn net.Conn, qSize int, incomingHook CommonIncomingHook) *CommonConnHandler {
+	basicHandler := NewBasicConnHandler(conn)
+	x := &CommonConnHandler{
+		BasicConnHandler: basicHandler,
+		sendQ:            q.NewQ[[]byte](qSize),
+		incomingHook:     incomingHook,
+	}
+	return x
 }
 
 // SendAsync send bytes async
-func (x *ConnHandler) SendAsync(bs []byte) error {
+func (x *CommonConnHandler) SendAsync(bs []byte) error {
 	return x.sendQ.Push(bs)
 }
 
-// SetMetaInfo set meta info
-func (x *ConnHandler) SetMetaInfo(m MetaInfo) {
-	x.metaInfo.Store(m)
-}
-
 // CLose : close connection
-func (x *ConnHandler) CLose() {
+func (x *CommonConnHandler) CLose() {
 	x.quit()
 }
 
-// loop receive
-func (x *ConnHandler) loopReceive() {
+// LoopReceive : loop receive
+func (x *CommonConnHandler) LoopReceive() {
 	defer func() {
 		r := recover()
 		if r != nil {
-			ulog.Error("ConnHandler.panic.in.loopReceive",
+			ulog.Error("ConnHandler.panic.in.LoopReceive",
 				zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)),
 				zap.Any("panic", r), zap.Stack("stack"))
 		}
@@ -152,7 +211,7 @@ func (x *ConnHandler) loopReceive() {
 	defer x.quit()
 
 	for {
-		err := x.incomingHook(x, x.conn, x.metaInfo.Load().(MetaInfo))
+		err := x.incomingHook(x, x.Conn, x.metaInfo.Load().(MetaInfo))
 		if err != nil {
 			ulog.Info("ConnHandler.incoming.hook.failed", zap.Error(err),
 				zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
@@ -161,12 +220,12 @@ func (x *ConnHandler) loopReceive() {
 	}
 }
 
-// loopSend loop to send bytes
-func (x *ConnHandler) loopSend() {
+// LoopSend : loop to send bytes
+func (x *CommonConnHandler) LoopSend() {
 	defer func() {
 		r := recover()
 		if r != nil {
-			ulog.Error("ConnHandler.panic.in.loopSend",
+			ulog.Error("ConnHandler.panic.in.LoopSend",
 				zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)),
 				zap.Any("panic", r), zap.Stack("stack"))
 		}
@@ -181,7 +240,7 @@ func (x *ConnHandler) loopSend() {
 				zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
 			return
 		}
-		err = x.send(sendBytes, writeTimeout.Load())
+		err = x.Send(sendBytes, writeTimeout.Load())
 		if err != nil {
 			ulog.Info("ConnHandler.send.failed", zap.Error(err),
 				zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
@@ -191,29 +250,17 @@ func (x *ConnHandler) loopSend() {
 }
 
 // quit : quit connection
-func (x *ConnHandler) quit() {
+func (x *CommonConnHandler) quit() {
 	x.exitOnce.Do(func() {
 		x.sendQ.Close()
-		err := x.conn.Close()
+		err := x.Conn.Close()
 		metaInfo := x.metaInfo.Load().(MetaInfo)
 		if err != nil {
 			ulog.Error("ConnHandler.close.conn.error", zap.Object("metaInfo", metaInfo),
 				zap.Error(err))
 		}
 		for _, hook := range x.exitHooks {
-			hook(x.conn, metaInfo)
+			hook(x.Conn, metaInfo)
 		}
 	})
-}
-
-// send bytes
-func (x *ConnHandler) send(bs []byte, timeout time.Duration) error {
-	err := x.conn.SetWriteDeadline(time.Now().Add(timeout))
-	if err != nil {
-		ulog.Info("ConnHandler.set.write.conn.deadline",
-			zap.Error(err), zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
-		return err
-	}
-	_, err = x.conn.Write(bs)
-	return err
 }

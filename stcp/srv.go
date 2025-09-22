@@ -4,6 +4,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/pinealctx/neptune/timex"
 	"github.com/pinealctx/neptune/ulog"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -11,21 +12,34 @@ import (
 
 // ServerAcceptCnf server start config
 type ServerAcceptCnf struct {
-	AcceptDelay    time.Duration `json:"acceptDelay"`
-	AcceptMaxDelay time.Duration `json:"acceptMaxDelay"`
-	AcceptMaxRetry int           `json:"acceptMaxRetry"`
-	MaxSendQSize   int           `json:"maxSendQSize"`
-	MaxConn        int32         `json:"maxConn"`
+	Address        string         `json:"address"`
+	AcceptDelay    timex.Duration `json:"acceptDelay"`
+	AcceptMaxDelay timex.Duration `json:"acceptMaxDelay"`
+	AcceptMaxRetry int            `json:"acceptMaxRetry"`
+	MaxConn        int32          `json:"maxConn"`
 }
 
 // DefaultServerAcceptCnf : get default start cnf
 func DefaultServerAcceptCnf() *ServerAcceptCnf {
 	return &ServerAcceptCnf{
-		AcceptDelay:    5 * time.Microsecond,
-		AcceptMaxDelay: 200 * time.Millisecond,
+		AcceptDelay:    timex.NewDuration(5 * time.Microsecond),
+		AcceptMaxDelay: timex.NewDuration(200 * time.Millisecond),
 		AcceptMaxRetry: 100,
-		MaxSendQSize:   1024,
 		MaxConn:        65535,
+	}
+}
+
+// CommServerCnf common server config
+type CommServerCnf struct {
+	*ServerAcceptCnf
+	MaxSendQSize int `json:"maxSendQSize"`
+}
+
+// DefaultCommServerCnf : get default common server cnf
+func DefaultCommServerCnf() *CommServerCnf {
+	return &CommServerCnf{
+		ServerAcceptCnf: DefaultServerAcceptCnf(),
+		MaxSendQSize:    512,
 	}
 }
 
@@ -35,89 +49,61 @@ type ITemporary interface {
 	Temporary() bool
 }
 
-// Server : tcp server frame
-type Server struct {
-	ln              net.Listener
-	connectionCount atomic.Int32
-	incomingHook    IncomingHook
-	address         string
+// ConnHandlerGenerator connection handler generator
+type ConnHandlerGenerator func(conn net.Conn) IConnHandler
+
+// BasicServer : basic tcp server frame
+type BasicServer struct {
+	ln                   net.Listener
+	connectionCount      atomic.Int32
+	svrCnf               *ServerAcceptCnf
+	connHandlerGenerator ConnHandlerGenerator
 }
 
-// NewTCPSrv :
-func NewTCPSrv(address string, incomingHook IncomingHook) *Server {
-	return &Server{
-		address:      address,
-		incomingHook: incomingHook,
+// NewBasicServer :
+func NewBasicServer(cnf *ServerAcceptCnf, gen ConnHandlerGenerator) *BasicServer {
+	return &BasicServer{
+		svrCnf:               cnf,
+		connHandlerGenerator: gen,
 	}
 }
 
 // Address :
-func (s *Server) Address() string {
-	return s.address
+func (x *BasicServer) Address() string {
+	return x.svrCnf.Address
 }
 
 // ConnectionCount :
-func (s *Server) ConnectionCount() int32 {
-	return s.connectionCount.Load()
+func (x *BasicServer) ConnectionCount() int32 {
+	return x.connectionCount.Load()
 }
 
-// RunWithOption : loop start server
-// errChan : a channel to receive error
-// opts : server start options
-func (s *Server) RunWithOption(errChan chan<- error, opts ...Option) {
-	go func() {
-		err := s.LoopStart(opts...)
-		errChan <- err
-	}()
-}
-
-// RunWithCnf : loop start server with config
+// Run : loop start server
 // errChan : a channel to receive error
 // cnf : server start config
-func (s *Server) RunWithCnf(errChan chan<- error, cnf *ServerAcceptCnf) {
+func (s *CommonServer) Run(errChan chan<- error) {
 	go func() {
-		err := s.LoopStartX(cnf)
+		err := s.Start()
 		errChan <- err
 	}()
 }
 
-// LoopStart : loop start server will go loop state
-func (s *Server) LoopStart(opts ...Option) error {
-	var cnf = DefaultServerAcceptCnf()
-	for _, opt := range opts {
-		opt(cnf)
-	}
-	return s.LoopStartX(cnf)
+// Close : close server
+func (s *CommonServer) Close() error {
+	return s.ln.Close()
 }
 
-// LoopStartX : loop start server with config
-func (s *Server) LoopStartX(cnf *ServerAcceptCnf) error {
+// Start : loop start server with config
+func (s *CommonServer) Start() error {
 	var err = s.startListen()
 	if err != nil {
 		return err
 	}
-	return s.loopAccept(cnf)
-}
-
-// Close : close server
-func (s *Server) Close() error {
-	return s.ln.Close()
-}
-
-// start to listen
-func (s *Server) startListen() error {
-	var err error
-	s.ln, err = net.Listen("tcp", s.address)
-	if err != nil {
-		ulog.Error("start.tcp.server",
-			zap.Error(err), zap.String("listen", s.address))
-		return err
-	}
-	return nil
+	return s.loopAccept()
 }
 
 // loop to accept
-func (s *Server) loopAccept(cnf *ServerAcceptCnf) error {
+func (x *BasicServer) loopAccept() error {
 	var conn net.Conn
 	var err error
 	var errNet ITemporary
@@ -126,6 +112,8 @@ func (s *Server) loopAccept(cnf *ServerAcceptCnf) error {
 	var accDelay time.Duration
 	var accRetryCount int
 
+	accCnfDelay := x.svrCnf.AcceptDelay.Value()
+	accCnfMaxDelay := x.svrCnf.AcceptMaxDelay.Value()
 	var handleErr = func() error {
 		errNet, ok = err.(ITemporary)
 		if !ok {
@@ -137,17 +125,17 @@ func (s *Server) loopAccept(cnf *ServerAcceptCnf) error {
 
 		//setup retry
 		accRetryCount++
-		if accRetryCount >= cnf.AcceptMaxRetry {
+		if accRetryCount >= x.svrCnf.AcceptMaxRetry {
 			return err
 		}
 		//Temporary error
 		if accDelay <= 0 {
-			accDelay = cnf.AcceptDelay
+			accDelay = accCnfDelay
 		} else {
 			accDelay *= 2
 		}
-		if accDelay >= cnf.AcceptMaxDelay {
-			accDelay = cnf.AcceptMaxDelay
+		if accDelay >= accCnfMaxDelay {
+			accDelay = accCnfMaxDelay
 		}
 		time.Sleep(accDelay)
 		return nil
@@ -156,7 +144,7 @@ func (s *Server) loopAccept(cnf *ServerAcceptCnf) error {
 	var outErr error
 
 	for {
-		conn, err = s.ln.Accept()
+		conn, err = x.ln.Accept()
 		if err != nil {
 			outErr = handleErr()
 			if outErr != nil {
@@ -168,64 +156,63 @@ func (s *Server) loopAccept(cnf *ServerAcceptCnf) error {
 		accDelay = 0
 		accRetryCount = 0
 
-		if s.connectionCount.Inc() >= cnf.MaxConn {
+		if x.connectionCount.Inc() >= x.svrCnf.MaxConn {
 			var e = conn.Close()
-			ulog.Error("touch.max.conn.num", zap.Error(e), zap.Int32("currentConn", s.connectionCount.Load()))
+			ulog.Error("touch.max.conn.num", zap.Error(e), zap.Int32("currentConn", x.connectionCount.Load()))
 		} else {
 			//处理connection
-			connHandler := NewConnHandlerV3(conn, cnf.MaxSendQSize, s.incomingHook, s.startHook, s.exitHook)
+			connHandler := NewConnHandlerRunner(x.connHandlerGenerator(conn))
+			connHandler.AddStartHook(x.startHook)
+			connHandler.AddExitHook(x.exitHook)
 			connHandler.Start()
 		}
 	}
 }
 
 // startHook : when connection start
-func (s *Server) startHook(metaInfo MetaInfo) {
+func (x *BasicServer) startHook(metaInfo MetaInfo) {
 	ulog.Info("connection.start", zap.Object("metaInfo", metaInfo),
-		zap.Int32("currentConn", s.connectionCount.Load()))
+		zap.Int32("currentConn", x.connectionCount.Load()))
 }
 
 // exitHook : when connection exit
-func (s *Server) exitHook(_ net.Conn, metaInfo MetaInfo) {
-	s.connectionCount.Dec()
+func (x *BasicServer) exitHook(_ net.Conn, metaInfo MetaInfo) {
+	x.connectionCount.Dec()
 	ulog.Info("connection.exit", zap.Object("metaInfo", metaInfo),
-		zap.Int32("currentConn", s.connectionCount.Load()))
+		zap.Int32("currentConn", x.connectionCount.Load()))
 }
 
-// Option server start option
-type Option func(o *ServerAcceptCnf)
-
-// WithMaxConn : setup max conn number
-func WithMaxConn(r int32) Option {
-	return func(o *ServerAcceptCnf) {
-		o.MaxConn = r
+// start to listen
+func (x *BasicServer) startListen() error {
+	var err error
+	x.ln, err = net.Listen("tcp", x.svrCnf.Address)
+	if err != nil {
+		ulog.Error("start.tcp.server",
+			zap.Error(err), zap.String("listen", x.svrCnf.Address))
+		return err
 	}
+	return nil
 }
 
-// WithAccDelay : setup acceptDelay
-func WithAccDelay(t time.Duration) Option {
-	return func(o *ServerAcceptCnf) {
-		o.AcceptDelay = t
-	}
+// CommonServer : common tcp server frame
+type CommonServer struct {
+	*BasicServer
+	incomingHook CommonIncomingHook
+	maxSendQSize int
 }
 
-// WithAccMaxDelay : setup acceptMaxDelay
-func WithAccMaxDelay(t time.Duration) Option {
-	return func(o *ServerAcceptCnf) {
-		o.AcceptMaxDelay = t
+// NewCommonTCPSrv : new common tcp server
+func NewCommonTCPSrv(cnf *CommServerCnf, incomingHook CommonIncomingHook) *CommonServer {
+	x := &CommonServer{
+		incomingHook: incomingHook,
+		maxSendQSize: cnf.MaxSendQSize,
 	}
+	basicServer := NewBasicServer(cnf.ServerAcceptCnf, x.connHandlerGenerator)
+	x.BasicServer = basicServer
+	return x
 }
 
-// WithAccMaxRetry : setup acceptMaxRetry
-func WithAccMaxRetry(r int) Option {
-	return func(o *ServerAcceptCnf) {
-		o.AcceptMaxRetry = r
-	}
-}
-
-// WithMaxSendQSize : setup max send queue size
-func WithMaxSendQSize(s int) Option {
-	return func(o *ServerAcceptCnf) {
-		o.MaxSendQSize = s
-	}
+// common connection handler generator
+func (s *CommonServer) connHandlerGenerator(conn net.Conn) IConnHandler {
+	return NewCommonConnHandler(conn, s.maxSendQSize, s.incomingHook)
 }
