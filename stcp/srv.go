@@ -4,20 +4,29 @@ import (
 	"net"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/pinealctx/neptune/ulog"
+	"go.uber.org/atomic"
+	"go.uber.org/zap"
 )
 
-// IConnMgr interface
-// 连接管理接口
-type IConnMgr interface {
-	//ConnCount 当前连接数
-	ConnCount() int32
-	//Do handle connection
-	Do(conn net.Conn)
-	//SetLogger setup logger
-	SetLogger(logger *ulog.Logger)
+// ServerAcceptCnf server start config
+type ServerAcceptCnf struct {
+	AcceptDelay    time.Duration `json:"acceptDelay"`
+	AcceptMaxDelay time.Duration `json:"acceptMaxDelay"`
+	AcceptMaxRetry int           `json:"acceptMaxRetry"`
+	MaxSendQSize   int           `json:"maxSendQSize"`
+	MaxConn        int32         `json:"maxConn"`
+}
+
+// DefaultServerAcceptCnf : get default start cnf
+func DefaultServerAcceptCnf() *ServerAcceptCnf {
+	return &ServerAcceptCnf{
+		AcceptDelay:    5 * time.Microsecond,
+		AcceptMaxDelay: 200 * time.Millisecond,
+		AcceptMaxRetry: 100,
+		MaxSendQSize:   1024,
+		MaxConn:        65535,
+	}
 }
 
 // ITemporary interface
@@ -28,9 +37,18 @@ type ITemporary interface {
 
 // Server : tcp server frame
 type Server struct {
-	ln      net.Listener
-	ch      IConnMgr //connection manager
-	address string
+	ln              net.Listener
+	connectionCount atomic.Int32
+	incomingHook    IncomingHook
+	address         string
+}
+
+// NewTCPSrv :
+func NewTCPSrv(address string, incomingHook IncomingHook) *Server {
+	return &Server{
+		address:      address,
+		incomingHook: incomingHook,
+	}
 }
 
 // Address :
@@ -38,48 +56,47 @@ func (s *Server) Address() string {
 	return s.address
 }
 
-// NewTCPSrv :
-func NewTCPSrv(address string, ch IConnMgr) *Server {
-	return &Server{
-		address: address,
-		ch:      ch,
-	}
+// ConnectionCount :
+func (s *Server) ConnectionCount() int32 {
+	return s.connectionCount.Load()
 }
 
-// NewTCPSrvX : use a simple IConnMgr
-func NewTCPSrvX(address string, rh ISession, opts ...MOption) *Server {
-	var ch = NewSessionMgr(rh, opts...)
-	return NewTCPSrv(address, ch)
+// RunWithOption : loop start server
+// errChan : a channel to receive error
+// opts : server start options
+func (s *Server) RunWithOption(errChan chan<- error, opts ...Option) {
+	go func() {
+		err := s.LoopStart(opts...)
+		errChan <- err
+	}()
 }
 
-// LoopStart :
+// RunWithCnf : loop start server with config
+// errChan : a channel to receive error
+// cnf : server start config
+func (s *Server) RunWithCnf(errChan chan<- error, cnf *ServerAcceptCnf) {
+	go func() {
+		err := s.LoopStartX(cnf)
+		errChan <- err
+	}()
+}
+
+// LoopStart : loop start server will go loop state
 func (s *Server) LoopStart(opts ...Option) error {
-	var cnf = defaultStartOpt()
+	var cnf = DefaultServerAcceptCnf()
 	for _, opt := range opts {
 		opt(cnf)
 	}
+	return s.LoopStartX(cnf)
+}
 
-	s.ch.SetLogger(cnf.logger)
-	var err = s.startListen(cnf)
+// LoopStartX : loop start server with config
+func (s *Server) LoopStartX(cnf *ServerAcceptCnf) error {
+	var err = s.startListen()
 	if err != nil {
 		return err
 	}
-
 	return s.loopAccept(cnf)
-}
-
-// Start : loop start server will go loop state
-// Use a channel to receive error
-func (s *Server) Start(opts ...Option) <-chan error {
-	var eh = make(chan error, 1)
-	var err error
-	go func() {
-		err = s.LoopStart(opts...)
-		if err != nil {
-			eh <- err
-		}
-	}()
-	return eh
 }
 
 // Close : close server
@@ -88,11 +105,11 @@ func (s *Server) Close() error {
 }
 
 // start to listen
-func (s *Server) startListen(cnf *_SrvStartOpt) error {
+func (s *Server) startListen() error {
 	var err error
 	s.ln, err = net.Listen("tcp", s.address)
 	if err != nil {
-		cnf.Logger().Error("start.tcp.server",
+		ulog.Error("start.tcp.server",
 			zap.Error(err), zap.String("listen", s.address))
 		return err
 	}
@@ -100,7 +117,7 @@ func (s *Server) startListen(cnf *_SrvStartOpt) error {
 }
 
 // loop to accept
-func (s *Server) loopAccept(cnf *_SrvStartOpt) error {
+func (s *Server) loopAccept(cnf *ServerAcceptCnf) error {
 	var conn net.Conn
 	var err error
 	var errNet ITemporary
@@ -120,17 +137,17 @@ func (s *Server) loopAccept(cnf *_SrvStartOpt) error {
 
 		//setup retry
 		accRetryCount++
-		if accRetryCount >= cnf.acceptMaxRetry {
+		if accRetryCount >= cnf.AcceptMaxRetry {
 			return err
 		}
 		//Temporary error
 		if accDelay <= 0 {
-			accDelay = cnf.acceptDelay
+			accDelay = cnf.AcceptDelay
 		} else {
 			accDelay *= 2
 		}
-		if accDelay >= cnf.acceptMaxDelay {
-			accDelay = cnf.acceptMaxDelay
+		if accDelay >= cnf.AcceptMaxDelay {
+			accDelay = cnf.AcceptMaxDelay
 		}
 		time.Sleep(accDelay)
 		return nil
@@ -143,7 +160,7 @@ func (s *Server) loopAccept(cnf *_SrvStartOpt) error {
 		if err != nil {
 			outErr = handleErr()
 			if outErr != nil {
-				cnf.Logger().Error("tcp.server.accept", zap.Error(err))
+				ulog.Error("tcp.server.accept", zap.Error(err))
 				return outErr
 			}
 			continue
@@ -151,76 +168,64 @@ func (s *Server) loopAccept(cnf *_SrvStartOpt) error {
 		accDelay = 0
 		accRetryCount = 0
 
-		if s.ch.ConnCount() >= cnf.maxConn {
+		if s.connectionCount.Inc() >= cnf.MaxConn {
 			var e = conn.Close()
-			cnf.Logger().Error("touch.max.conn.num", zap.Error(e))
+			ulog.Error("touch.max.conn.num", zap.Error(e), zap.Int32("currentConn", s.connectionCount.Load()))
 		} else {
 			//处理connection
-			s.ch.Do(conn)
+			connHandler := NewConnHandlerV3(conn, cnf.MaxSendQSize, s.incomingHook, s.startHook, s.exitHook)
+			connHandler.Start()
 		}
 	}
 }
 
+// startHook : when connection start
+func (s *Server) startHook(metaInfo MetaInfo) {
+	ulog.Info("connection.start", zap.Object("metaInfo", metaInfo),
+		zap.Int32("currentConn", s.connectionCount.Load()))
+}
+
+// exitHook : when connection exit
+func (s *Server) exitHook(_ net.Conn, metaInfo MetaInfo) {
+	s.connectionCount.Dec()
+	ulog.Info("connection.exit", zap.Object("metaInfo", metaInfo),
+		zap.Int32("currentConn", s.connectionCount.Load()))
+}
+
 // Option server start option
-type Option func(o *_SrvStartOpt)
+type Option func(o *ServerAcceptCnf)
 
 // WithMaxConn : setup max conn number
 func WithMaxConn(r int32) Option {
-	return func(o *_SrvStartOpt) {
-		o.maxConn = r
-	}
-}
-
-// WithLogger : setup logger
-func WithLogger(l *ulog.Logger) Option {
-	return func(o *_SrvStartOpt) {
-		o.logger = l
+	return func(o *ServerAcceptCnf) {
+		o.MaxConn = r
 	}
 }
 
 // WithAccDelay : setup acceptDelay
 func WithAccDelay(t time.Duration) Option {
-	return func(o *_SrvStartOpt) {
-		o.acceptDelay = t
+	return func(o *ServerAcceptCnf) {
+		o.AcceptDelay = t
 	}
 }
 
 // WithAccMaxDelay : setup acceptMaxDelay
 func WithAccMaxDelay(t time.Duration) Option {
-	return func(o *_SrvStartOpt) {
-		o.acceptMaxDelay = t
+	return func(o *ServerAcceptCnf) {
+		o.AcceptMaxDelay = t
 	}
 }
 
 // WithAccMaxRetry : setup acceptMaxRetry
 func WithAccMaxRetry(r int) Option {
-	return func(o *_SrvStartOpt) {
-		o.acceptMaxRetry = r
+	return func(o *ServerAcceptCnf) {
+		o.AcceptMaxRetry = r
 	}
 }
 
-// server start config
-type _SrvStartOpt struct {
-	acceptDelay    time.Duration
-	acceptMaxDelay time.Duration
-	acceptMaxRetry int
-	maxConn        int32
-	logger         *ulog.Logger
-}
-
-func (o *_SrvStartOpt) Logger() *ulog.Logger {
-	if o.logger == nil {
-		return ulog.GetDefaultLogger()
-	}
-	return o.logger
-}
-
-// get default start cnf
-func defaultStartOpt() *_SrvStartOpt {
-	return &_SrvStartOpt{
-		acceptDelay:    5 * time.Microsecond,
-		acceptMaxDelay: 200 * time.Millisecond,
-		acceptMaxRetry: 100,
-		maxConn:        65535,
+// WithMaxSendQSize : setup max send queue size
+func WithMaxSendQSize(s int) Option {
+	return func(o *ServerAcceptCnf) {
+		o.MaxSendQSize = s
 	}
 }

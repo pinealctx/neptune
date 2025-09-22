@@ -13,7 +13,7 @@ formatters:
     # format the code
     - gofmt
     # format the block of imports
-    - gci
+    # - gci
 
   settings:
     # format the code with Go standard library
@@ -28,7 +28,7 @@ formatters:
 
     # make sure imports are always in a deterministic order
     # https://github.com/daixiang0/gci/
-    gci:  # define the section orders for imports
+    gci: # define the section orders for imports
       sections:
         # Standard section: captures all standard packages.
         - standard
@@ -202,12 +202,12 @@ linters:
 
       # List of words to ignore
       # among the one defined in https://github.com/golangci/misspell/blob/master/words.go
-      ignore-rules: []
+      ignore-rules: [ ]
       #  - valor
       #  - and
 
       # Extra word corrections.
-      extra-words: []
+      extra-words: [ ]
       #  - typo: "whattever"
       #    correction: "whatever"
 
