@@ -58,6 +58,8 @@ type BasicServer struct {
 	connectionCount      atomic.Int32
 	svrCnf               *ServerAcceptCnf
 	connHandlerGenerator ConnHandlerGenerator
+	startHooker          ConnStartEvent
+	exitHooker           ConnExitEvent
 }
 
 // NewBasicServer :
@@ -100,6 +102,16 @@ func (s *CommonServer) Start() error {
 		return err
 	}
 	return s.loopAccept()
+}
+
+// SetStartHook : set start hook
+func (x *BasicServer) SetStartHook(hook ConnStartEvent) {
+	x.startHooker = hook
+}
+
+// SetExitHook : set exit hook
+func (x *BasicServer) SetExitHook(hook ConnExitEvent) {
+	x.exitHooker = hook
 }
 
 // loop to accept
@@ -174,13 +186,19 @@ func (x *BasicServer) loopAccept() error {
 func (x *BasicServer) startHook(metaInfo MetaInfo) {
 	ulog.Info("connection.start", zap.Object("metaInfo", metaInfo),
 		zap.Int32("currentConn", x.connectionCount.Load()))
+	if x.startHooker != nil {
+		x.startHooker(metaInfo)
+	}
 }
 
 // exitHook : when connection exit
-func (x *BasicServer) exitHook(_ net.Conn, metaInfo MetaInfo) {
+func (x *BasicServer) exitHook(conn net.Conn, metaInfo MetaInfo) {
 	x.connectionCount.Dec()
 	ulog.Info("connection.exit", zap.Object("metaInfo", metaInfo),
 		zap.Int32("currentConn", x.connectionCount.Load()))
+	if x.exitHooker != nil {
+		x.exitHooker(conn, metaInfo)
+	}
 }
 
 // start to listen
