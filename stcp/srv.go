@@ -143,6 +143,7 @@ func (x *BasicServer) loopAccept() error {
 
 	var outErr error
 
+	ulog.Info("tcp.server.accept.loop.start")
 	for {
 		conn, err = x.ln.Accept()
 		if err != nil {
@@ -191,6 +192,7 @@ func (x *BasicServer) startListen() error {
 			zap.Error(err), zap.String("listen", x.svrCnf.Address))
 		return err
 	}
+	ulog.Info("tcp.server.started", zap.String("listen", x.svrCnf.Address))
 	return nil
 }
 
