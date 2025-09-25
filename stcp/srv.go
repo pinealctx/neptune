@@ -31,27 +31,22 @@ func DefaultServerAcceptCnf() *ServerAcceptCnf {
 
 // TcpServer tcp server
 type TcpServer struct {
-	acceptCnf   *ServerAcceptCnf
-	startHooker ConnStartEvent
-	exitHooker  ConnExitEvent
-	connReader  ConnReaderFunc
+	acceptCnf         *ServerAcceptCnf
+	startHooker       ConnStartEvent
+	exitHooker        ConnExitEvent
+	connReader        ConnReaderFunc
+	connSenderFactory ConnSenderFactory
 
 	connCount atomic.Int32
-	// send queue size
-	// 0 means unlimited capacity
-	// otherwise, the send queue has limited capacity
-	// if the send queue is full, Put2Queue will return error, the connection handler should exit.
-	sendQSize int
-
-	ln net.Listener
+	ln        net.Listener
 }
 
 // NewTcpServer : new tcp server
-func NewTcpServer(cnf *ServerAcceptCnf, connReader ConnReaderFunc, sendQSize int) *TcpServer {
+func NewTcpServer(cnf *ServerAcceptCnf, connReader ConnReaderFunc, connSenderFactory ConnSenderFactory) *TcpServer {
 	return &TcpServer{
-		acceptCnf:  cnf,
-		connReader: connReader,
-		sendQSize:  sendQSize,
+		acceptCnf:         cnf,
+		connReader:        connReader,
+		connSenderFactory: connSenderFactory,
 	}
 }
 
@@ -164,7 +159,7 @@ func (x *TcpServer) loopAccept() error {
 			x.connCount.Dec()
 			ulog.Error("TcpServer.loopAccept.close.too.many", zap.Int32("currentConnCount", curConnCount), zap.Error(err))
 		} else {
-			connRunner := NewConnRunner(x.connReader, NewQSendConnHandler(conn, x.sendQSize))
+			connRunner := NewConnRunner(x.connReader, x.connSenderFactory(conn))
 			connRunner.AddStartHook(x.connStartHook)
 			connRunner.AddExitHook(x.connExitHook)
 			connRunner.Start()

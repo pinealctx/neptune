@@ -1,16 +1,17 @@
 ## TCP Server 框架（基于组合式设计）
 
 该模块提供一个轻量、高性能的 TCP Server 框架：
-- 通过 NewTcpServer(cnf, connReader, sendQSize) 创建服务
+- 通过 NewTcpServer(cnf, connReader, connSenderFactory) 创建服务，支持工厂模式注入不同的连接发送器
 - ConnReader 完全由业务方实现，负责从 net.Conn 读取数据并处理（定长、变长、心跳等策略均由外部控制）
-- 框架内部管理连接生命周期、并发处理与异步发送队列，支持完整的配置和Hook机制
+- 框架内部管理连接生命周期、并发处理，通过ConnSenderFactory支持灵活的发送策略，包括完整的配置和Hook机制
 
 ### 核心组件
 
 - **TcpServer**: 主服务器，负责Accept循环和连接管理
 - **ConnHandler**: 连接处理器，管理单个连接的生命周期
-- **QSender**: 队列发送器，提供异步消息发送能力
+- **QSender**: 队列发送器，提供异步消息发送能力（IConnSender的一个实现）
 - **IConnSender**: 连接发送器接口，支持不同的发送策略
+- **ConnSenderFactory**: 连接发送器工厂，用于创建不同类型的发送器实例
 
 ---
 
@@ -18,8 +19,14 @@
 
 #### Server 构造
 ```go
-func NewTcpServer(cnf *ServerAcceptCnf, connReader ConnReaderFunc, sendQSize int) *TcpServer
+func NewTcpServer(cnf *ServerAcceptCnf, connReader ConnReaderFunc, connSenderFactory ConnSenderFactory) *TcpServer
 ```
+
+#### 连接发送器工厂
+```go
+type ConnSenderFactory func(conn net.Conn) IConnSender
+```
+工厂函数用于为每个新连接创建相应的发送器实例，支持不同的发送策略。
 
 #### 配置结构
 ```go
@@ -92,13 +99,18 @@ func main() {
         return sender.Put2Queue(buf[:n])  // 异步发送响应
     }
 
+    // 创建连接发送器工厂（使用队列发送器）
+    senderFactory := func(conn net.Conn) stcp.IConnSender {
+        return stcp.NewQSendConnHandler(conn, 1024)  // 队列容量1024
+    }
+
     // 创建服务器配置
     cnf := stcp.DefaultServerAcceptCnf()
     cnf.Address = ":9000"
     cnf.MaxConn = 1000
     
-    // 创建服务器（sendQSize=1024表示发送队列容量）
-    srv := stcp.NewTcpServer(cnf, connReader, 1024)
+    // 创建服务器
+    srv := stcp.NewTcpServer(cnf, connReader, senderFactory)
     
     // 设置连接钩子（可选）
     srv.SetStartHooker(func(sender stcp.IConnSender) {
@@ -119,6 +131,57 @@ func main() {
     if err := <-errCh; err != nil {
         panic(err)
     }
+}
+```
+
+### 高级特性：灵活的连接发送器工厂
+
+框架支持通过ConnSenderFactory工厂模式注入不同的发送器实现，满足各种业务场景需求：
+
+#### 不同队列容量的发送器
+
+```go
+// 大容量队列发送器（适合高并发场景）
+largeQueueFactory := func(conn net.Conn) stcp.IConnSender {
+    return stcp.NewQSendConnHandler(conn, 10000)
+}
+
+// 小容量队列发送器（适合内存敏感场景）
+smallQueueFactory := func(conn net.Conn) stcp.IConnSender {
+    return stcp.NewQSendConnHandler(conn, 100)
+}
+
+// 无限容量队列发送器
+unlimitedFactory := func(conn net.Conn) stcp.IConnSender {
+    return stcp.NewQSendConnHandler(conn, 0)  // 0表示无限容量
+}
+```
+
+#### 条件化发送器选择
+
+```go
+// 根据连接来源选择不同的发送器
+conditionalFactory := func(conn net.Conn) stcp.IConnSender {
+    remoteAddr := conn.RemoteAddr().String()
+    
+    if strings.Contains(remoteAddr, "127.0.0.1") {
+        // 本地连接使用大队列
+        return stcp.NewQSendConnHandler(conn, 10000)
+    } else {
+        // 外部连接使用小队列
+        return stcp.NewQSendConnHandler(conn, 1000)
+    }
+}
+```
+
+#### 自定义发送器实现
+
+```go
+// 如果你有自定义的IConnSender实现
+customFactory := func(conn net.Conn) stcp.IConnSender {
+    // return your custom implementation
+    // return NewMyCustomSender(conn, customConfig)
+    return stcp.NewQSendConnHandler(conn, 1024)  // 示例中仍使用QSender
 }
 ```
 
@@ -267,7 +330,11 @@ import (
 )
 
 func main() {
-    srv := stcp.NewTcpServer(cnf, connReader, 1024)
+    // 创建连接发送器工厂
+    senderFactory := func(conn net.Conn) stcp.IConnSender {
+        return stcp.NewQSendConnHandler(conn, 1024)
+    }
+    srv := stcp.NewTcpServer(cnf, connReader, senderFactory)
     
     errCh := make(chan error, 1)
     srv.Run(errCh)
@@ -323,10 +390,13 @@ func main() {
 ## 架构特点
 
 - **组合式设计**：避免复杂继承，各组件职责清晰
+- **工厂模式**：ConnSenderFactory支持灵活的发送器创建策略
 - **接口驱动**：IConnSender接口支持不同发送策略扩展
+- **插拔式架构**：可以轻松替换和扩展连接发送器实现
 - **异步发送**：队列化发送避免阻塞接收处理
 - **完善日志**：结构化日志支持，MetaInfo可自定义
 - **Hook机制**：连接生命周期钩子便于监控和扩展
 - **并发安全**：所有共享状态都有适当的同步保护
+- **测试友好**：工厂模式便于单元测试时注入Mock实现
 
 如需更多示例或适配特定协议，可在ConnReader内按需实现相应的读取和处理逻辑。

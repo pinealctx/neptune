@@ -69,6 +69,9 @@ type ConnExitEvent func(handler IConnSender)
 // ConnReaderFunc connection reader function
 type ConnReaderFunc func(handler IConnSender, conn net.Conn) error
 
+// ConnSenderFactory connection sender factory
+type ConnSenderFactory func(conn net.Conn) IConnSender
+
 // BasicMetaInfo basic meta info
 type BasicMetaInfo struct {
 	RemoteAddr string
