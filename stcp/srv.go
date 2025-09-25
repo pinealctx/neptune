@@ -23,216 +23,168 @@ type ServerAcceptCnf struct {
 func DefaultServerAcceptCnf() *ServerAcceptCnf {
 	return &ServerAcceptCnf{
 		AcceptDelay:    timex.NewDuration(5 * time.Microsecond),
-		AcceptMaxDelay: timex.NewDuration(200 * time.Millisecond),
-		AcceptMaxRetry: 100,
+		AcceptMaxDelay: timex.NewDuration(50 * time.Millisecond),
+		AcceptMaxRetry: 0,
 		MaxConn:        65535,
 	}
 }
 
-// CommServerCnf common server config
-type CommServerCnf struct {
-	*ServerAcceptCnf
-	MaxSendQSize int `json:"maxSendQSize"`
+// TcpServer tcp server
+type TcpServer struct {
+	acceptCnf   *ServerAcceptCnf
+	startHooker ConnStartEvent
+	exitHooker  ConnExitEvent
+	connReader  ConnReaderFunc
+
+	connCount atomic.Int32
+	// send queue size
+	// 0 means unlimited capacity
+	// otherwise, the send queue has limited capacity
+	// if the send queue is full, Put2Queue will return error, the connection handler should exit.
+	sendQSize int
+
+	ln net.Listener
 }
 
-// DefaultCommServerCnf : get default common server cnf
-func DefaultCommServerCnf() *CommServerCnf {
-	return &CommServerCnf{
-		ServerAcceptCnf: DefaultServerAcceptCnf(),
-		MaxSendQSize:    512,
+// NewTcpServer : new tcp server
+func NewTcpServer(cnf *ServerAcceptCnf, connReader ConnReaderFunc, sendQSize int) *TcpServer {
+	return &TcpServer{
+		acceptCnf:  cnf,
+		connReader: connReader,
+		sendQSize:  sendQSize,
 	}
 }
 
-// ITemporary interface
-// to replace net.Error interface to avoid go lint check
-type ITemporary interface {
-	Temporary() bool
+// Address : get listen address
+func (x *TcpServer) Address() string {
+	return x.acceptCnf.Address
 }
 
-// ConnHandlerGenerator connection handler generator
-type ConnHandlerGenerator func(conn net.Conn) IConnHandler
-
-// BasicServer : basic tcp server frame
-type BasicServer struct {
-	ln                   net.Listener
-	connectionCount      atomic.Int32
-	svrCnf               *ServerAcceptCnf
-	connHandlerGenerator ConnHandlerGenerator
-	startHooker          ConnStartEvent
-	exitHooker           ConnExitEvent
+// ConnCount : get current connection count
+func (x *TcpServer) ConnCount() int32 {
+	return x.connCount.Load()
 }
 
-// NewBasicServer :
-func NewBasicServer(cnf *ServerAcceptCnf, gen ConnHandlerGenerator) *BasicServer {
-	return &BasicServer{
-		svrCnf:               cnf,
-		connHandlerGenerator: gen,
-	}
+// SetStartHooker : set connection start hooker
+func (x *TcpServer) SetStartHooker(hooker ConnStartEvent) {
+	x.startHooker = hooker
 }
 
-// Address :
-func (x *BasicServer) Address() string {
-	return x.svrCnf.Address
+// SetExitHooker : set connection exit hooker
+func (x *TcpServer) SetExitHooker(hooker ConnExitEvent) {
+	x.exitHooker = hooker
 }
 
-// ConnectionCount :
-func (x *BasicServer) ConnectionCount() int32 {
-	return x.connectionCount.Load()
-}
-
-// Run : loop start server
-// errChan : a channel to receive error
-// cnf : server start config
-func (s *CommonServer) Run(errChan chan<- error) {
+// Run : run server
+// errChan : error channel
+// if server exit, the error will be sent to errChan
+func (x *TcpServer) Run(errChan chan<- error) {
 	go func() {
-		err := s.Start()
+		err := x.start()
 		errChan <- err
 	}()
 }
 
-// Close : close server
-func (s *CommonServer) Close() error {
-	return s.ln.Close()
-}
-
-// Start : loop start server with config
-func (s *CommonServer) Start() error {
-	var err = s.startListen()
-	if err != nil {
-		return err
+// Close : close the server listener
+func (x *TcpServer) Close() error {
+	if x.ln != nil {
+		return x.ln.Close()
 	}
-	return s.loopAccept()
-}
-
-// SetStartHook : set start hook
-func (x *BasicServer) SetStartHook(hook ConnStartEvent) {
-	x.startHooker = hook
-}
-
-// SetExitHook : set exit hook
-func (x *BasicServer) SetExitHook(hook ConnExitEvent) {
-	x.exitHooker = hook
-}
-
-// loop to accept
-func (x *BasicServer) loopAccept() error {
-	var conn net.Conn
-	var err error
-	var errNet ITemporary
-	var ok bool
-
-	var accDelay time.Duration
-	var accRetryCount int
-
-	accCnfDelay := x.svrCnf.AcceptDelay.Value()
-	accCnfMaxDelay := x.svrCnf.AcceptMaxDelay.Value()
-	var handleErr = func() error {
-		errNet, ok = err.(ITemporary)
-		if !ok {
-			return err
-		}
-		if !errNet.Temporary() {
-			return err
-		}
-
-		//setup retry
-		accRetryCount++
-		if accRetryCount >= x.svrCnf.AcceptMaxRetry {
-			return err
-		}
-		//Temporary error
-		if accDelay <= 0 {
-			accDelay = accCnfDelay
-		} else {
-			accDelay *= 2
-		}
-		if accDelay >= accCnfMaxDelay {
-			accDelay = accCnfMaxDelay
-		}
-		time.Sleep(accDelay)
-		return nil
-	}
-
-	var outErr error
-
-	ulog.Info("tcp.server.accept.loop.start")
-	for {
-		conn, err = x.ln.Accept()
-		if err != nil {
-			outErr = handleErr()
-			if outErr != nil {
-				ulog.Error("tcp.server.accept", zap.Error(err))
-				return outErr
-			}
-			continue
-		}
-		accDelay = 0
-		accRetryCount = 0
-
-		if x.connectionCount.Inc() >= x.svrCnf.MaxConn {
-			var e = conn.Close()
-			ulog.Error("touch.max.conn.num", zap.Error(e), zap.Int32("currentConn", x.connectionCount.Load()))
-		} else {
-			//处理connection
-			connHandler := NewConnHandlerRunner(x.connHandlerGenerator(conn))
-			connHandler.AddStartHook(x.startHook)
-			connHandler.AddExitHook(x.exitHook)
-			connHandler.Start()
-		}
-	}
-}
-
-// startHook : when connection start
-func (x *BasicServer) startHook(metaInfo MetaInfo) {
-	ulog.Info("connection.start", zap.Object("metaInfo", metaInfo),
-		zap.Int32("currentConn", x.connectionCount.Load()))
-	if x.startHooker != nil {
-		x.startHooker(metaInfo)
-	}
-}
-
-// exitHook : when connection exit
-func (x *BasicServer) exitHook(conn net.Conn, metaInfo MetaInfo) {
-	x.connectionCount.Dec()
-	ulog.Info("connection.exit", zap.Object("metaInfo", metaInfo),
-		zap.Int32("currentConn", x.connectionCount.Load()))
-	if x.exitHooker != nil {
-		x.exitHooker(conn, metaInfo)
-	}
-}
-
-// start to listen
-func (x *BasicServer) startListen() error {
-	var err error
-	x.ln, err = net.Listen("tcp", x.svrCnf.Address)
-	if err != nil {
-		ulog.Error("start.tcp.server",
-			zap.Error(err), zap.String("listen", x.svrCnf.Address))
-		return err
-	}
-	ulog.Info("tcp.server.started", zap.String("listen", x.svrCnf.Address))
 	return nil
 }
 
-// CommonServer : common tcp server frame
-type CommonServer struct {
-	*BasicServer
-	incomingHook CommonIncomingHook
-	maxSendQSize int
-}
-
-// NewCommonTCPSrv : new common tcp server
-func NewCommonTCPSrv(cnf *CommServerCnf, incomingHook CommonIncomingHook) *CommonServer {
-	x := &CommonServer{
-		incomingHook: incomingHook,
-		maxSendQSize: cnf.MaxSendQSize,
+// start : start server
+func (x *TcpServer) start() error {
+	var err error
+	x.ln, err = net.Listen("tcp", x.acceptCnf.Address)
+	if err != nil {
+		return err
 	}
-	basicServer := NewBasicServer(cnf.ServerAcceptCnf, x.connHandlerGenerator)
-	x.BasicServer = basicServer
-	return x
+	return x.loopAccept()
 }
 
-// common connection handler generator
-func (s *CommonServer) connHandlerGenerator(conn net.Conn) IConnHandler {
-	return NewCommonConnHandler(conn, s.maxSendQSize, s.incomingHook)
+// loop to accept connection
+func (x *TcpServer) loopAccept() error {
+	// configuration values
+	accMinDelay := x.acceptCnf.AcceptDelay.Value()
+	accMaxDelay := x.acceptCnf.AcceptMaxDelay.Value()
+	maxConnCount := x.acceptCnf.MaxConn
+	maxRetry := x.acceptCnf.AcceptMaxRetry
+
+	// net and error variables
+	var conn net.Conn
+	var err error
+	var netErr net.Error
+	var ok bool
+
+	// retry and delay variables
+	accDelay := time.Duration(0)
+	retryCount := 0
+
+	ulog.Info("TcpServer.loopAccept.start", zap.String("address", x.acceptCnf.Address))
+	for {
+		conn, err = x.ln.Accept()
+		if err != nil {
+			// check if it's a temporary error that we should retry
+			netErr, ok = err.(net.Error)
+			if !ok {
+				return err
+			}
+			// nolint: staticcheck // SA1019: net.Error.Temporary is deprecated: Temporary is deprecated: see https://golang.org/doc/go1.17#net
+			if !netErr.Temporary() {
+				return err
+			}
+
+			// check retry count
+			if maxRetry > 0 {
+				retryCount++
+				if retryCount >= maxRetry {
+					return err
+				}
+			}
+
+			// It's a temporary error, try to accept again
+			if accDelay < accMinDelay {
+				accDelay = accMinDelay
+			} else if accDelay > accMaxDelay {
+				accDelay = accMaxDelay
+			} else {
+				accDelay *= 2
+			}
+			time.Sleep(accDelay)
+			continue
+		}
+		// reset
+		accDelay = 0
+		retryCount = 0
+
+		curConnCount := x.connCount.Inc()
+		if curConnCount > maxConnCount {
+			err = conn.Close()
+			x.connCount.Dec()
+			ulog.Error("TcpServer.loopAccept.close.too.many", zap.Int32("currentConnCount", curConnCount), zap.Error(err))
+		} else {
+			connRunner := NewConnRunner(x.connReader, NewQSendConnHandler(conn, x.sendQSize))
+			connRunner.AddStartHook(x.connStartHook)
+			connRunner.AddExitHook(x.connExitHook)
+			connRunner.Start()
+		}
+	}
+}
+
+// connStartHook : when connection start
+func (x *TcpServer) connStartHook(connSender IConnSender) {
+	ulog.Info("connection.start", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", x.connCount.Load()))
+	if x.startHooker != nil {
+		x.startHooker(connSender)
+	}
+}
+
+// connExitHook : when connection exit
+func (x *TcpServer) connExitHook(connSender IConnSender) {
+	curConnCount := x.connCount.Dec()
+	ulog.Info("connection.exit", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", curConnCount))
+	if x.exitHooker != nil {
+		x.exitHooker(connSender)
+	}
 }

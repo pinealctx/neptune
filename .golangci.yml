@@ -193,7 +193,10 @@ linters:
 
         # warns when initialism, variable or package naming conventions are not followed.
         - name: var-naming
-
+          arguments:
+            # Custom initialisms - add Id and Http as acceptable forms
+            - ["ID", "HTTP", "Id", "Http", "TCP", "Tcp"]
+            
     misspell:
       # Correct spellings using locale preferences for US or UK.
       # Setting locale to US will correct the British spelling of 'colour' to 'color'.
