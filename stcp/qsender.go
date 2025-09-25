@@ -3,6 +3,7 @@ package stcp
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/pinealctx/neptune/syncx/pipe/q"
 	"github.com/pinealctx/neptune/ulog"
@@ -15,6 +16,8 @@ import (
 // user can put bytes to send queue async
 // and LoopSend will send bytes in queue one by one
 type QSender struct {
+	// close once
+	closeOnce sync.Once
 	// connection
 	conn net.Conn
 	// meta info
@@ -76,9 +79,17 @@ func (x *QSender) MetaInfo() MetaInfo {
 }
 
 // Close : close connection handler
+// This method can be called directly via IConnSender interface to gracefully shutdown
+// the connection and trigger the associated ConnHandler.Exit() through the goroutine defer chain
 func (x *QSender) Close() error {
-	x.sendQ.Close()
-	return x.conn.Close()
+	var err error
+	x.closeOnce.Do(func() {
+		// close send queue - this will cause LoopSend() to exit
+		x.sendQ.Close()
+		// close connection - this will cause loopReceive() to exit
+		err = x.conn.Close()
+	})
+	return err
 }
 
 // Put2Queue send bytes async(put to send queue)
