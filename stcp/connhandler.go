@@ -70,13 +70,13 @@ func (x *ConnHandler) Start() {
 			defer func() {
 				r := recover()
 				if r != nil {
-					ulog.Error("x.connSender.LoopSend.recover", zap.Any("panic", r), zap.Object("metaInfo", x.connSender.MetaInfo()),
+					ulog.Error("x.connSender.loopSend.recover", zap.Any("panic", r), zap.Object("metaInfo", x.connSender.MetaInfo()),
 						zap.Stack("stack"))
 				}
 			}()
 			defer x.Exit()
 
-			x.connSender.LoopSend()
+			x.connSender.loopSend()
 		}()
 		for _, hook := range x.startHooks {
 			hook(x.connSender)

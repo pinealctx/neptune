@@ -10,7 +10,7 @@
 - **TcpServer**: 主服务器，负责Accept循环和连接管理
 - **ConnHandler**: 连接处理器，管理单个连接的生命周期
 - **QSender**: 队列发送器，提供异步消息发送能力（IConnSender的一个实现）
-- **IConnSender**: 连接发送器接口，支持不同的发送策略
+- **IConnSender**: 连接发送器接口，支持不同的发送策略，所有方法（除内部loopSend）均为线程安全
 - **ConnSenderFactory**: 连接发送器工厂，用于创建不同类型的发送器实例
 
 ---
@@ -58,6 +58,7 @@ type ConnReaderFunc func(handler IConnSender, conn net.Conn) error
 
 #### 消息发送
 - 异步发送：`handler.Put2Queue([]byte) error`（写入发送队列）
+- 连接关闭：`handler.Close() error`（线程安全，支持重入调用）
 - 写超时控制：`SetWriteTimeout(d time.Duration)`，默认 5s
 
 #### 连接信息
@@ -67,6 +68,36 @@ type ConnReaderFunc func(handler IConnSender, conn net.Conn) error
 #### 日志与元信息
 - 默认 MetaInfo 为 BasicMetaInfo{RemoteAddr}
 - 可调用 `handler.SetMetaInfo(...)` 替换为自定义 MetaInfo（需实现 zapcore.ObjectMarshaler）以丰富日志字段
+- SetMetaInfo 方法线程安全，支持在任何时候更新连接元信息
+
+### IConnSender 接口设计
+
+#### 线程安全与重入性
+`IConnSender` 接口的所有公开方法都经过精心设计，确保：
+
+- **线程安全**: 所有方法都可以在多个 goroutine 中并发调用
+- **重入安全**: `Close()` 方法支持多次调用，不会 panic，确保资源清理的幂等性
+- **错误处理**: 方法可能返回错误，但保证不会 panic
+
+#### 方法分类
+- **必需方法**: `Conn()`, `SetMetaInfo()`, `MetaInfo()`, `Close()`
+- **可选方法**: `Put2Queue()`, `Put2SendMap()`, `Put2SendSMap()`, `Put2SendMaps()`, `Put2SendSMaps()`
+- **内部方法**: `loopSend()` - 仅由框架内部调用，业务代码不应直接使用
+
+#### 生命周期管理
+通过 `IConnSender.Close()` 可以优雅地关闭连接：
+```go
+// 业务代码中的任何地方都可以安全调用
+err := sender.Close()  // 线程安全，重入安全
+if err != nil {
+    // 处理关闭错误，但不会 panic
+}
+```
+
+调用 `Close()` 后会触发：
+1. 发送队列关闭，`loopSend` goroutine 退出
+2. 网络连接关闭，`loopReceive` goroutine 退出  
+3. `ConnHandler.Exit()` 执行，触发退出钩子
 
 ---
 
@@ -136,7 +167,7 @@ func main() {
 
 ### 高级特性：灵活的连接发送器工厂
 
-框架支持通过ConnSenderFactory工厂模式注入不同的发送器实现，满足各种业务场景需求：
+框架支持通过ConnSenderFactory工厂模式注入不同的发送器实现，满足各种业务场景需求。所有发送器实现都必须遵循 `IConnSender` 接口的线程安全约定。
 
 #### 不同队列容量的发送器
 
@@ -182,6 +213,74 @@ customFactory := func(conn net.Conn) stcp.IConnSender {
     // return your custom implementation
     // return NewMyCustomSender(conn, customConfig)
     return stcp.NewQSendConnHandler(conn, 1024)  // 示例中仍使用QSender
+}
+```
+
+### 连接生命周期管理示例
+
+#### 业务代码中主动关闭连接
+
+```go
+func businessLogic(sender stcp.IConnSender, conn net.Conn) error {
+    // 正常的业务处理...
+    buf := make([]byte, 1024)
+    n, err := conn.Read(buf)
+    if err != nil {
+        return err
+    }
+    
+    // 检查是否需要关闭连接
+    if shouldCloseConnection(buf[:n]) {
+        // 线程安全地关闭连接，触发完整的清理流程
+        if err := sender.Close(); err != nil {
+            // 记录错误但不会 panic
+            log.Printf("Close connection error: %v", err)
+        }
+        return io.EOF // 返回错误让 ConnReader 退出
+    }
+    
+    // 继续处理消息
+    return sender.Put2Queue(processMessage(buf[:n]))
+}
+```
+
+#### 多goroutine环境下的安全调用
+
+```go
+func multiGoroutineExample(sender stcp.IConnSender) {
+    // Goroutine 1: 处理业务逻辑
+    go func() {
+        for {
+            // 线程安全的元信息更新
+            sender.SetMetaInfo(&MyMetaInfo{
+                UserID:    getCurrentUser(),
+                Timestamp: time.Now().Unix(),
+            })
+            time.Sleep(time.Second)
+        }
+    }()
+    
+    // Goroutine 2: 发送心跳
+    go func() {
+        ticker := time.NewTicker(30 * time.Second)
+        defer ticker.Stop()
+        
+        for range ticker.C {
+            // 线程安全的消息发送
+            heartbeat := []byte("PING")
+            if err := sender.Put2Queue(heartbeat); err != nil {
+                // 连接可能已关闭，安全退出
+                return
+            }
+        }
+    }()
+    
+    // Goroutine 3: 条件关闭
+    go func() {
+        <-shutdownSignal
+        // 多个goroutine可以安全地调用Close()
+        sender.Close() // 重入安全，不会panic
+    }()
 }
 ```
 
@@ -384,6 +483,25 @@ func main() {
 - 发送队列支持容量限制，防止内存无限增长
 - 队列满时Put2Queue会返回错误，连接处理器应优雅退出
 - 所有关键路径都经过并发安全设计
+- `IConnSender` 接口方法的线程安全实现确保高并发场景下的稳定性
+- `Close()` 方法使用 `sync.Once` 实现，避免重复资源释放的开销
+
+### 设计原则与最佳实践
+
+#### 接口隔离原则
+- 业务代码只需依赖 `IConnSender` 接口，无需了解 `ConnHandler` 实现细节
+- 通过接口可以完整管理连接生命周期，包括发送消息和关闭连接
+- 支持依赖注入和单元测试 Mock
+
+#### 并发安全设计
+- 所有公开方法都是线程安全的，可在多 goroutine 环境下安全使用
+- `Close()` 方法支持重入调用，多次调用不会导致 panic
+- 资源清理操作具有幂等性，确保系统的健壮性
+
+#### 错误处理策略
+- 方法可能返回错误，但保证不会 panic
+- 错误信息结构化，便于日志记录和问题诊断
+- 支持优雅降级，连接异常时不影响整体服务稳定性
 
 ---
 
@@ -391,12 +509,92 @@ func main() {
 
 - **组合式设计**：避免复杂继承，各组件职责清晰
 - **工厂模式**：ConnSenderFactory支持灵活的发送器创建策略
-- **接口驱动**：IConnSender接口支持不同发送策略扩展
+- **接口驱动**：IConnSender接口支持不同发送策略扩展，所有方法线程安全
 - **插拔式架构**：可以轻松替换和扩展连接发送器实现
 - **异步发送**：队列化发送避免阻塞接收处理
 - **完善日志**：结构化日志支持，MetaInfo可自定义
 - **Hook机制**：连接生命周期钩子便于监控和扩展
-- **并发安全**：所有共享状态都有适当的同步保护
+- **并发安全**：所有共享状态都有适当的同步保护，支持高并发场景
+- **重入安全**：关键方法如 Close() 支持多次调用，确保资源清理的可靠性
 - **测试友好**：工厂模式便于单元测试时注入Mock实现
+- **接口隔离**：业务代码只依赖 IConnSender 接口，降低耦合度
+- **生命周期管理**：通过接口方法即可完整控制连接的创建、运行和销毁
 
 如需更多示例或适配特定协议，可在ConnReader内按需实现相应的读取和处理逻辑。
+
+---
+
+## IConnSender 接口实现指南
+
+如果需要实现自定义的 `IConnSender`，请遵循以下约定：
+
+### 必须实现的方法
+```go
+type IConnSender interface {
+    // 必需方法 - 必须实现
+    Conn() net.Conn              // 返回底层连接，线程安全
+    SetMetaInfo(m MetaInfo)       // 设置元信息，线程安全，重入安全
+    MetaInfo() MetaInfo          // 获取元信息，线程安全
+    Close() error                // 关闭连接，线程安全，重入安全，不能panic
+    
+    // 可选方法 - 至少实现一个Put2*方法
+    Put2Queue(bs []byte) error
+    Put2SendMap(key uint32, bs []byte) error
+    Put2SendSMap(key string, bs []byte) error
+    Put2SendMaps(pairs []KeyIntBytesPair) error
+    Put2SendSMaps(pairs []KeyStrBytesPair) error
+    
+    // 内部方法 - 框架调用，不对外公开
+    loopSend()                   // 发送循环，仅由ConnHandler调用
+}
+```
+
+### 实现要求
+
+#### 1. 线程安全性
+- 除 `loopSend()` 外的所有方法都必须是线程安全的
+- 可以使用 `sync.Mutex`, `atomic.Value`, `sync.Once` 等同步原语
+
+#### 2. 重入安全性
+- `Close()` 方法必须支持多次调用
+- 推荐使用 `sync.Once` 确保资源只清理一次
+- 多次调用应该是无害的，可以返回错误但不能panic
+
+#### 3. 错误处理
+- 方法可以返回错误，但绝对不能panic
+- 错误信息应该具有描述性，便于调试
+
+#### 4. 资源管理
+- 在 `Close()` 中确保所有资源得到正确清理
+- 队列、连接、goroutine等都应该被适当关闭
+
+### 实现示例模板
+```go
+type MyCustomSender struct {
+    closeOnce sync.Once
+    conn      net.Conn
+    metaInfo  atomic.Value
+    // 其他字段...
+}
+
+func (s *MyCustomSender) Close() error {
+    var err error
+    s.closeOnce.Do(func() {
+        // 清理资源
+        err = s.conn.Close()
+        // 清理其他资源...
+    })
+    return err
+}
+
+func (s *MyCustomSender) SetMetaInfo(m MetaInfo) {
+    s.metaInfo.Store(m)
+}
+
+func (s *MyCustomSender) MetaInfo() MetaInfo {
+    if v := s.metaInfo.Load(); v != nil {
+        return v.(MetaInfo)
+    }
+    return nil
+}
+```

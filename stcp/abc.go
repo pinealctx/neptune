@@ -31,33 +31,55 @@ type KeyStrBytesPair struct {
 	Val []byte
 }
 
-// IConnSender connection handler interface
-// all methods are goroutine safe
-// user must implement this interface
-// Conn/LoopSend/SetMetaInfo/MetaInfo/Close are required
-// Put2Queue/Put2SendMap/Put2SendSMap/Put2SendMaps/Put2SendSMaps are optional, but at least one of them should be implemented, others can be no-op
+// IConnSender connection sender interface
+//
+// Thread Safety & Re-entrancy Requirements:
+// - ALL methods except loopSend() MUST be goroutine-safe and re-entrant
+// - Multiple calls to Close() should be safe (may return error but MUST NOT panic)
+// - Resource cleanup operations should be idempotent
+//
+// Method Categories:
+//   - Required: Conn/SetMetaInfo/MetaInfo/Close/loopSend
+//   - Optional: Put2Queue/Put2SendMap/Put2SendSMap/Put2SendMaps/Put2SendSMaps
+//     (at least one Put2* method should be implemented, others can be no-op)
+//
+// Special Notes:
+// - loopSend() is ONLY called by ConnHandler internally, NEVER call it from external code
+// - loopSend() runs in its own goroutine and handles the sending loop logic
 type IConnSender interface {
-	// Conn : get connection (required)
+	// Conn returns the underlying network connection (required, goroutine-safe)
 	Conn() net.Conn
-	// LoopSend : loop to send (required)
-	LoopSend()
-	// SetMetaInfo set meta info (required)
+
+	// SetMetaInfo sets meta info for logging (required, goroutine-safe, re-entrant)
 	SetMetaInfo(m MetaInfo)
-	// MetaInfo get meta info (required)
+
+	// MetaInfo gets meta info for logging (required, goroutine-safe)
 	MetaInfo() MetaInfo
-	// Close : close connection handler
+
+	// Close closes the connection handler (required, goroutine-safe, re-entrant)
+	// Multiple calls should be safe, may return error but MUST NOT panic
 	Close() error
 
-	// Put2Queue put bytes to send queue (optional)
+	// Put2Queue puts bytes to send queue (optional, goroutine-safe, re-entrant)
 	Put2Queue(bs []byte) error
-	// Put2SendMap put bytes to send map (optional)
+
+	// Put2SendMap puts bytes to send map (optional, goroutine-safe, re-entrant)
 	Put2SendMap(key uint32, bs []byte) error
-	// Put2SendSMap put bytes to send map (optional)
+
+	// Put2SendSMap puts bytes to send map (optional, goroutine-safe, re-entrant)
 	Put2SendSMap(key string, bs []byte) error
-	// Put2SendMaps put multiple key uint32 and bytes pairs to send map (optional)
+
+	// Put2SendMaps puts multiple key uint32 and bytes pairs to send map (optional, goroutine-safe, re-entrant)
 	Put2SendMaps(pairs []KeyIntBytesPair) error
-	// Put2SendSMaps put multiple key string and bytes pairs to send map (optional)
+
+	// Put2SendSMaps puts multiple key string and bytes pairs to send map (optional, goroutine-safe, re-entrant)
 	Put2SendSMaps(pairs []KeyStrBytesPair) error
+
+	// loopSend is the internal sending loop (required, NOT goroutine-safe)
+	// WARNING: This method is ONLY called by ConnHandler internally.
+	// NEVER call this method from external code - it will cause undefined behavior.
+	// This method runs in its own dedicated goroutine managed by ConnHandler.
+	loopSend()
 }
 
 // ConnStartEvent on connection start
