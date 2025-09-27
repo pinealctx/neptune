@@ -86,6 +86,7 @@ func (lru *LRUCache) Get(key any) (v any, ok bool) {
 		return nil, false
 	}
 	lru.list.MoveToFront(element)
+	// nolint : forcetypeassert // I know the type is exactly here
 	return element.Value.(*entry).value, true
 }
 
@@ -98,6 +99,7 @@ func (lru *LRUCache) Peek(key any) (v any, ok bool) {
 	if element == nil {
 		return nil, false
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	return element.Value.(*entry).value, true
 }
 
@@ -234,6 +236,7 @@ func (lru *LRUCache) Keys() []any {
 
 	keys := make([]any, 0, lru.list.Len())
 	for e := lru.list.Front(); e != nil; e = e.Next() {
+		// nolint : forcetypeassert // I know the type is exactly here
 		keys = append(keys, e.Value.(*entry).key)
 	}
 	return keys
@@ -247,6 +250,7 @@ func (lru *LRUCache) Items() []Item {
 
 	items := make([]Item, 0, lru.list.Len())
 	for e := lru.list.Front(); e != nil; e = e.Next() {
+		// nolint : forcetypeassert // I know the type is exactly here
 		v := e.Value.(*entry)
 		items = append(items, Item{Key: v.key, Value: v.value})
 	}
@@ -254,6 +258,7 @@ func (lru *LRUCache) Items() []Item {
 }
 
 func (lru *LRUCache) updateInPlace(element *list.Element, value any) {
+	// nolint : forcetypeassert // I know the type is exactly here
 	element.Value.(*entry).value = value
 	lru.list.MoveToFront(element)
 }
@@ -278,6 +283,7 @@ func (lru *LRUCache) checkCapacity() {
 	// Partially duplicated from Delete
 	for lru.size > lru.capacity {
 		delElem := lru.list.Back()
+		// nolint : forcetypeassert // I know the type is exactly here
 		delValue := delElem.Value.(*entry)
 		lru.list.Remove(delElem)
 		delete(lru.table, delValue.key)
@@ -289,6 +295,7 @@ func (lru *LRUCache) checkCapacity() {
 func (lru *LRUCache) checkCapacityAndGetRemoved() (removedValueList []any) {
 	for lru.size > lru.capacity {
 		delElem := lru.list.Back()
+		// nolint : forcetypeassert // I know the type is exactly here
 		delValue := delElem.Value.(*entry)
 		lru.list.Remove(delElem)
 		delete(lru.table, delValue.key)

@@ -4,6 +4,7 @@ import (
 	crd "crypto/rand"
 	"encoding/binary"
 	"io"
+
 	/* #nosec */
 	"math/rand"
 	"time"
@@ -31,7 +32,9 @@ func SimpleRandBetween(minV, maxV int) int {
 		//no choice
 		return minV
 	}
+	// nolint : gosec // this random is only used for simple rand
 	rand.New(rand.NewSource(time.Now().UnixNano()))
+	// nolint : gosec // this random is only used for simple rand
 	return rand.Intn(maxV-minV+1) + minV
 }
 

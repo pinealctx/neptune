@@ -113,6 +113,7 @@ func (w *Worker) runLoop() {
 				zap.Error(err))
 			return
 		}
+		// nolint : forcetypeassert // I know the type is exactly here
 		c = e.(*AsyncC)
 		w.handleAsync(c)
 	}

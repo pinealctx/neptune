@@ -98,6 +98,7 @@ func test100KPassMap(t *testing.T, name string, mp MapFacade, rc int, wc int) {
 			for j := 0; j < count; j++ {
 				var v, ok = mp.Get(j)
 				if ok {
+					// nolint : forcetypeassert // I know the type is exactly here
 					if j != int(v.(_I)) {
 						panic(j)
 					}
@@ -106,6 +107,7 @@ func test100KPassMap(t *testing.T, name string, mp MapFacade, rc int, wc int) {
 			for j := 0; j < c; j++ {
 				var v, ok = mp.Get(us[j])
 				if ok {
+					// nolint : forcetypeassert // I know the type is exactly here
 					if us[j] != uint64(v.(_I)) {
 						panic(us[j])
 					}

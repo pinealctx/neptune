@@ -36,8 +36,10 @@ func incAdd(ctx context.Context, inc any) (int, error) {
 	var result = rets[0].Interface()
 	var err error
 	if !rets[1].IsNil() {
+		// nolint : forcetypeassert // I know the type is exactly here
 		err = rets[1].Interface().(error)
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	return result.(int), err
 }
 

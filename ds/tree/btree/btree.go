@@ -889,5 +889,6 @@ type Int int
 
 // Less returns true if int(a) < int(b).
 func (a Int) Less(b Item) bool {
+	// nolint : forcetypeassert // I know the type is exactly here
 	return a < b.(Int)
 }

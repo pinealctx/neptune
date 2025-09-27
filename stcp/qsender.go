@@ -56,6 +56,7 @@ func (x *QSender) MetaInfo() MetaInfo {
 	if v == nil {
 		return nil
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	return v.(MetaInfo)
 }
 
@@ -113,11 +114,13 @@ func (x *QSender) loopSend() {
 		sendBytes, err := x.sendQ.Pop()
 		if err != nil {
 			// queue closed
+			// nolint : forcetypeassert // I know the type is exactly here
 			ulog.Info("QSender.sendQ.closed", zap.Error(err), zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
 			return
 		}
 		err = SendBytes2Conn(x.conn, sendBytes)
 		if err != nil {
+			// nolint : forcetypeassert // I know the type is exactly here
 			ulog.Info("QSender.send.failed", zap.Error(err), zap.Object("metaInfo", x.metaInfo.Load().(MetaInfo)))
 			return
 		}

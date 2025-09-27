@@ -19,6 +19,7 @@ func TestMapClone(t *testing.T) {
 
 	m2["1"] = -1
 	m2["2"] = -2
+	// nolint : forcetypeassert // I know the type is exactly here
 	var x = m2["r"].(map[string]any)
 	x["1"] = -1
 	x["2"] = -2

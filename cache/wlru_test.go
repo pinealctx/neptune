@@ -98,6 +98,7 @@ func test100KPassLRU(t *testing.T, name string, lru LRUFacade, rc int, wc int) {
 			for j := 0; j < count; j++ {
 				var v, ok = lru.Get(j)
 				if ok {
+					// nolint : forcetypeassert // I know the type is exactly here
 					if j != int(v.(_I)) {
 						panic(j)
 					}
@@ -106,6 +107,7 @@ func test100KPassLRU(t *testing.T, name string, lru LRUFacade, rc int, wc int) {
 			for j := 0; j < c; j++ {
 				var v, ok = lru.Get(us[j])
 				if ok {
+					// nolint : forcetypeassert // I know the type is exactly here
 					if us[j] != uint64(v.(_I)) {
 						panic(us[j])
 					}

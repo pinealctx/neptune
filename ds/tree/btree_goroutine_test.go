@@ -13,6 +13,7 @@ type X struct {
 }
 
 func (x *X) Less(b Node) bool {
+	// nolint : forcetypeassert // I know the type is exactly here
 	return x.a < b.(*X).a
 }
 
@@ -36,6 +37,7 @@ func TestBtreeCmp(t *testing.T) {
 	t.Log("len after:", b.Len())
 
 	b.Ascend(func(i Node) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		t.Logf("out: v:%+v, p:%p\n", i.(*X).a, i.(*X))
 		return true
 	})
@@ -44,6 +46,7 @@ func TestBtreeCmp(t *testing.T) {
 type Int int
 
 func (i Int) Less(b Node) bool {
+	// nolint : forcetypeassert // I know the type is exactly here
 	return i < b.(Int)
 }
 
@@ -273,6 +276,7 @@ func insertX(t *testing.T, b *btree.BTree, x *X) {
 	t.Helper()
 	var y = b.ReplaceOrInsert(x)
 	if y != nil {
+		// nolint : forcetypeassert // I know the type is exactly here
 		t.Log("already:", y.(*X).a)
 	}
 }

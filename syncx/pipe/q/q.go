@@ -17,8 +17,10 @@ type Q[T any] struct {
 
 	// lock protects all queue operations
 	lock sync.Mutex
-	// cond is used to signal waiting goroutines
-	cond sync.Cond
+	// condSub is used to signal waiting Pop() operations
+	condSub sync.Cond
+	// condPub is used to signal waiting PushBlocking() operations
+	condPub sync.Cond
 }
 
 // NewQ creates a new list-based queue with specified capacity
@@ -32,7 +34,8 @@ func NewQ[T any](capacity int) *Q[T] {
 		items:    list.New(),
 		capacity: capacity,
 	}
-	q.cond.L = &q.lock
+	q.condSub.L = &q.lock
+	q.condPub.L = &q.lock
 	return q
 }
 
@@ -50,19 +53,41 @@ func (q *Q[T]) Push(item T) error {
 	}
 
 	q.items.PushBack(item)
-	q.cond.Signal()
+	q.condSub.Signal() // Signal waiting Pop() operations
+	return nil
+}
+
+// PushBlocking adds an item to the end of the queue
+// Blocks if queue is at capacity until space is available or queue is closed
+func (q *Q[T]) PushBlocking(item T) error {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	// Wait until there's space or queue is closed
+	for q.capacity > 0 && q.items.Len() >= q.capacity && !q.closed {
+		q.condPub.Wait() // wait for Pop to consume items
+	}
+
+	if q.closed {
+		return ErrClosed
+	}
+
+	q.items.PushBack(item)
+	q.condSub.Signal() // Signal waiting Pop() operations
 	return nil
 }
 
 // Pop removes and returns an item from the front of the queue
 // Blocks if queue is empty until an item is available or queue is closed
+// Important: If the queue is closed, it immediately returns ErrClosed regardless of whether there are items left.
+// This ensures that once a queue is closed, no further data can be consumed, which is useful for graceful shutdown scenarios.
 func (q *Q[T]) Pop() (T, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	// Wait until queue has data or is closed
 	for q.items.Len() == 0 && !q.closed {
-		q.cond.Wait()
+		q.condSub.Wait() // wait for Push()/PushBlocking() to add items
 	}
 
 	var zero T
@@ -74,17 +99,26 @@ func (q *Q[T]) Pop() (T, error) {
 
 	// We have data (since !q.closed and loop exited)
 	front := q.items.Front()
-	if front != nil {
-		q.items.Remove(front)
-		if value, ok := front.Value.(T); ok {
-			return value, nil
-		}
-		// This should never happen if our code is correct
-		panic("queue: unexpected type in list element")
+	q.items.Remove(front)
+	q.condPub.Signal() // Signal waiting PushBlocking operations
+	// nolint : forcetypeassert // I know the type is exactly here
+	return front.Value.(T), nil
+}
+
+// Peek returns the item at the front of the queue without removing it
+// Returns zero value if the queue is empty
+func (q *Q[T]) Peek() T {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	var zero T
+	if q.items.Len() == 0 {
+		return zero
 	}
 
-	// Should not reach here, but safety fallback
-	return zero, ErrClosed
+	front := q.items.Front()
+	// nolint : forcetypeassert // I know the type is exactly here
+	return front.Value.(T)
 }
 
 // Close closes the queue, all subsequent operations will return ErrClosed
@@ -96,7 +130,8 @@ func (q *Q[T]) Close() {
 		return
 	}
 	q.closed = true
-	q.cond.Broadcast()
+	q.condSub.Broadcast() // Wake up all waiting Pop() operations
+	q.condPub.Broadcast() // Wake up all waiting PushBlocking() operations
 }
 
 // Len returns the current number of items in the queue
@@ -109,6 +144,11 @@ func (q *Q[T]) Len() int {
 // Cap returns the maximum capacity of the queue (0 means unlimited)
 func (q *Q[T]) Cap() int {
 	return q.capacity
+}
+
+// IsUnlimited returns true if the queue has unlimited capacity
+func (q *Q[T]) IsUnlimited() bool {
+	return q.capacity == 0
 }
 
 // IsClosed returns true if the queue is closed

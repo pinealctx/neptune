@@ -49,6 +49,7 @@ func (m *FacadeLRU) Peek(key any) (any, bool) {
 	if !ok {
 		return nil, false
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	return w.(_wrapper).v, true
 }
 
@@ -58,6 +59,7 @@ func (m *FacadeLRU) Get(key any) (any, bool) {
 	if !ok {
 		return nil, false
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	return w.(_wrapper).v, true
 }
 

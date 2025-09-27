@@ -11,9 +11,9 @@ var (
 )
 
 var (
-	//u64 mask table
+	// u64 mask table
 	u64Tab [64]Bit64
-	//64 sequence bytes
+	// 64 sequence bytes
 	seq64Buf [64]byte
 )
 

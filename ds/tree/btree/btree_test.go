@@ -196,6 +196,7 @@ func TestAscendRange(t *testing.T) {
 	}
 	got = got[:0]
 	tr.AscendRange(Int(40), Int(60), func(a Item) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		if a.(Int) > 50 {
 			return false
 		}
@@ -222,6 +223,7 @@ func TestDescendRange(t *testing.T) {
 	}
 	got = got[:0]
 	tr.DescendRange(Int(60), Int(40), func(a Item) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		if a.(Int) < 50 {
 			return false
 		}
@@ -247,6 +249,7 @@ func TestAscendLessThan(t *testing.T) {
 	}
 	got = got[:0]
 	tr.AscendLessThan(Int(60), func(a Item) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		if a.(Int) > 50 {
 			return false
 		}
@@ -273,6 +276,7 @@ func TestDescendLessOrEqual(t *testing.T) {
 	}
 	got = got[:0]
 	tr.DescendLessOrEqual(Int(60), func(a Item) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		if a.(Int) < 50 {
 			return false
 		}
@@ -298,6 +302,7 @@ func TestAscendGreaterOrEqual(t *testing.T) {
 	}
 	got = got[:0]
 	tr.AscendGreaterOrEqual(Int(40), func(a Item) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		if a.(Int) > 50 {
 			return false
 		}
@@ -324,6 +329,7 @@ func TestDescendGreaterThan(t *testing.T) {
 	}
 	got = got[:0]
 	tr.DescendGreaterThan(Int(40), func(a Item) bool {
+		// nolint : forcetypeassert // I know the type is exactly here
 		if a.(Int) < 50 {
 			return false
 		}
@@ -493,6 +499,7 @@ func (a byInts) Len() int {
 }
 
 func (a byInts) Less(i, j int) bool {
+	// nolint : forcetypeassert // I know the type is exactly here
 	return a[i].(Int) < a[j].(Int)
 }
 
@@ -511,6 +518,7 @@ func BenchmarkAscend(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		j := 0
 		tr.Ascend(func(item Item) bool {
+			// nolint : forcetypeassert // I know the type is exactly here
 			if item.(Int) != arr[j].(Int) {
 				b.Fatalf("mismatch: expected: %v, got %v", arr[j].(Int), item.(Int))
 			}
@@ -531,7 +539,9 @@ func BenchmarkDescend(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		j := len(arr) - 1
 		tr.Descend(func(item Item) bool {
+			// nolint : forcetypeassert // I know the type is exactly here
 			if item.(Int) != arr[j].(Int) {
+				// nolint : forcetypeassert // I know the type is exactly here
 				b.Fatalf("mismatch: expected: %v, got %v", arr[j].(Int), item.(Int))
 			}
 			j--
@@ -550,7 +560,9 @@ func BenchmarkAscendRange(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		j := 100
 		tr.AscendRange(Int(100), arr[len(arr)-100], func(item Item) bool {
+			// nolint : forcetypeassert // I know the type is exactly here
 			if item.(Int) != arr[j].(Int) {
+				// nolint : forcetypeassert // I know the type is exactly here
 				b.Fatalf("mismatch: expected: %v, got %v", arr[j].(Int), item.(Int))
 			}
 			j++
@@ -573,7 +585,9 @@ func BenchmarkDescendRange(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		j := len(arr) - 100
 		tr.DescendRange(arr[len(arr)-100], Int(100), func(item Item) bool {
+			// nolint : forcetypeassert // I know the type is exactly here
 			if item.(Int) != arr[j].(Int) {
+				// nolint : forcetypeassert // I know the type is exactly here
 				b.Fatalf("mismatch: expected: %v, got %v", arr[j].(Int), item.(Int))
 			}
 			j--
@@ -596,7 +610,9 @@ func BenchmarkAscendGreaterOrEqual(b *testing.B) {
 		j := 100
 		k := 0
 		tr.AscendGreaterOrEqual(Int(100), func(item Item) bool {
+			// nolint : forcetypeassert // I know the type is exactly here
 			if item.(Int) != arr[j].(Int) {
+				// nolint : forcetypeassert // I know the type is exactly here
 				b.Fatalf("mismatch: expected: %v, got %v", arr[j].(Int), item.(Int))
 			}
 			j++
@@ -623,7 +639,9 @@ func BenchmarkDescendLessOrEqual(b *testing.B) {
 		j := len(arr) - 100
 		k := len(arr)
 		tr.DescendLessOrEqual(arr[len(arr)-100], func(item Item) bool {
+			// nolint : forcetypeassert // I know the type is exactly here
 			if item.(Int) != arr[j].(Int) {
+				// nolint : forcetypeassert // I know the type is exactly here
 				b.Fatalf("mismatch: expected: %v, got %v", arr[j].(Int), item.(Int))
 			}
 			j--

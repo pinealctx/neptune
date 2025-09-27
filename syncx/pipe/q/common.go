@@ -15,9 +15,17 @@ type Queue[T any] interface {
 	// Push adds an item to the queue
 	Push(item T) error
 
+	// PushBlocking adds an item to the end of the queue
+	// Blocks if queue is at capacity until space is available or queue is closed
+	PushBlocking(item T) error
+
 	// Pop removes and returns an item from the queue
 	// Blocks if queue is empty until an item is available or queue is closed
 	Pop() (T, error)
+
+	// Peek returns the item at the front of the queue without removing it
+	// Returns zero value if the queue is empty
+	Peek() T
 
 	// Close closes the queue
 	Close()
@@ -27,6 +35,9 @@ type Queue[T any] interface {
 
 	// Cap returns the maximum capacity of the queue
 	Cap() int
+
+	// IsUnlimited returns true if the queue has unlimited capacity
+	IsUnlimited() bool
 
 	// IsClosed returns true if the queue is closed
 	IsClosed() bool

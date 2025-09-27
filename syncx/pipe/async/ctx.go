@@ -87,6 +87,7 @@ func (c *callCtxT) run() {
 	var rets = c.functionValue.Call(params[:])
 	c.result = rets[0].Interface()
 	if !rets[1].IsNil() {
+		// nolint : forcetypeassert // I know the type is exactly here
 		c.err = rets[1].Interface().(error)
 	}
 }

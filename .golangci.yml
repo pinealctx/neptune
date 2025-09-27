@@ -68,6 +68,27 @@ linters:
   #
   # enable some extra linters
   enable:
+    # Check race conditions
+    - gocritic
+
+    # Security linter for Go source code.
+    - gosec
+
+    # Check unclosed http.Response.Body
+    - bodyclose  
+
+    # Checks for unhandled errors in type assertions
+    - forcetypeassert
+
+    # Finds naked returns in functions greater than a specified function length
+    - nakedret
+
+    # Reports deeply nested if statements
+    # - nestif
+
+    # Finds the code that returns nil even if it checks that the error is not nil.
+    - nilerr
+
     # Errcheck is a program for checking for unchecked errors in Go code.
     - errcheck
 
@@ -115,6 +136,18 @@ linters:
     - usetesting
 
   settings:
+    gocritic:
+      # Disable specific gocritic rules
+      disabled-checks:
+        - ifElseChain        # Don't convert if-else to switch
+        - commentFormatting  # Don't enforce comment formatting (space after //)
+        - assignOp          # Don't enforce using +=, -=, *=, /= operators
+
+    gosec:
+      # Disable specific gosec rules
+      excludes:
+        - G115  # Don't check for integer overflow, allow explicit type conversion
+
     revive:
       rules:
         # these are the default revive rules
