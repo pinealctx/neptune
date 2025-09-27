@@ -53,6 +53,7 @@ func TestSetInsertsValue(t *testing.T) {
 	cache.Set(key, data)
 
 	v, ok := cache.Get(key)
+	// nolint : forcetypeassert // I know the type is exactly here
 	if !ok || v.(*CacheValue) != data {
 		t.Errorf("Cache has incorrect value: %v != %v", data, v)
 	}
@@ -74,6 +75,7 @@ func TestSetIfAbsent(t *testing.T) {
 	cache.SetIfAbsent(key, data)
 
 	v, ok := cache.Get(key)
+	// nolint : forcetypeassert // I know the type is exactly here
 	if !ok || v.(*CacheValue) != data {
 		t.Errorf("Cache has incorrect value: %v != %v", data, v)
 	}
@@ -81,6 +83,7 @@ func TestSetIfAbsent(t *testing.T) {
 	cache.SetIfAbsent(key, &CacheValue{1})
 
 	v, ok = cache.Get(key)
+	// nolint : forcetypeassert // I know the type is exactly here
 	if !ok || v.(*CacheValue) != data {
 		t.Errorf("Cache has incorrect value: %v != %v", data, v)
 	}
@@ -93,11 +96,13 @@ func TestGetValueWithMultipleTypes(t *testing.T) {
 	cache.Set(key, data)
 
 	v, ok := cache.Get("key")
+	// nolint : forcetypeassert // I know the type is exactly here
 	if !ok || v.(*CacheValue) != data {
 		t.Errorf("Cache has incorrect value for \"key\": %v != %v", data, v)
 	}
 
 	v, ok = cache.Get(string([]byte{'k', 'e', 'y'}))
+	// nolint : forcetypeassert // I know the type is exactly here
 	if !ok || v.(*CacheValue) != data {
 		t.Errorf("Cache has incorrect value for []byte {'k','e','y'}: %v != %v", data, v)
 	}
@@ -128,6 +133,7 @@ func TestSetWithOldKeyUpdatesValue(t *testing.T) {
 	cache.Set(key, someValue)
 
 	v, ok := cache.Get(key)
+	// nolint : forcetypeassert // I know the type is exactly here
 	if !ok || v.(*CacheValue) != someValue {
 		t.Errorf("Cache has incorrect value: %v != %v", someValue, v)
 	}
@@ -168,6 +174,7 @@ func TestPeek(t *testing.T) {
 	// Make key1 the most recent.
 	cache.Get("key1")
 	// Peek key2.
+	// nolint : forcetypeassert // I know the type is exactly here
 	if v, ok := cache.Peek("key2"); ok && v.(*CacheValue) != val2 {
 		t.Errorf("key2 received: %v, want %v", v, val2)
 	}
@@ -244,6 +251,7 @@ func TestCapacityIsObeyed(t *testing.T) {
 	if err := json.Unmarshal([]byte(data), &m); err != nil {
 		t.Errorf("cache.StatsJSON() returned bad json data: %v %v", data, err)
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	if m["Size"].(float64) != float64(size) {
 		t.Errorf("cache.StatsJSON() returned bad size: %v", m)
 	}

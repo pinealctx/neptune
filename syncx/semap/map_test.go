@@ -102,6 +102,7 @@ func hammerWeighted(sem SemMapper, n int64, loops int) {
 		if err != nil {
 			panic(err)
 		}
+		// nolint : gosec // this random is only used for test
 		time.Sleep(time.Duration(rand.Int63n(int64(maxSleep/time.Nanosecond))) * time.Nanosecond)
 		sem.ReleaseWrite(n, w)
 	}

@@ -42,7 +42,7 @@ func (s *_Snappy) CompressWithPrefix(src []byte, prefix []byte) []byte {
 	var encSize = len(encBuf)
 	var actualSize = prefixSize + encSize
 	if totalSize >= actualSize {
-		//enough
+		// enough
 		return totalBuf[:actualSize]
 	}
 	var extendBuf = make([]byte, actualSize)

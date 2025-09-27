@@ -52,6 +52,7 @@ func TestPriQueue_op(t *testing.T) {
 		if e == nil {
 			break
 		}
+		// nolint : forcetypeassert // I know the type is exactly here
 		fmt.Printf("%d,", e.(qItem))
 	}
 	fmt.Println()
@@ -69,6 +70,7 @@ func TestPriQueue_Use(t *testing.T) {
 		for range q.WaitCh() {
 			e := q.Pop()
 			if e != nil {
+				// nolint : forcetypeassert // I know the type is exactly here
 				fmt.Printf("%d\n", e.(qItem))
 			}
 		}
@@ -146,6 +148,7 @@ func TestOrder(_ *testing.T) {
 		if e == nil {
 			break
 		}
+		// nolint : forcetypeassert // I know the type is exactly here
 		o := e.(*TOrder)
 		fmt.Printf("%d : %d\n", o.Pri, o.Value)
 	}

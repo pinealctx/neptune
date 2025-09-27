@@ -41,6 +41,7 @@ func TestRunnerQ_Call(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		// nolint : forcetypeassert // I know the type is exactly here
 		var ix = r.(int)
 		if ix != i+1 {
 			panic("not.equals")
@@ -76,6 +77,7 @@ func TestRunnerQ_Delegate(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		// nolint : forcetypeassert // I know the type is exactly here
 		var ix = r.(int)
 		if ix != i+1 {
 			panic("not.equals")
@@ -111,6 +113,7 @@ func TestRunnerQ_Proc(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		// nolint : forcetypeassert // I know the type is exactly here
 		var ix = r.(int)
 		if ix != i+1 {
 			panic("not.equals")

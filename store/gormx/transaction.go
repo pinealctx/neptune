@@ -27,6 +27,7 @@ func Combine(fns ...GormProcFn) GormProcFn {
 }
 
 // Transact : db transaction
+// nolint : nakedret // using named return for defer func
 func Transact(db *gorm.DB, fnList ...GormProcFn) (err error) {
 	if len(fnList) == 0 {
 		return

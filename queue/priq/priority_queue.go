@@ -40,6 +40,7 @@ func (e EntryList) Swap(i, j int) {
 }
 
 func (e *EntryList) Push(x any) {
+	// nolint : forcetypeassert // I know the type is exactly here
 	*e = append(*e, x.(*wrapEntry))
 }
 
@@ -76,6 +77,7 @@ func (pq *PriQueue) Pop() IEntry {
 		pq.mu.Unlock()
 		return nil
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	e := heap.Pop(&pq.entries).(*wrapEntry)
 	needSignal := len(pq.entries) > 0
 	// mu只锁entries

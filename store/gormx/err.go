@@ -35,7 +35,7 @@ func IsNotFoundErr(err error) bool {
 // ToGRPCNotFoundErr error to grpc
 func ToGRPCNotFoundErr(err error) error {
 	if err == nil {
-		return err
+		return nil
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return status.Error(codes.NotFound, "db.item.not.exist")
@@ -46,7 +46,7 @@ func ToGRPCNotFoundErr(err error) error {
 // ToGRPCDupErr err to grpc duplicate
 func ToGRPCDupErr(err error) error {
 	if err == nil {
-		return err
+		return nil
 	}
 	if IsDupError(err) {
 		return status.Error(codes.AlreadyExists, "db.item.already.exist")

@@ -94,6 +94,7 @@ func (lru *LRUCache) Get(key any) (v Value, ok bool) {
 		return nil, false
 	}
 	lru.list.MoveToFront(element)
+	// nolint : forcetypeassert // I know the type is exactly here
 	return element.Value.(*entry).value, true
 }
 
@@ -106,6 +107,7 @@ func (lru *LRUCache) Peek(key any) (v Value, ok bool) {
 	if element == nil {
 		return nil, false
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	return element.Value.(*entry).value, true
 }
 
@@ -164,6 +166,7 @@ func (lru *LRUCache) Delete(key any) bool {
 
 	lru.list.Remove(element)
 	delete(lru.table, key)
+	// nolint : forcetypeassert // I know the type is exactly here
 	lru.size -= element.Value.(*entry).size
 	return true
 }
@@ -241,6 +244,7 @@ func (lru *LRUCache) Keys() []any {
 
 	keys := make([]any, 0, lru.list.Len())
 	for e := lru.list.Front(); e != nil; e = e.Next() {
+		// nolint : forcetypeassert // I know the type is exactly here
 		keys = append(keys, e.Value.(*entry).key)
 	}
 	return keys
@@ -254,6 +258,7 @@ func (lru *LRUCache) Items() []Item {
 
 	items := make([]Item, 0, lru.list.Len())
 	for e := lru.list.Front(); e != nil; e = e.Next() {
+		// nolint : forcetypeassert // I know the type is exactly here
 		v := e.Value.(*entry)
 		items = append(items, Item{Key: v.key, Value: v.value})
 	}
@@ -262,8 +267,11 @@ func (lru *LRUCache) Items() []Item {
 
 func (lru *LRUCache) updateInPlace(element *list.Element, value Value) {
 	valueSize := int64(value.Size())
+	// nolint : forcetypeassert // I know the type is exactly here
 	sizeDiff := valueSize - element.Value.(*entry).size
+	// nolint : forcetypeassert // I know the type is exactly here
 	element.Value.(*entry).value = value
+	// nolint : forcetypeassert // I know the type is exactly here
 	element.Value.(*entry).size = valueSize
 	lru.size += sizeDiff
 	lru.list.MoveToFront(element)
@@ -272,8 +280,11 @@ func (lru *LRUCache) updateInPlace(element *list.Element, value Value) {
 
 func (lru *LRUCache) updateInPlaceAndGetRemoved(element *list.Element, value Value) []Value {
 	valueSize := int64(value.Size())
+	// nolint : forcetypeassert // I know the type is exactly here
 	sizeDiff := valueSize - element.Value.(*entry).size
+	// nolint : forcetypeassert // I know the type is exactly here
 	element.Value.(*entry).value = value
+	// nolint : forcetypeassert // I know the type is exactly here
 	element.Value.(*entry).size = valueSize
 	lru.size += sizeDiff
 	lru.list.MoveToFront(element)
@@ -300,6 +311,7 @@ func (lru *LRUCache) checkCapacity() {
 	// Partially duplicated from Delete
 	for lru.size > lru.capacity {
 		delElem := lru.list.Back()
+		// nolint : forcetypeassert // I know the type is exactly here
 		delValue := delElem.Value.(*entry)
 		lru.list.Remove(delElem)
 		delete(lru.table, delValue.key)
@@ -311,6 +323,7 @@ func (lru *LRUCache) checkCapacity() {
 func (lru *LRUCache) checkCapacityAndGetRemoved() (removedValueList []Value) {
 	for lru.size > lru.capacity {
 		delElem := lru.list.Back()
+		// nolint : forcetypeassert // I know the type is exactly here
 		delValue := delElem.Value.(*entry)
 		lru.list.Remove(delElem)
 		delete(lru.table, delValue.key)

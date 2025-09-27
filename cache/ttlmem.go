@@ -125,6 +125,7 @@ func (t *ttlMemCache) Remove(_ context.Context, key string) error {
 	defer t.Unlock()
 	var ele, ok = t.eleHash[key]
 	if ok {
+		// nolint : forcetypeassert // I know the type is exactly here
 		t.remove(ele, ele.Value.(*ttlNode))
 	}
 	return nil
@@ -152,6 +153,7 @@ func (t *ttlMemCache) removeTail() *ttlNode {
 	if ele == nil {
 		return nil
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	var node = ele.Value.(*ttlNode)
 	t.remove(ele, node)
 	return node
@@ -169,6 +171,7 @@ func (t *ttlMemCache) set(key string, value []byte, fns ...SetOptFn) error {
 			return ErrTTLKeyExists
 		}
 		t.eleList.MoveToFront(ele)
+		// nolint : forcetypeassert // I know the type is exactly here
 		var node = ele.Value.(*ttlNode)
 		node.value = value
 		if !o.keepTTL {
@@ -195,6 +198,7 @@ func (t *ttlMemCache) get(key string, fns ...GetOptFn) ([]byte, error) {
 	if !ok {
 		return nil, ErrTTLKeyNotFound
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	var node = ele.Value.(*ttlNode)
 	if now() > node.deadline {
 		t.remove(ele, node)

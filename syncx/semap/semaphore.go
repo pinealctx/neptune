@@ -93,6 +93,7 @@ func (s *Weighted) notifyWaiters() bool {
 			return true // No more waiters blocked.
 		}
 
+		// nolint : forcetypeassert // I know the type is exactly here
 		w := next.Value.(waiter)
 		if s.size-s.cur < w.n {
 			// Not enough tokens for the next waiter.  We could keep going (to try to

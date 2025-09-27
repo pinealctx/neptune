@@ -128,6 +128,7 @@ var (
 // Shuffle shuffles a list
 func Shuffle[T any](list []T) []T {
 	if shuffleRand == nil {
+		// nolint : gosec // this random is only used for shuffle
 		shuffleRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	}
 	for i := len(list) - 1; i > 0; i-- {

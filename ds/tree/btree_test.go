@@ -10,6 +10,7 @@ type xCmp struct {
 }
 
 func (x *xCmp) Less(v Node) bool {
+	// nolint : forcetypeassert // I know the type is exactly here
 	return x.x < v.(*xCmp).x
 }
 
@@ -24,6 +25,7 @@ func TestBTree_Get(t *testing.T) {
 	}
 	for i := 1; i <= 10; i++ {
 		var k = &xCmp{x: i}
+		// nolint : forcetypeassert // I know the type is exactly here
 		var v = bt.Get(k).(*xCmp)
 		t.Log("i:", i, "v:", v.x, v.y)
 	}
@@ -173,6 +175,7 @@ func testIter(t *testing.T, k Node, ifn _testIterFn, n int) {
 	}
 	var ns = ifn(k, ffn, n)
 	for i := range ns {
+		// nolint : forcetypeassert // I know the type is exactly here
 		var v = ns[i].(*xCmp)
 		t.Log("x:", v.x, "y:", v.y)
 	}

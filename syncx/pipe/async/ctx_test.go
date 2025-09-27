@@ -17,6 +17,7 @@ func TestCtxRun(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	// nolint : forcetypeassert // I know the type is exactly here
 	var ri = r.(int)
 	if ri != 10 {
 		t.Fail()
