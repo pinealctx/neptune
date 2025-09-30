@@ -43,6 +43,21 @@ func NewQSendConnHandler(conn net.Conn, sendQSize int, readerFactory ConnReaderF
 	return h
 }
 
+// NewQSendConnHandlerWithReader : new queue send connection handler with custom reader
+// sendQSize : send queue size, if sendQSize is 0, the send queue has unlimited capacity
+//
+//	otherwise, the send queue has limited capacity.
+//	if the send queue is full, Put2Queue will return error
+func NewQSendConnHandlerWithReader(conn net.Conn, sendQSize int, reader IConnReader) *QSendConn {
+	h := &QSendConn{
+		conn:   conn,
+		sendQ:  q.NewQ[[]byte](sendQSize),
+		reader: reader,
+	}
+	h.metaInfo.Store(NewBasicMetaInfo(conn))
+	return h
+}
+
 // Conn returns the underlying network connection (required, goroutine-safe)
 func (x *QSendConn) Conn() net.Conn {
 	return x.conn
