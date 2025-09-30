@@ -124,9 +124,9 @@ func (x *QSendConn) Put2SendSMaps(_ []KeyStrBytesPair) error {
 	return fmt.Errorf("QSendConn.Put2SendSMaps.not.supported")
 }
 
-// ReadFrame reads one frame from connection
-func (x *QSendConn) ReadFrame() ([]byte, error) {
-	buf, err := x.reader.ReadFrame()
+// ReadFrame reads one frame(an entire message bytes) from connection
+func (x *QSendConn) ReadFrame(conn net.Conn) ([]byte, error) {
+	buf, err := x.reader.ReadFrame(conn)
 	if err != nil {
 		return nil, fmt.Errorf("QSendConn.ReadFrame: %w", err)
 	}

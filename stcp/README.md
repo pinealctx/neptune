@@ -47,7 +47,7 @@ type IConnSender interface {
 负责数据读取相关功能，支持不同的帧读取策略：
 ```go
 type IConnReader interface {
-    ReadFrame() ([]byte, error)        // 读取一帧数据 (线程安全)
+    ReadFrame(conn net.Conn) ([]byte, error)  // 读取一帧数据(一条完整消息的字节流)
 }
 ```
 
@@ -228,13 +228,13 @@ func main() {
 
 // 示例：自定义连接读取器实现
 type MyConnReader struct {
-    conn net.Conn
+    // 不需要持有连接，设计更纯净
 }
 
-func (r *MyConnReader) ReadFrame() ([]byte, error) {
+func (r *MyConnReader) ReadFrame(conn net.Conn) ([]byte, error) {
     // 示例：读取一行数据
     buf := make([]byte, 1024)
-    n, err := r.conn.Read(buf)
+    n, err := conn.Read(buf)
     if err != nil {
         return nil, err
     }
@@ -252,7 +252,7 @@ func (r *MyConnReader) ReadFrame() ([]byte, error) {
 // 大容量队列连接（适合高并发场景）
 largeQueueFactory := func(conn net.Conn) stcp.IConnIO {
     readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{conn: c}
+        return &MyConnReader{}
     }
     return stcp.NewQSendConnHandler(conn, 10000, readerFactory)
 }
@@ -260,7 +260,7 @@ largeQueueFactory := func(conn net.Conn) stcp.IConnIO {
 // 小容量队列连接（适合内存敏感场景）
 smallQueueFactory := func(conn net.Conn) stcp.IConnIO {
     readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{conn: c}
+        return &MyConnReader{}  // 连接会在ReadFrame时传入
     }
     return stcp.NewQSendConnHandler(conn, 100, readerFactory)
 }
@@ -268,7 +268,7 @@ smallQueueFactory := func(conn net.Conn) stcp.IConnIO {
 // 无限容量队列连接
 unlimitedFactory := func(conn net.Conn) stcp.IConnIO {
     readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{conn: c}
+        return &MyConnReader{}
     }
     return stcp.NewQSendConnHandler(conn, 0, readerFactory)  // 0表示无限容量
 }
@@ -283,9 +283,9 @@ conditionalFactory := func(conn net.Conn) stcp.IConnIO {
     
     readerFactory := func(c net.Conn) stcp.IConnReader {
         if strings.Contains(remoteAddr, "127.0.0.1") {
-            return &LocalConnReader{conn: c}  // 本地连接使用特殊读取器
+            return &LocalConnReader{}   // 本地连接使用特殊读取器
         }
-        return &RemoteConnReader{conn: c}     // 远程连接使用标准读取器
+        return &RemoteConnReader{}      // 远程连接使用标准读取器
     }
     
     if strings.Contains(remoteAddr, "127.0.0.1") {
@@ -308,7 +308,7 @@ customFactory := func(conn net.Conn) stcp.IConnIO {
     
     // 示例中仍使用QSendConn
     readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{conn: c}
+        return &MyConnReader{}
     }
     return stcp.NewQSendConnHandler(conn, 1024, readerFactory)
 }
@@ -387,13 +387,13 @@ import (
 
 // 定长消息读取器实现
 type FixedLengthReader struct {
-    conn net.Conn
+    // 不需要持有连接引用
 }
 
-func (r *FixedLengthReader) ReadFrame() ([]byte, error) {
+func (r *FixedLengthReader) ReadFrame(conn net.Conn) ([]byte, error) {
     const messageSize = 128
     buf := make([]byte, messageSize)
-    if _, err := io.ReadFull(r.conn, buf); err != nil {
+    if _, err := io.ReadFull(conn, buf); err != nil {
         return nil, err // 读不足或连接关闭则退出
     }
     return buf, nil
@@ -419,13 +419,13 @@ import (
 
 // 变长消息读取器实现
 type VarLengthReader struct {
-    conn net.Conn
+    // 更纯净的设计，连接作为参数传入
 }
 
-func (r *VarLengthReader) ReadFrame() ([]byte, error) {
+func (r *VarLengthReader) ReadFrame(conn net.Conn) ([]byte, error) {
     // 读取 4 字节长度头（大端序）
     var hdr [4]byte
-    if _, err := io.ReadFull(r.conn, hdr[:]); err != nil {
+    if _, err := io.ReadFull(conn, hdr[:]); err != nil {
         return nil, err
     }
     
@@ -436,7 +436,7 @@ func (r *VarLengthReader) ReadFrame() ([]byte, error) {
     
     // 读取消息体
     body := make([]byte, length)
-    if _, err := io.ReadFull(r.conn, body); err != nil {
+    if _, err := io.ReadFull(conn, body); err != nil {
         return nil, err
     }
     
@@ -463,26 +463,26 @@ import (
 
 // 心跳读取器实现
 type HeartbeatReader struct {
-    conn net.Conn
+    // 无状态设计，更灵活
 }
 
-func (r *HeartbeatReader) ReadFrame() ([]byte, error) {
+func (r *HeartbeatReader) ReadFrame(conn net.Conn) ([]byte, error) {
     const heartbeatInterval = 15 * time.Second
     const gracePeriod = 5 * time.Second
     
     // 设置读超时
-    if err := r.conn.SetReadDeadline(time.Now().Add(heartbeatInterval + gracePeriod)); err != nil {
+    if err := conn.SetReadDeadline(time.Now().Add(heartbeatInterval + gracePeriod)); err != nil {
         return nil, err
     }
 
     // 读取消息
     var hdr [4]byte
-    if _, err := io.ReadFull(r.conn, hdr[:]); err != nil {
+    if _, err := io.ReadFull(conn, hdr[:]); err != nil {
         return nil, err
     }
     
     // 成功读到数据后，重置下一次的读超时
-    if err := r.conn.SetReadDeadline(time.Now().Add(heartbeatInterval + gracePeriod)); err != nil {
+    if err := conn.SetReadDeadline(time.Now().Add(heartbeatInterval + gracePeriod)); err != nil {
         return nil, err
     }
     
@@ -555,7 +555,7 @@ func main() {
     // 创建连接IO工厂
     connIOFactory := func(conn net.Conn) stcp.IConnIO {
         readerFactory := func(c net.Conn) stcp.IConnReader {
-            return &MyConnReader{conn: c}
+            return &MyConnReader{}
         }
         return stcp.NewQSendConnHandler(conn, 1024, readerFactory)
     }
@@ -593,7 +593,7 @@ func main() {
 1. 服务器在指定地址监听TCP连接
 2. 每个新连接会通过ConnIOFactory创建对应的IConnIO实例
 3. ConnHandler启动两个goroutine管理连接：
-   - 接收goroutine：循环调用IConnIO.ReadFrame()获取数据，然后调用ReadProcessor处理
+   - 接收goroutine：循环调用IConnIO.ReadFrame(conn)获取数据，然后调用ReadProcessor处理
    - 发送goroutine：从发送队列取数据并写入连接
 4. 当ReadFrame()或ReadProcessor返回错误时，连接被关闭并触发退出钩子
 5. ConnHandler提供panic恢复机制，确保单个连接异常不影响整体服务
@@ -675,10 +675,10 @@ type IConnIO interface {
 
 type IConnSender interface {
     // 必需方法 - 必须实现
-    Conn() net.Conn              // 返回底层连接，线程安全
-    SetMetaInfo(m MetaInfo)       // 设置元信息，线程安全，重入安全
+    Conn() net.Conn              // 返回底层连接
+    SetMetaInfo(m MetaInfo)       // 设置元信息，线程安全
     MetaInfo() MetaInfo          // 获取元信息，线程安全
-    Close() error                // 关闭连接，线程安全，重入安全，不能panic
+    Close() error                // 关闭连接，重入安全，不能panic
     
     // 可选方法 - 至少实现一个Put2*方法
     Put2Queue(bs []byte) error
@@ -692,7 +692,7 @@ type IConnSender interface {
 }
 
 type IConnReader interface {
-    ReadFrame() ([]byte, error)  // 读取一帧数据，线程安全
+    ReadFrame(conn net.Conn) ([]byte, error)  // 读取一帧数据(一条完整消息的字节流)
 }
 ```
 
@@ -700,7 +700,7 @@ type IConnReader interface {
 
 #### 1. 线程安全性
 - 除 `loopSend()` 外的所有方法都必须是线程安全的
-- `ReadFrame()` 通常在单一goroutine中调用，但也应考虑线程安全
+- `ReadFrame(conn net.Conn)` 在单一goroutine中调用
 - 可以使用 `sync.Mutex`, `atomic.Value`, `sync.Once` 等同步原语
 
 #### 2. 重入安全性
@@ -749,9 +749,9 @@ func (c *MyCustomConnIO) MetaInfo() MetaInfo {
     return nil
 }
 
-func (c *MyCustomConnIO) ReadFrame() ([]byte, error) {
+func (c *MyCustomConnIO) ReadFrame(conn net.Conn) ([]byte, error) {
     // 可以委托给内部reader，或直接实现
-    return c.reader.ReadFrame()
+    return c.reader.ReadFrame(conn)
 }
 
 // 实现其他必需的方法...
@@ -762,12 +762,13 @@ func (c *MyCustomConnIO) ReadFrame() ([]byte, error) {
 #### 组合优于继承
 - 推荐组合现有的IConnReader实现而不是从头实现
 - 可以重用框架提供的基础组件，专注于业务逻辑
+- 新的接口设计使Reader更加无状态，便于复用
 
 #### 错误包装
 - 在ReadFrame()中进行错误包装，提供更多上下文：
 ```go
-func (c *MyCustomConnIO) ReadFrame() ([]byte, error) {
-    buf, err := c.reader.ReadFrame()
+func (c *MyCustomConnIO) ReadFrame(conn net.Conn) ([]byte, error) {
+    buf, err := c.reader.ReadFrame(conn)
     if err != nil {
         return nil, fmt.Errorf("MyCustomConnIO.ReadFrame: %w", err)
     }
