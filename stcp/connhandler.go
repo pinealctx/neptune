@@ -1,6 +1,7 @@
 package stcp
 
 import (
+	"net"
 	"sync"
 
 	"github.com/pinealctx/neptune/ulog"
@@ -62,7 +63,8 @@ func (x *ConnHandler) Start() {
 			}()
 			defer x.Exit()
 
-			x.loopReceive()
+			conn := x.iConnIO.Conn()
+			x.loopReceive(conn)
 		}()
 
 		go func() {
@@ -117,11 +119,12 @@ func (x *ConnHandler) Exit() {
 }
 
 // loopReceive loop receive
-// x.connReader is the function to read from connection
-// when x.connReader returns error, loopReceive will exit
-func (x *ConnHandler) loopReceive() {
+// WARNING: This method is ONLY called by ConnHandler internally.
+// NEVER call this method from external code - it will cause undefined behavior.
+// This method runs in its own dedicated goroutine managed by ConnHandler.
+func (x *ConnHandler) loopReceive(conn net.Conn) {
 	for {
-		buf, err := x.iConnIO.ReadFrame()
+		buf, err := x.iConnIO.ReadFrame(conn)
 		if err != nil {
 			ulog.Info("loopReceive.connReader", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
 			break

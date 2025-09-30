@@ -86,8 +86,10 @@ type IConnSender interface {
 
 // IConnReader connection reader interface
 type IConnReader interface {
-	// ReadFrame reads one frame from connection
-	ReadFrame() ([]byte, error)
+	// ReadFrame reads one frame(an entire message bytes) from connection
+	// conn : connection to read from
+	// return : read buffer and error if any
+	ReadFrame(conn net.Conn) ([]byte, error)
 }
 
 // IConnIO connection io interface
