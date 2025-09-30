@@ -1,7 +1,6 @@
 package stcp
 
 import (
-	"net"
 	"sync"
 
 	"github.com/pinealctx/neptune/ulog"
@@ -10,10 +9,10 @@ import (
 
 // ConnHandler connection handler
 type ConnHandler struct {
-	// connection reader(function)
-	connReader ConnReaderFunc
-	// connection sender(handler)
-	connSender IConnSender
+	// read processor
+	readProcessor ReadProcessor
+	// connection io interface
+	iConnIO IConnIO
 	//start once
 	startOnce sync.Once
 	// exit once
@@ -25,19 +24,19 @@ type ConnHandler struct {
 	exitHooks []ConnExitEvent
 }
 
-// NewConnRunner : new connection runner
-func NewConnRunner(connReader ConnReaderFunc, connSender IConnSender) *ConnHandler {
+// NewConnHandler : new connection handler
+func NewConnHandler(readerProcessor ReadProcessor, iConnIO IConnIO) *ConnHandler {
 	return &ConnHandler{
-		connReader: connReader,
-		connSender: connSender,
-		startHooks: make([]ConnStartEvent, 0, 1),
-		exitHooks:  make([]ConnExitEvent, 0, 1),
+		readProcessor: readerProcessor,
+		iConnIO:       iConnIO,
+		startHooks:    make([]ConnStartEvent, 0, 1),
+		exitHooks:     make([]ConnExitEvent, 0, 1),
 	}
 }
 
-// GetConnSender get connection sender
-func (x *ConnHandler) GetConnSender() IConnSender {
-	return x.connSender
+// GetIConn get connection interface
+func (x *ConnHandler) GetIConn() IConnIO {
+	return x.iConnIO
 }
 
 // AddStartHook add start hook
@@ -57,29 +56,40 @@ func (x *ConnHandler) Start() {
 			defer func() {
 				r := recover()
 				if r != nil {
-					ulog.Error("loopReceive.recover", zap.Any("panic", r), zap.Object("metaInfo", x.connSender.MetaInfo()),
+					ulog.Error("ConnHandler.loopReceive.recover", zap.Any("panic", r), zap.Object("metaInfo", x.iConnIO.MetaInfo()),
 						zap.Stack("stack"))
 				}
 			}()
 			defer x.Exit()
-			conn := x.connSender.Conn()
-			x.loopReceive(conn)
+
+			x.loopReceive()
 		}()
 
 		go func() {
 			defer func() {
 				r := recover()
 				if r != nil {
-					ulog.Error("x.connSender.loopSend.recover", zap.Any("panic", r), zap.Object("metaInfo", x.connSender.MetaInfo()),
+					ulog.Error("ConnHandler.loopSend.recover", zap.Any("panic", r), zap.Object("metaInfo", x.iConnIO.MetaInfo()),
 						zap.Stack("stack"))
 				}
 			}()
 			defer x.Exit()
 
-			x.connSender.loopSend()
+			x.iConnIO.loopSend()
 		}()
+
 		for _, hook := range x.startHooks {
-			hook(x.connSender)
+			func() {
+				defer func() {
+					r := recover()
+					if r != nil {
+						ulog.Error("ConnHandler.startHook.recover", zap.Any("panic", r), zap.Object("metaInfo", x.iConnIO.MetaInfo()),
+							zap.Stack("stack"))
+					}
+				}()
+
+				hook(x.iConnIO)
+			}()
 		}
 	})
 }
@@ -87,12 +97,21 @@ func (x *ConnHandler) Start() {
 // Exit : exit connection handler
 func (x *ConnHandler) Exit() {
 	x.exitOnce.Do(func() {
-		err := x.connSender.Close()
+		err := x.iConnIO.Close()
 		if err != nil {
-			ulog.Error("x.connSender.Close", zap.Error(err), zap.Object("metaInfo", x.connSender.MetaInfo()))
+			ulog.Error("x.handler.Close", zap.Error(err), zap.Object("metaInfo", x.iConnIO.MetaInfo()))
 		}
 		for _, hook := range x.exitHooks {
-			hook(x.connSender)
+			func() {
+				defer func() {
+					r := recover()
+					if r != nil {
+						ulog.Error("ConnHandler.exitHook.recover", zap.Any("panic", r), zap.Object("metaInfo", x.iConnIO.MetaInfo()),
+							zap.Stack("stack"))
+					}
+				}()
+				hook(x.iConnIO)
+			}()
 		}
 	})
 }
@@ -100,11 +119,16 @@ func (x *ConnHandler) Exit() {
 // loopReceive loop receive
 // x.connReader is the function to read from connection
 // when x.connReader returns error, loopReceive will exit
-func (x *ConnHandler) loopReceive(conn net.Conn) {
+func (x *ConnHandler) loopReceive() {
 	for {
-		err := x.connReader(x.connSender, conn)
+		buf, err := x.iConnIO.ReadFrame()
 		if err != nil {
-			ulog.Info("loopReceive.connReader", zap.Object("metaInfo", x.connSender.MetaInfo()), zap.Error(err))
+			ulog.Info("loopReceive.connReader", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
+			break
+		}
+		err = x.readProcessor(x.iConnIO, buf)
+		if err != nil {
+			ulog.Info("loopReceive.readProcessor", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
 			break
 		}
 	}

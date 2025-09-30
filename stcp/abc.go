@@ -15,7 +15,9 @@ var (
 
 // MetaInfo meta info for logging
 type MetaInfo interface {
+	// ObjectMarshaler marshal log object
 	zapcore.ObjectMarshaler
+	// GetRemoteAddr get remote address
 	GetRemoteAddr() string
 }
 
@@ -33,7 +35,7 @@ type KeyStrBytesPair struct {
 
 // IConnSender connection sender interface
 //
-// Thread Safety & Re-entrancy Requirements:
+// Thread Safety & Re-entrance Requirements:
 // - ALL methods except loopSend() MUST be goroutine-safe and re-entrant
 // - Multiple calls to Close() should be safe (may return error but MUST NOT panic)
 // - Resource cleanup operations should be idempotent
@@ -56,7 +58,7 @@ type IConnSender interface {
 	// MetaInfo gets meta info for logging (required, goroutine-safe)
 	MetaInfo() MetaInfo
 
-	// Close closes the connection handler (required, goroutine-safe, re-entrant)
+	// Close closes the connection (required, goroutine-safe, re-entrant)
 	// Multiple calls should be safe, may return error but MUST NOT panic
 	Close() error
 
@@ -82,17 +84,52 @@ type IConnSender interface {
 	loopSend()
 }
 
+// IConnReader connection reader interface
+type IConnReader interface {
+	// ReadFrame reads one frame from connection
+	ReadFrame() ([]byte, error)
+}
+
+// IConnIO connection io interface
+//
+// Thread Safety & Re-entrance Requirements:
+// - ALL methods except loopSend() MUST be goroutine-safe and re-entrant
+// - Multiple calls to Close() should be safe (may return error but MUST NOT panic)
+// - Resource cleanup operations should be idempotent
+//
+// Method Categories:
+//   - Required: Conn/SetMetaInfo/MetaInfo/Close/loopSend
+//   - Optional: Put2Queue/Put2SendMap/Put2SendSMap/Put2SendMaps/Put2SendSMaps
+//     (at least one Put2* method should be implemented, others can be no-op)
+//
+// Special Notes:
+// - loopSend() is ONLY called by ConnHandler internally, NEVER call it from external code
+// - loopSend() runs in its own goroutine and handles the sending loop logic
+type IConnIO interface {
+	// IConnSender connection sender interface
+	IConnSender
+	// IConnReader connection reader interface
+	IConnReader
+}
+
 // ConnStartEvent on connection start
-type ConnStartEvent func(handler IConnSender)
+type ConnStartEvent func(iConnIO IConnIO)
 
 // ConnExitEvent on connection exit
-type ConnExitEvent func(handler IConnSender)
+type ConnExitEvent func(iConnIO IConnIO)
 
-// ConnReaderFunc connection reader function
-type ConnReaderFunc func(handler IConnSender, conn net.Conn) error
+// ConnReaderFactory connection reader factory
+type ConnReaderFactory func(conn net.Conn) IConnReader
 
-// ConnSenderFactory connection sender factory
-type ConnSenderFactory func(conn net.Conn) IConnSender
+// ConnIOFactory connection io factory
+type ConnIOFactory func(conn net.Conn) IConnIO
+
+// ReadProcessor read handler logic
+// iConnIO : connection io interface
+// buffer : read buffer
+// return : error if any
+// Actually, this is the core function to process the read data
+type ReadProcessor func(iConnIO IConnIO, buffer []byte) error
 
 // BasicMetaInfo basic meta info
 type BasicMetaInfo struct {
