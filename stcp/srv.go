@@ -31,22 +31,22 @@ func DefaultServerAcceptCnf() *ServerAcceptCnf {
 
 // TcpServer tcp server
 type TcpServer struct {
-	acceptCnf         *ServerAcceptCnf
-	startHooker       ConnStartEvent
-	exitHooker        ConnExitEvent
-	connReader        ConnReaderFunc
-	connSenderFactory ConnSenderFactory
+	acceptCnf       *ServerAcceptCnf
+	startHooker     ConnStartEvent
+	exitHooker      ConnExitEvent
+	readerProcessor ReadProcessor
+	connIOFactory   ConnIOFactory
 
 	connCount atomic.Int32
 	ln        net.Listener
 }
 
 // NewTcpServer : new tcp server
-func NewTcpServer(cnf *ServerAcceptCnf, connReader ConnReaderFunc, connSenderFactory ConnSenderFactory) *TcpServer {
+func NewTcpServer(cnf *ServerAcceptCnf, readerProcessor ReadProcessor, connIOFactory ConnIOFactory) *TcpServer {
 	return &TcpServer{
-		acceptCnf:         cnf,
-		connReader:        connReader,
-		connSenderFactory: connSenderFactory,
+		acceptCnf:       cnf,
+		readerProcessor: readerProcessor,
+		connIOFactory:   connIOFactory,
 	}
 }
 
@@ -159,16 +159,16 @@ func (x *TcpServer) loopAccept() error {
 			x.connCount.Dec()
 			ulog.Error("TcpServer.loopAccept.close.too.many", zap.Int32("currentConnCount", curConnCount), zap.Error(err))
 		} else {
-			connRunner := NewConnRunner(x.connReader, x.connSenderFactory(conn))
-			connRunner.AddStartHook(x.connStartHook)
-			connRunner.AddExitHook(x.connExitHook)
-			connRunner.Start()
+			connHandler := NewConnHandler(x.readerProcessor, x.connIOFactory(conn))
+			connHandler.AddStartHook(x.connStartHook)
+			connHandler.AddExitHook(x.connExitHook)
+			connHandler.Start()
 		}
 	}
 }
 
 // connStartHook : when connection start
-func (x *TcpServer) connStartHook(connSender IConnSender) {
+func (x *TcpServer) connStartHook(connSender IConnIO) {
 	ulog.Info("connection.start", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", x.connCount.Load()))
 	if x.startHooker != nil {
 		x.startHooker(connSender)
@@ -176,7 +176,7 @@ func (x *TcpServer) connStartHook(connSender IConnSender) {
 }
 
 // connExitHook : when connection exit
-func (x *TcpServer) connExitHook(connSender IConnSender) {
+func (x *TcpServer) connExitHook(connSender IConnIO) {
 	curConnCount := x.connCount.Dec()
 	ulog.Info("connection.exit", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", curConnCount))
 	if x.exitHooker != nil {
