@@ -15,7 +15,7 @@ import (
 // send queue based connection sender
 // user can put bytes to send queue async
 // and LoopSend will send bytes in queue one by one
-type QSendConn struct {
+type QSendConn[T any] struct {
 	// close once
 	closeOnce sync.Once
 	// connection
@@ -33,8 +33,8 @@ type QSendConn struct {
 //
 //	otherwise, the send queue has limited capacity.
 //	if the send queue is full, Put2Queue will return error
-func NewQSendConnHandler(conn net.Conn, sendQSize int, readerFactory ConnReaderFactory) *QSendConn {
-	h := &QSendConn{
+func NewQSendConnHandler[T any](conn net.Conn, sendQSize int, readerFactory ConnReaderFactory) *QSendConn[T] {
+	h := &QSendConn[T]{
 		conn:   conn,
 		sendQ:  q.NewQ[[]byte](sendQSize),
 		reader: readerFactory(conn),
@@ -48,8 +48,8 @@ func NewQSendConnHandler(conn net.Conn, sendQSize int, readerFactory ConnReaderF
 //
 //	otherwise, the send queue has limited capacity.
 //	if the send queue is full, Put2Queue will return error
-func NewQSendConnHandlerWithReader(conn net.Conn, sendQSize int, reader IConnReader) *QSendConn {
-	h := &QSendConn{
+func NewQSendConnHandlerWithReader[T any](conn net.Conn, sendQSize int, reader IConnReader) *QSendConn[T] {
+	h := &QSendConn[T]{
 		conn:   conn,
 		sendQ:  q.NewQ[[]byte](sendQSize),
 		reader: reader,
@@ -59,17 +59,17 @@ func NewQSendConnHandlerWithReader(conn net.Conn, sendQSize int, reader IConnRea
 }
 
 // Conn returns the underlying network connection (required, goroutine-safe)
-func (x *QSendConn) Conn() net.Conn {
+func (x *QSendConn[T]) Conn() net.Conn {
 	return x.conn
 }
 
 // SetMetaInfo sets meta info for logging (required, goroutine-safe, re-entrant)
-func (x *QSendConn) SetMetaInfo(m MetaInfo) {
+func (x *QSendConn[T]) SetMetaInfo(m MetaInfo) {
 	x.metaInfo.Store(m)
 }
 
 // MetaInfo gets meta info for logging (required, goroutine-safe)
-func (x *QSendConn) MetaInfo() MetaInfo {
+func (x *QSendConn[T]) MetaInfo() MetaInfo {
 	v := x.metaInfo.Load()
 	if v == nil {
 		return nil
@@ -82,7 +82,7 @@ func (x *QSendConn) MetaInfo() MetaInfo {
 // This method can be called directly via IConnSender/IConnIO interface to gracefully shutdown
 // the connection and trigger the associated ConnHandler.Exit() through the goroutine defer chain
 // Multiple calls are safe and will not panic
-func (x *QSendConn) Close() error {
+func (x *QSendConn[T]) Close() error {
 	var err error
 	x.closeOnce.Do(func() {
 		// close send queue - this will cause LoopSend() to exit
@@ -94,38 +94,25 @@ func (x *QSendConn) Close() error {
 }
 
 // Put2Queue send bytes async(put to send queue) (optional, goroutine-safe, re-entrant)
-func (x *QSendConn) Put2Queue(bs []byte) error {
+func (x *QSendConn[T]) Put2Queue(bs []byte) error {
 	return x.sendQ.Push(bs)
 }
 
 // Put2SendMap put bytes to send map (optional, goroutine-safe, re-entrant)
 // Note: treats this as equivalent to Put2Queue, ignoring the key
-func (x *QSendConn) Put2SendMap(_ uint32, bs []byte) error {
-	return x.sendQ.Push(bs)
-}
-
-// Put2SendSMap put bytes to send map (optional, goroutine-safe, re-entrant)
-// Note: treats this as equivalent to Put2Queue, ignoring the key
-func (x *QSendConn) Put2SendSMap(_ string, bs []byte) error {
+func (x *QSendConn[T]) Put2SendMap(_ T, bs []byte) error {
 	return x.sendQ.Push(bs)
 }
 
 // Put2SendMaps put multiple key uint32 and bytes pairs to send map (optional, goroutine-safe, re-entrant)
 // Note: does not support batch operations
-func (x *QSendConn) Put2SendMaps(_ []KeyIntBytesPair) error {
+func (x *QSendConn[T]) Put2SendMaps(_ []KvItem[T]) error {
 	ulog.Error("QSendConn.Put2SendMaps.not.supported")
 	return fmt.Errorf("QSendConn.Put2SendMaps.not.supported")
 }
 
-// Put2SendSMaps put multiple key string and bytes pairs to send map (optional, goroutine-safe, re-entrant)
-// Note: does not support batch operations
-func (x *QSendConn) Put2SendSMaps(_ []KeyStrBytesPair) error {
-	ulog.Error("QSendConn.Put2SendSMaps.not.supported")
-	return fmt.Errorf("QSendConn.Put2SendSMaps.not.supported")
-}
-
 // ReadFrame reads one frame(an entire message bytes) from connection
-func (x *QSendConn) ReadFrame(conn net.Conn) ([]byte, error) {
+func (x *QSendConn[T]) ReadFrame(conn net.Conn) ([]byte, error) {
 	buf, err := x.reader.ReadFrame(conn)
 	if err != nil {
 		return nil, fmt.Errorf("QSendConn.ReadFrame: %w", err)
@@ -136,7 +123,8 @@ func (x *QSendConn) ReadFrame(conn net.Conn) ([]byte, error) {
 // loopSend is the internal sending loop (required, NOT goroutine-safe)
 // WARNING: This method is ONLY called by ConnHandler internally.
 // NEVER call this method from external code.
-func (x *QSendConn) loopSend() {
+// nolint:unused // This method implements IConnSender[T].loopSend() interface
+func (x *QSendConn[T]) loopSend() {
 	for {
 		sendBytes, err := x.sendQ.Pop()
 		if err != nil {

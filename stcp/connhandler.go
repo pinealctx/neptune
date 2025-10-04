@@ -9,49 +9,49 @@ import (
 )
 
 // ConnHandler connection handler
-type ConnHandler struct {
+type ConnHandler[T any] struct {
 	// read processor
-	readProcessor ReadProcessor
+	readProcessor ReadProcessor[T]
 	// connection io interface
-	iConnIO IConnIO
+	iConnIO IConnIO[T]
 	//start once
 	startOnce sync.Once
 	// exit once
 	exitOnce sync.Once
 	// hook functions
 	// start hook
-	startHooks []ConnStartEvent
+	startHooks []ConnStartEvent[T]
 	// exit hook
-	exitHooks []ConnExitEvent
+	exitHooks []ConnExitEvent[T]
 }
 
 // NewConnHandler : new connection handler
-func NewConnHandler(readerProcessor ReadProcessor, iConnIO IConnIO) *ConnHandler {
-	return &ConnHandler{
+func NewConnHandler[T any](readerProcessor ReadProcessor[T], iConnIO IConnIO[T]) *ConnHandler[T] {
+	return &ConnHandler[T]{
 		readProcessor: readerProcessor,
 		iConnIO:       iConnIO,
-		startHooks:    make([]ConnStartEvent, 0, 1),
-		exitHooks:     make([]ConnExitEvent, 0, 1),
+		startHooks:    make([]ConnStartEvent[T], 0, 1),
+		exitHooks:     make([]ConnExitEvent[T], 0, 1),
 	}
 }
 
 // GetIConn get connection interface
-func (x *ConnHandler) GetIConn() IConnIO {
+func (x *ConnHandler[T]) GetIConn() IConnIO[T] {
 	return x.iConnIO
 }
 
 // AddStartHook add start hook
-func (x *ConnHandler) AddStartHook(hook ConnStartEvent) {
+func (x *ConnHandler[T]) AddStartHook(hook ConnStartEvent[T]) {
 	x.startHooks = append(x.startHooks, hook)
 }
 
 // AddExitHook add exit hook
-func (x *ConnHandler) AddExitHook(hook ConnExitEvent) {
+func (x *ConnHandler[T]) AddExitHook(hook ConnExitEvent[T]) {
 	x.exitHooks = append(x.exitHooks, hook)
 }
 
 // Start : start connection handler
-func (x *ConnHandler) Start() {
+func (x *ConnHandler[T]) Start() {
 	x.startOnce.Do(func() {
 		go func() {
 			defer func() {
@@ -97,7 +97,7 @@ func (x *ConnHandler) Start() {
 }
 
 // Exit : exit connection handler
-func (x *ConnHandler) Exit() {
+func (x *ConnHandler[T]) Exit() {
 	x.exitOnce.Do(func() {
 		err := x.iConnIO.Close()
 		if err != nil {
@@ -122,7 +122,7 @@ func (x *ConnHandler) Exit() {
 // WARNING: This method is ONLY called by ConnHandler internally.
 // NEVER call this method from external code - it will cause undefined behavior.
 // This method runs in its own dedicated goroutine managed by ConnHandler.
-func (x *ConnHandler) loopReceive(conn net.Conn) {
+func (x *ConnHandler[T]) loopReceive(conn net.Conn) {
 	for {
 		buf, err := x.iConnIO.ReadFrame(conn)
 		if err != nil {

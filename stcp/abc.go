@@ -21,16 +21,10 @@ type MetaInfo interface {
 	GetRemoteAddr() string
 }
 
-// KeyIntBytesPair key uint32 and bytes pair
-type KeyIntBytesPair struct {
-	Key uint32
-	Val []byte
-}
-
-// KeyStrBytesPair key string and bytes pair
-type KeyStrBytesPair struct {
-	Key string
-	Val []byte
+// KvItem key/bytes pair item
+type KvItem[T any] struct {
+	K T
+	V []byte
 }
 
 // IConnSender connection sender interface
@@ -48,7 +42,7 @@ type KeyStrBytesPair struct {
 // Special Notes:
 // - loopSend() is ONLY called by ConnHandler internally, NEVER call it from external code
 // - loopSend() runs in its own goroutine and handles the sending loop logic
-type IConnSender interface {
+type IConnSender[T any] interface {
 	// Conn returns the underlying network connection (required, goroutine-safe)
 	Conn() net.Conn
 
@@ -66,16 +60,10 @@ type IConnSender interface {
 	Put2Queue(bs []byte) error
 
 	// Put2SendMap puts bytes to send map (optional, goroutine-safe, re-entrant)
-	Put2SendMap(key uint32, bs []byte) error
-
-	// Put2SendSMap puts bytes to send map (optional, goroutine-safe, re-entrant)
-	Put2SendSMap(key string, bs []byte) error
+	Put2SendMap(key T, bs []byte) error
 
 	// Put2SendMaps puts multiple key uint32 and bytes pairs to send map (optional, goroutine-safe, re-entrant)
-	Put2SendMaps(pairs []KeyIntBytesPair) error
-
-	// Put2SendSMaps puts multiple key string and bytes pairs to send map (optional, goroutine-safe, re-entrant)
-	Put2SendSMaps(pairs []KeyStrBytesPair) error
+	Put2SendMaps(pairs []KvItem[T]) error
 
 	// loopSend is the internal sending loop (required, NOT goroutine-safe)
 	// WARNING: This method is ONLY called by ConnHandler internally.
@@ -107,31 +95,31 @@ type IConnReader interface {
 // Special Notes:
 // - loopSend() is ONLY called by ConnHandler internally, NEVER call it from external code
 // - loopSend() runs in its own goroutine and handles the sending loop logic
-type IConnIO interface {
+type IConnIO[T any] interface {
 	// IConnSender connection sender interface
-	IConnSender
+	IConnSender[T]
 	// IConnReader connection reader interface
 	IConnReader
 }
 
 // ConnStartEvent on connection start
-type ConnStartEvent func(iConnIO IConnIO)
+type ConnStartEvent[T any] func(iConnIO IConnIO[T])
 
 // ConnExitEvent on connection exit
-type ConnExitEvent func(iConnIO IConnIO)
+type ConnExitEvent[T any] func(iConnIO IConnIO[T])
 
 // ConnReaderFactory connection reader factory
 type ConnReaderFactory func(conn net.Conn) IConnReader
 
 // ConnIOFactory connection io factory
-type ConnIOFactory func(conn net.Conn) IConnIO
+type ConnIOFactory[T any] func(conn net.Conn) IConnIO[T]
 
 // ReadProcessor read handler logic
 // iConnIO : connection io interface
 // buffer : read buffer
 // return : error if any
 // Actually, this is the core function to process the read data
-type ReadProcessor func(iConnIO IConnIO, buffer []byte) error
+type ReadProcessor[T any] func(iConnIO IConnIO[T], buffer []byte) error
 
 // BasicMetaInfo basic meta info
 type BasicMetaInfo struct {
