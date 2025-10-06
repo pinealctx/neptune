@@ -1,16 +1,20 @@
-## TCP Server 框架（基于接口分层设计）
+## TCP Server 框架（基于消息驱动的接口分层设计）
 
-该模块提供一个轻量、高性能的 TCP Server 框架，采用接口分层架构实现关注点分离：
+该模块提供一个轻量、高性能、类型安全的 TCP Server 框架，采用消息驱动的接口分层架构：
 - 通过 NewTcpServer(cnf, readProcessor, connIOFactory) 创建服务，支持工厂模式注入不同的连接处理器
 - ReadProcessor 完全由业务方实现，负责处理从连接读取的数据（定长、变长、心跳等策略均由外部控制）
-- 框架内部管理连接生命周期、并发处理，通过ConnIOFactory支持灵活的连接实现策略，包括完整的配置和Hook机制
+- 引入IMsg消息接口系统，提供类型安全的消息处理机制
+- 框架内部管理连接生命周期、并发处理，通过ConnIOFactory支持灵活的连接实现策略
 
 ### 核心组件
 
 - **TcpServer**: 主服务器，负责Accept循环和连接管理
 - **ConnHandler**: 连接处理器，管理单个连接的生命周期，包含panic恢复机制
-- **QSendConn**: 队列连接实现，提供异步消息发送能力（IConnIO的一个实现）
-- **IConnSender**: 连接发送器接口，定义消息发送能力，所有方法（除内部loopSend）均为线程安全
+- **IMsg**: 消息接口，定义统一的消息抽象，支持类型安全的消息处理
+- **BytesMsg**: 字节消息实现，封装字节数组为消息对象
+- **BasicConnIO**: 基础连接IO实现，提供通用的连接操作功能
+- **QSendConn**: 队列连接实现，基于BasicConnIO，提供异步消息发送能力
+- **IConnSender**: 连接发送器接口，定义消息发送和队列管理能力
 - **IConnReader**: 连接读取器接口，定义数据读取能力，支持不同的帧读取策略
 - **IConnIO**: 连接IO接口，组合发送器和读取器，提供完整的连接操作能力
 - **ConnIOFactory**: 连接IO工厂，用于创建不同类型的连接实例
@@ -22,24 +26,19 @@
 框架采用三层接口设计，实现关注点分离：
 
 #### IConnSender - 连接发送器接口
-负责消息发送相关功能，定义发送能力的抽象：
+负责消息发送和队列管理功能，提供类型安全的消息处理：
 ```go
 type IConnSender interface {
-    // 核心方法
-    Conn() net.Conn                    // 获取底层连接 (线程安全)
-    SetMetaInfo(m MetaInfo)            // 设置元信息 (线程安全，重入安全)
-    MetaInfo() MetaInfo                // 获取元信息 (线程安全)
-    Close() error                      // 关闭连接 (线程安全，重入安全)
+    // 核心连接管理 (线程安全)
+    Conn() net.Conn                    // 获取底层连接
+    SetMetaInfo(m MetaInfo)            // 设置元信息 (重入安全)
+    MetaInfo() MetaInfo                // 获取元信息
+    Close() error                      // 关闭连接 (重入安全)
     
-    // 发送方法 (至少实现一个，线程安全，重入安全)
-    Put2Queue(bs []byte) error                    // 异步发送到队列
-    Put2SendMap(key uint32, bs []byte) error      // 按整型键发送
-    Put2SendSMap(key string, bs []byte) error     // 按字符串键发送
-    Put2SendMaps(pairs []KeyIntBytesPair) error   // 批量按整型键发送
-    Put2SendSMaps(pairs []KeyStrBytesPair) error  // 批量按字符串键发送
-    
-    // 内部方法 (仅由框架调用，非线程安全)
-    loopSend()                         // 发送循环，由ConnHandler管理
+    // 消息处理 (线程安全，重入安全)
+    PutMsg(msg IMsg) error             // 发送消息到队列，类型安全
+    PopMsgBytes() ([]byte, error)      // 从队列取出消息字节
+    // 注意：sendBytes2Conn 是内部方法，不对外暴露
 }
 ```
 
@@ -62,9 +61,10 @@ type IConnIO interface {
 
 #### 工厂接口
 ```go
-type ConnReaderFactory func(conn net.Conn) IConnReader
 type ConnIOFactory func(conn net.Conn) IConnIO
 ```
+
+**说明**: ConnIOFactory负责创建IConnIO实例。在工厂函数内部，您需要创建IConnReader实例并传递给具体的连接实现。
 
 ### API 接口
 
@@ -116,9 +116,11 @@ type ConnExitEvent func(iConnIO IConnIO)
 **重要**: 框架对Hook函数提供panic恢复机制，Hook函数中的panic不会导致整个连接或服务器崩溃，错误会被记录到日志中。
 
 #### 消息发送
-- 异步发送：`iConnIO.Put2Queue([]byte) error`（写入发送队列）
+- 类型安全发送：`iConnIO.PutMsg(NewBytesMsg([]byte)) error`（类型安全的消息发送）
 - 连接关闭：`iConnIO.Close() error`（线程安全，支持重入调用）
 - 写超时控制：`SetWriteTimeout(d time.Duration)`，默认 5s
+
+**重要**: 框架内部会自动处理消息发送，用户代码应使用`PutMsg()`方法来发送消息，而不是直接调用底层发送方法。
 
 #### 连接信息
 - 获取监听地址：`Address() string`
@@ -141,8 +143,8 @@ type ConnExitEvent func(iConnIO IConnIO)
 
 #### 方法分类
 - **必需方法**: `Conn()`, `SetMetaInfo()`, `MetaInfo()`, `Close()`, `ReadFrame()`
-- **可选方法**: `Put2Queue()`, `Put2SendMap()`, `Put2SendSMap()`, `Put2SendMaps()`, `Put2SendSMaps()`
-- **内部方法**: `loopSend()` - 仅由框架内部调用，业务代码不应直接使用
+- **消息方法**: `PutMsg()`, `PopMsgBytes()`
+- **内部机制**: ConnHandler内部自动调用PopMsgBytes()和sendBytes2Conn()完成发送循环
 
 #### 生命周期管理
 通过 `IConnIO.Close()` 可以优雅地关闭连接：
@@ -155,8 +157,8 @@ if err != nil {
 ```
 
 调用 `Close()` 后会触发：
-1. 发送队列关闭，`loopSend` goroutine 退出
-2. 网络连接关闭，`loopReceive` goroutine 退出  
+1. 发送队列关闭，`PopMsgBytes()` 返回错误，发送循环退出
+2. 网络连接关闭，`ReadFrame()` 返回错误，接收循环退出  
 3. `ConnHandler.Exit()` 执行，触发退出钩子
 
 ---
@@ -180,21 +182,18 @@ import (
 func main() {
     // ReadProcessor 函数：负责处理从连接读取的数据
     readProcessor := func(iConnIO stcp.IConnIO, buffer []byte) error {
-        // 示例：回显数据
-        // 业务处理...
-        return iConnIO.Put2Queue(buffer)  // 异步发送响应
+        // 示例：回显数据（使用新的消息系统）
+        msg := stcp.NewBytesMsg(buffer)
+        return iConnIO.PutMsg(msg)  // 类型安全的消息发送
     }
 
     // 创建连接读取器工厂（实现自定义帧读取逻辑）
-    readerFactory := func(conn net.Conn) stcp.IConnReader {
-        // 这里可以返回自定义的IConnReader实现
-        // 或者使用框架提供的基础实现
-        return &MyConnReader{conn: conn}
-    }
+    reader := &MyConnReader{}  // 直接创建读取器实例
 
     // 创建连接IO工厂（使用队列连接实现）
     connIOFactory := func(conn net.Conn) stcp.IConnIO {
-        return stcp.NewQSendConnHandler(conn, 1024, readerFactory)  // 队列容量1024
+        reader := &MyConnReader{}  // 自定义读取器实现
+        return stcp.NewQSendConnHandler(conn, 1024, reader)  // 队列容量1024
     }
 
     // 创建服务器配置
@@ -251,26 +250,20 @@ func (r *MyConnReader) ReadFrame(conn net.Conn) ([]byte, error) {
 ```go
 // 大容量队列连接（适合高并发场景）
 largeQueueFactory := func(conn net.Conn) stcp.IConnIO {
-    readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{}
-    }
-    return stcp.NewQSendConnHandler(conn, 10000, readerFactory)
+    reader := &MyConnReader{}  // 创建读取器实例
+    return stcp.NewQSendConnHandler(conn, 10000, reader)
 }
 
 // 小容量队列连接（适合内存敏感场景）
 smallQueueFactory := func(conn net.Conn) stcp.IConnIO {
-    readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{}  // 连接会在ReadFrame时传入
-    }
-    return stcp.NewQSendConnHandler(conn, 100, readerFactory)
+    reader := &MyConnReader{}
+    return stcp.NewQSendConnHandler(conn, 100, reader)
 }
 
 // 无限容量队列连接
 unlimitedFactory := func(conn net.Conn) stcp.IConnIO {
-    readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{}
-    }
-    return stcp.NewQSendConnHandler(conn, 0, readerFactory)  // 0表示无限容量
+    reader := &MyConnReader{}
+    return stcp.NewQSendConnHandler(conn, 0, reader)  // 0表示无限容量
 }
 ```
 
@@ -281,19 +274,14 @@ unlimitedFactory := func(conn net.Conn) stcp.IConnIO {
 conditionalFactory := func(conn net.Conn) stcp.IConnIO {
     remoteAddr := conn.RemoteAddr().String()
     
-    readerFactory := func(c net.Conn) stcp.IConnReader {
-        if strings.Contains(remoteAddr, "127.0.0.1") {
-            return &LocalConnReader{}   // 本地连接使用特殊读取器
-        }
-        return &RemoteConnReader{}      // 远程连接使用标准读取器
-    }
+    reader := &MyConnReader{}
     
     if strings.Contains(remoteAddr, "127.0.0.1") {
         // 本地连接使用大队列
-        return stcp.NewQSendConnHandler(conn, 10000, readerFactory)
+        return stcp.NewQSendConnHandler(conn, 10000, reader)
     } else {
         // 外部连接使用小队列
-        return stcp.NewQSendConnHandler(conn, 1000, readerFactory)
+        return stcp.NewQSendConnHandler(conn, 1000, reader)
     }
 }
 ```
@@ -307,10 +295,8 @@ customFactory := func(conn net.Conn) stcp.IConnIO {
     // return NewMyCustomConnIO(conn, customConfig)
     
     // 示例中仍使用QSendConn
-    readerFactory := func(c net.Conn) stcp.IConnReader {
-        return &MyConnReader{}
-    }
-    return stcp.NewQSendConnHandler(conn, 1024, readerFactory)
+    reader := &MyConnReader{}
+    return stcp.NewQSendConnHandler(conn, 1024, reader)
 }
 ```
 
@@ -330,8 +316,9 @@ func businessLogic(iConnIO stcp.IConnIO, buffer []byte) error {
         return io.EOF // 返回错误让 ReadProcessor 退出
     }
     
-    // 继续处理消息
-    return iConnIO.Put2Queue(processMessage(buffer))
+    // 继续处理消息（使用新的消息系统）
+    msg := stcp.NewBytesMsg(processMessage(buffer))
+    return iConnIO.PutMsg(msg)
 }
 ```
 
@@ -357,9 +344,9 @@ func multiGoroutineExample(iConnIO stcp.IConnIO) {
         defer ticker.Stop()
         
         for range ticker.C {
-            // 线程安全的消息发送
-            heartbeat := []byte("PING")
-            if err := iConnIO.Put2Queue(heartbeat); err != nil {
+            // 线程安全的消息发送（使用新的消息系统）
+            heartbeat := stcp.NewBytesMsg([]byte("PING"))
+            if err := iConnIO.PutMsg(heartbeat); err != nil {
                 // 连接可能已关闭，安全退出
                 return
             }
@@ -401,8 +388,9 @@ func (r *FixedLengthReader) ReadFrame(conn net.Conn) ([]byte, error) {
 
 // ReadProcessor 处理定长消息
 func fixedLengthProcessor(iConnIO stcp.IConnIO, buffer []byte) error {
-    // 处理定长消息...
-    return iConnIO.Put2Queue(buffer)
+    // 处理定长消息...（使用新的消息系统）
+    msg := stcp.NewBytesMsg(buffer)
+    return iConnIO.PutMsg(msg)
 }
 ```
 
@@ -446,7 +434,8 @@ func (r *VarLengthReader) ReadFrame(conn net.Conn) ([]byte, error) {
 // ReadProcessor 处理变长消息
 func varLengthProcessor(iConnIO stcp.IConnIO, buffer []byte) error {
     // 处理变长消息...
-    return iConnIO.Put2Queue(buffer)
+    msg := stcp.NewBytesMsg(buffer)
+    return iConnIO.PutMsg(msg)
 }
 ```
 
@@ -535,8 +524,9 @@ func customMetaProcessor(iConnIO stcp.IConnIO, buffer []byte) error {
     }
     iConnIO.SetMetaInfo(customMeta)
     
-    // 继续处理消息...
-    return iConnIO.Put2Queue(buffer)
+    // 继续处理消息（使用新的消息系统）
+    msg := stcp.NewBytesMsg(buffer)
+    return iConnIO.PutMsg(msg)
 }
 ```
 
@@ -594,8 +584,8 @@ func main() {
 2. 每个新连接会通过ConnIOFactory创建对应的IConnIO实例
 3. ConnHandler启动两个goroutine管理连接：
    - 接收goroutine：循环调用IConnIO.ReadFrame(conn)获取数据，然后调用ReadProcessor处理
-   - 发送goroutine：从发送队列取数据并写入连接
-4. 当ReadFrame()或ReadProcessor返回错误时，连接被关闭并触发退出钩子
+   - 发送goroutine：循环调用IConnIO.PopMsgBytes()获取消息，然后通过内部方法sendBytes2Conn()发送
+4. 当ReadFrame()、ReadProcessor或PopMsgBytes()返回错误时，对应goroutine退出，连接被关闭
 5. ConnHandler提供panic恢复机制，确保单个连接异常不影响整体服务
 
 ### 连接数限制
@@ -610,22 +600,25 @@ func main() {
 
 ### 内存与性能
 - 发送队列支持容量限制，防止内存无限增长
-- 队列满时Put2Queue会返回错误，应用层应优雅处理
+- 队列满时PutMsg会返回错误，应用层应优雅处理
 - 所有关键路径都经过并发安全设计
 - `IConnIO` 接口方法的线程安全实现确保高并发场景下的稳定性
 - `Close()` 方法使用 `sync.Once` 实现，避免重复资源释放的开销
+- 消息系统提供类型安全，避免运行时类型转换错误
 
 ### 设计原则与最佳实践
 
 #### 接口分层原则
-- **IConnSender**: 专注于发送能力，定义消息发送的抽象
+- **IMsg**: 定义消息抽象，支持类型安全的消息处理
+- **IConnSender**: 专注于消息发送和队列管理，提供PutMsg/PopMsgBytes方法，sendBytes2Conn为内部方法
 - **IConnReader**: 专注于读取能力，支持不同的帧解析策略
 - **IConnIO**: 组合两者，提供完整的连接操作能力
+- **BasicConnIO**: 提供基础实现，支持组合设计模式
 - 业务代码只需依赖相应接口，无需了解具体实现细节
 
 #### 工厂模式设计
-- **ConnReaderFactory**: 支持不同的帧读取策略（定长、变长、分隔符等）
 - **ConnIOFactory**: 支持不同的连接实现（队列、直接发送、批处理等）
+- **消息工厂**: NewBytesMsg等便捷构造函数简化消息创建
 - 便于依赖注入和单元测试Mock，提高代码可测试性
 
 #### 并发安全设计
@@ -644,11 +637,13 @@ func main() {
 
 ## 架构特点
 
-- **接口分层设计**：IConnSender/IConnReader/IConnIO三层接口实现关注点分离
-- **工厂模式**：ConnReaderFactory和ConnIOFactory支持灵活的实现策略
+- **消息驱动设计**：IMsg接口提供类型安全的消息处理，支持扩展不同消息类型
+- **接口分层架构**：IConnSender/IConnReader/IConnIO三层接口实现关注点分离
+- **组合设计模式**：BasicConnIO提供基础实现，子类通过组合复用功能
+- **工厂模式**：ConnIOFactory支持灵活的实现策略
 - **接口驱动**：所有核心功能基于接口定义，便于扩展和测试
 - **插拔式架构**：可以轻松替换和扩展连接读取器、发送器实现
-- **异步发送**：队列化发送避免阻塞接收处理
+- **异步发送**：队列化发送避免阻塞接收处理，支持PutMsg/PopMsgBytes分离设计
 - **完善日志**：结构化日志支持，MetaInfo可自定义
 - **Hook机制**：连接生命周期钩子便于监控和扩展，具备panic恢复能力
 - **并发安全**：所有共享状态都有适当的同步保护，支持高并发场景
@@ -657,6 +652,7 @@ func main() {
 - **关注点分离**：读取、发送、连接管理职责清晰，便于维护和扩展
 - **生命周期管理**：通过接口方法即可完整控制连接的创建、运行和销毁
 - **错误隔离**：panic恢复机制确保单个连接异常不影响整体服务稳定性
+- **类型安全**：消息系统在编译期检查类型，避免运行时错误
 
 如需更多示例或适配特定协议，可通过实现IConnReader接口按需定制帧读取逻辑。
 
@@ -680,15 +676,12 @@ type IConnSender interface {
     MetaInfo() MetaInfo          // 获取元信息，线程安全
     Close() error                // 关闭连接，重入安全，不能panic
     
-    // 可选方法 - 至少实现一个Put2*方法
-    Put2Queue(bs []byte) error
-    Put2SendMap(key uint32, bs []byte) error
-    Put2SendSMap(key string, bs []byte) error
-    Put2SendMaps(pairs []KeyIntBytesPair) error
-    Put2SendSMaps(pairs []KeyStrBytesPair) error
+    // 消息处理方法 - 必须实现
+    PutMsg(msg IMsg) error           // 发送消息到队列，类型安全
+    PopMsgBytes() ([]byte, error)    // 从队列取出消息字节
     
-    // 内部方法 - 框架调用，不对外公开
-    loopSend()                   // 发送循环，仅由ConnHandler调用
+    // 内部方法 - 仅供ConnHandler调用
+    sendBytes2Conn(bs []byte) error  // 内部发送方法，外部代码禁止调用
 }
 
 type IConnReader interface {
@@ -699,8 +692,9 @@ type IConnReader interface {
 ### 实现要求
 
 #### 1. 线程安全性
-- 除 `loopSend()` 外的所有方法都必须是线程安全的
+- 除 `sendBytes2Conn()` 外的所有方法都必须是线程安全的
 - `ReadFrame(conn net.Conn)` 在单一goroutine中调用
+- `sendBytes2Conn()` 仅在ConnHandler的发送goroutine中调用，无需考虑线程安全
 - 可以使用 `sync.Mutex`, `atomic.Value`, `sync.Once` 等同步原语
 
 #### 2. 重入安全性
@@ -711,7 +705,13 @@ type IConnReader interface {
 #### 3. 错误处理
 - 方法可以返回错误，但绝对不能panic
 - 错误信息应该具有描述性，便于调试
+
+#### 4. 内部方法约定
+- `sendBytes2Conn()` 是内部方法，仅供ConnHandler调用
+- 外部代码绝对不能直接调用此方法，这会破坏消息队列机制
+- 用户应始终使用 `PutMsg()` 来发送消息
 - ReadFrame()返回错误会导致连接关闭
+- PutMsg()需要验证消息类型，返回具体的类型错误信息
 
 #### 4. 资源管理
 - 在 `Close()` 中确保所有资源得到正确清理
@@ -721,37 +721,33 @@ type IConnReader interface {
 ### 实现示例模板
 ```go
 type MyCustomConnIO struct {
-    closeOnce sync.Once
-    conn      net.Conn
-    metaInfo  atomic.Value
-    reader    IConnReader  // 组合读取器
-    // 其他字段...
+    *stcp.BasicConnIO  // 组合基础实现
+    // 其他自定义字段...
 }
 
-func (c *MyCustomConnIO) Close() error {
-    var err error
-    c.closeOnce.Do(func() {
-        // 清理资源
-        err = c.conn.Close()
-        // 清理其他资源...
-    })
-    return err
-}
-
-func (c *MyCustomConnIO) SetMetaInfo(m MetaInfo) {
-    c.metaInfo.Store(m)
-}
-
-func (c *MyCustomConnIO) MetaInfo() MetaInfo {
-    if v := c.metaInfo.Load(); v != nil {
-        return v.(MetaInfo)
+func (c *MyCustomConnIO) PutMsg(msg stcp.IMsg) error {
+    // 实现消息类型检查和处理
+    if msg == nil {
+        return fmt.Errorf("MyCustomConnIO.PutMsg: nil message")
     }
-    return nil
+    
+    switch m := msg.(type) {
+    case *stcp.BytesMsg:
+        // 处理字节消息
+        return c.handleBytesMsg(m)
+    default:
+        return fmt.Errorf("MyCustomConnIO.PutMsg: unsupported message type: %s", msg.Name())
+    }
 }
 
-func (c *MyCustomConnIO) ReadFrame(conn net.Conn) ([]byte, error) {
-    // 可以委托给内部reader，或直接实现
-    return c.reader.ReadFrame(conn)
+func (c *MyCustomConnIO) PopMsgBytes() ([]byte, error) {
+    // 实现消息队列的出队逻辑
+    return c.queue.Pop()
+}
+
+func (c *MyCustomConnIO) sendBytes2Conn(bs []byte) error {
+    // 实现网络发送逻辑 - 这是内部方法，仅供ConnHandler调用
+    return stcp.SendBytes2Conn(c.Conn(), bs)
 }
 
 // 实现其他必需的方法...
@@ -760,29 +756,46 @@ func (c *MyCustomConnIO) ReadFrame(conn net.Conn) ([]byte, error) {
 ### 最佳实践
 
 #### 组合优于继承
-- 推荐组合现有的IConnReader实现而不是从头实现
+- 推荐组合BasicConnIO基础实现而不是从头实现所有方法
 - 可以重用框架提供的基础组件，专注于业务逻辑
 - 新的接口设计使Reader更加无状态，便于复用
 
-#### 错误包装
-- 在ReadFrame()中进行错误包装，提供更多上下文：
+#### 消息类型设计
+- 为不同业务场景定义特定的消息类型：
 ```go
-func (c *MyCustomConnIO) ReadFrame(conn net.Conn) ([]byte, error) {
-    buf, err := c.reader.ReadFrame(conn)
-    if err != nil {
-        return nil, fmt.Errorf("MyCustomConnIO.ReadFrame: %w", err)
+type ProtobufMsg struct {
+    MessageType string
+    Data        []byte
+}
+
+func (m *ProtobufMsg) Name() string {
+    return fmt.Sprintf("ProtobufMsg:%s", m.MessageType)
+}
+```
+
+#### 错误包装
+- 在PutMsg()中进行类型检查和错误包装：
+```go
+func (c *MyCustomConnIO) PutMsg(msg stcp.IMsg) error {
+    if msg == nil {
+        return fmt.Errorf("MyCustomConnIO.PutMsg: nil message")
     }
-    return buf, nil
+    
+    bsMsg, ok := msg.(*stcp.BytesMsg)
+    if !ok {
+        return fmt.Errorf("MyCustomConnIO.PutMsg: expected *BytesMsg, got %s", msg.Name())
+    }
+    
+    return c.processBytesMsg(bsMsg)
 }
 ```
 
 #### 工厂函数设计
 - 提供便于使用的工厂函数：
 ```go
-func NewMyCustomConnIO(conn net.Conn, readerFactory ConnReaderFactory) IConnIO {
+func NewMyCustomConnIO(conn net.Conn, reader stcp.IConnReader) stcp.IConnIO {
     return &MyCustomConnIO{
-        conn:   conn,
-        reader: readerFactory(conn),
+        BasicConnIO: stcp.NewBasicConnIO(conn, reader),
         // 初始化其他字段...
     }
 }

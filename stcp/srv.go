@@ -30,20 +30,20 @@ func DefaultServerAcceptCnf() *ServerAcceptCnf {
 }
 
 // TcpServer tcp server
-type TcpServer[T any] struct {
+type TcpServer struct {
 	acceptCnf       *ServerAcceptCnf
-	startHooker     ConnStartEvent[T]
-	exitHooker      ConnExitEvent[T]
-	readerProcessor ReadProcessor[T]
-	connIOFactory   ConnIOFactory[T]
+	startHooker     ConnStartEvent
+	exitHooker      ConnExitEvent
+	readerProcessor ReadProcessor
+	connIOFactory   ConnIOFactory
 
 	connCount atomic.Int32
 	ln        net.Listener
 }
 
 // NewTcpServer : new tcp server
-func NewTcpServer[T any](cnf *ServerAcceptCnf, readerProcessor ReadProcessor[T], connIOFactory ConnIOFactory[T]) *TcpServer[T] {
-	return &TcpServer[T]{
+func NewTcpServer(cnf *ServerAcceptCnf, readerProcessor ReadProcessor, connIOFactory ConnIOFactory) *TcpServer {
+	return &TcpServer{
 		acceptCnf:       cnf,
 		readerProcessor: readerProcessor,
 		connIOFactory:   connIOFactory,
@@ -51,29 +51,29 @@ func NewTcpServer[T any](cnf *ServerAcceptCnf, readerProcessor ReadProcessor[T],
 }
 
 // Address : get listen address
-func (x *TcpServer[T]) Address() string {
+func (x *TcpServer) Address() string {
 	return x.acceptCnf.Address
 }
 
 // ConnCount : get current connection count
-func (x *TcpServer[T]) ConnCount() int32 {
+func (x *TcpServer) ConnCount() int32 {
 	return x.connCount.Load()
 }
 
 // SetStartHooker : set connection start hooker
-func (x *TcpServer[T]) SetStartHooker(hooker ConnStartEvent[T]) {
+func (x *TcpServer) SetStartHooker(hooker ConnStartEvent) {
 	x.startHooker = hooker
 }
 
 // SetExitHooker : set connection exit hooker
-func (x *TcpServer[T]) SetExitHooker(hooker ConnExitEvent[T]) {
+func (x *TcpServer) SetExitHooker(hooker ConnExitEvent) {
 	x.exitHooker = hooker
 }
 
 // Run : run server
 // errChan : error channel
 // if server exit, the error will be sent to errChan
-func (x *TcpServer[T]) Run(errChan chan<- error) {
+func (x *TcpServer) Run(errChan chan<- error) {
 	go func() {
 		err := x.start()
 		errChan <- err
@@ -81,7 +81,7 @@ func (x *TcpServer[T]) Run(errChan chan<- error) {
 }
 
 // Close : close the server listener
-func (x *TcpServer[T]) Close() error {
+func (x *TcpServer) Close() error {
 	if x.ln != nil {
 		return x.ln.Close()
 	}
@@ -89,7 +89,7 @@ func (x *TcpServer[T]) Close() error {
 }
 
 // start : start server
-func (x *TcpServer[T]) start() error {
+func (x *TcpServer) start() error {
 	var err error
 	x.ln, err = net.Listen("tcp", x.acceptCnf.Address)
 	if err != nil {
@@ -99,7 +99,7 @@ func (x *TcpServer[T]) start() error {
 }
 
 // loop to accept connection
-func (x *TcpServer[T]) loopAccept() error {
+func (x *TcpServer) loopAccept() error {
 	// configuration values
 	accMinDelay := x.acceptCnf.AcceptDelay.Value()
 	accMaxDelay := x.acceptCnf.AcceptMaxDelay.Value()
@@ -168,17 +168,17 @@ func (x *TcpServer[T]) loopAccept() error {
 }
 
 // connStartHook : when connection start
-func (x *TcpServer[T]) connStartHook(connSender IConnIO[T]) {
-	ulog.Info("connection.start", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", x.connCount.Load()))
+func (x *TcpServer) connStartHook(connSender IConnIO) {
+	ulog.Info("TcpServer.connection.start", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", x.connCount.Load()))
 	if x.startHooker != nil {
 		x.startHooker(connSender)
 	}
 }
 
 // connExitHook : when connection exit
-func (x *TcpServer[T]) connExitHook(connSender IConnIO[T]) {
+func (x *TcpServer) connExitHook(connSender IConnIO) {
 	curConnCount := x.connCount.Dec()
-	ulog.Info("connection.exit", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", curConnCount))
+	ulog.Info("TcpServer.connection.exit", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", curConnCount))
 	if x.exitHooker != nil {
 		x.exitHooker(connSender)
 	}
