@@ -48,15 +48,12 @@ func (x *QSendConn) PutMsg(msg IMsg) error {
 	if msg == nil {
 		return fmt.Errorf("QSendConn.PutMsg: nil message")
 	}
-	bsMsg, ok := msg.(*BytesMsg)
+	bsMsg, ok := msg.(BytesMsg)
 	if !ok {
-		return fmt.Errorf("QSendConn.PutMsg: invalid message name: %s, expected *BytesMsg", msg.Name())
-	}
-	if bsMsg == nil {
-		return fmt.Errorf("QSendConn.PutMsg: nil *BytesMsg")
+		return fmt.Errorf("QSendConn.PutMsg: invalid message name: %s, expected BytesMsg", msg.Name())
 	}
 	if len(bsMsg.Bs) == 0 {
-		return fmt.Errorf("QSendConn.PutMsg: empty *BytesMsg")
+		return fmt.Errorf("QSendConn.PutMsg: empty BytesMsg")
 	}
 	return x.sendQ.Push(bsMsg.Bs)
 }

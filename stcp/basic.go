@@ -14,12 +14,12 @@ type BytesMsg struct {
 }
 
 // NewBytesMsg : new bytes message
-func NewBytesMsg(bs []byte) *BytesMsg {
-	return &BytesMsg{Bs: bs}
+func NewBytesMsg(bs []byte) BytesMsg {
+	return BytesMsg{Bs: bs}
 }
 
 // Name : message name
-func (x *BytesMsg) Name() string {
+func (x BytesMsg) Name() string {
 	return "BytesMsg"
 }
 

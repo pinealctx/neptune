@@ -732,7 +732,7 @@ func (c *MyCustomConnIO) PutMsg(msg stcp.IMsg) error {
     }
     
     switch m := msg.(type) {
-    case *stcp.BytesMsg:
+    case stcp.BytesMsg:
         // 处理字节消息
         return c.handleBytesMsg(m)
     default:
@@ -781,9 +781,9 @@ func (c *MyCustomConnIO) PutMsg(msg stcp.IMsg) error {
         return fmt.Errorf("MyCustomConnIO.PutMsg: nil message")
     }
     
-    bsMsg, ok := msg.(*stcp.BytesMsg)
+    bsMsg, ok := msg.(stcp.BytesMsg)
     if !ok {
-        return fmt.Errorf("MyCustomConnIO.PutMsg: expected *BytesMsg, got %s", msg.Name())
+        return fmt.Errorf("MyCustomConnIO.PutMsg: expected BytesMsg, got %s", msg.Name())
     }
     
     return c.processBytesMsg(bsMsg)
