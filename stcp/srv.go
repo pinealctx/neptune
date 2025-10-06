@@ -169,7 +169,7 @@ func (x *TcpServer) loopAccept() error {
 
 // connStartHook : when connection start
 func (x *TcpServer) connStartHook(connSender IConnIO) {
-	ulog.Info("connection.start", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", x.connCount.Load()))
+	ulog.Info("TcpServer.connection.start", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", x.connCount.Load()))
 	if x.startHooker != nil {
 		x.startHooker(connSender)
 	}
@@ -178,7 +178,7 @@ func (x *TcpServer) connStartHook(connSender IConnIO) {
 // connExitHook : when connection exit
 func (x *TcpServer) connExitHook(connSender IConnIO) {
 	curConnCount := x.connCount.Dec()
-	ulog.Info("connection.exit", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", curConnCount))
+	ulog.Info("TcpServer.connection.exit", zap.Object("metaInfo", connSender.MetaInfo()), zap.Int32("currentConn", curConnCount))
 	if x.exitHooker != nil {
 		x.exitHooker(connSender)
 	}

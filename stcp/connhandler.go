@@ -77,7 +77,7 @@ func (x *ConnHandler) Start() {
 			}()
 			defer x.Exit()
 
-			x.iConnIO.loopSend()
+			x.loopSend()
 		}()
 
 		for _, hook := range x.startHooks {
@@ -101,7 +101,7 @@ func (x *ConnHandler) Exit() {
 	x.exitOnce.Do(func() {
 		err := x.iConnIO.Close()
 		if err != nil {
-			ulog.Error("x.handler.Close", zap.Error(err), zap.Object("metaInfo", x.iConnIO.MetaInfo()))
+			ulog.Error("ConnHandler.iConnIO.Close", zap.Error(err), zap.Object("metaInfo", x.iConnIO.MetaInfo()))
 		}
 		for _, hook := range x.exitHooks {
 			func() {
@@ -126,13 +126,35 @@ func (x *ConnHandler) loopReceive(conn net.Conn) {
 	for {
 		buf, err := x.iConnIO.ReadFrame(conn)
 		if err != nil {
-			ulog.Info("loopReceive.connReader", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
+			ulog.Info("ConnHandler.loopReceive.connReader", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
 			break
 		}
 		err = x.readProcessor(x.iConnIO, buf)
 		if err != nil {
-			ulog.Info("loopReceive.readProcessor", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
+			ulog.Info("ConnHandler.loopReceive.readProcessor", zap.Object("metaInfo", x.iConnIO.MetaInfo()), zap.Error(err))
 			break
+		}
+	}
+}
+
+// loopSend is the internal sending loop (required, NOT goroutine-safe)
+// WARNING: This method is ONLY called by ConnHandler internally.
+// NEVER call this method from external code.
+func (x *ConnHandler) loopSend() {
+
+	for {
+		sendBytes, err := x.iConnIO.PopMsgBytes()
+		if err != nil {
+			// queue closed
+			// nolint : forcetypeassert // I know the type is exactly here
+			ulog.Info("ConnHandler.sendQ.closed", zap.Error(err), zap.Object("metaInfo", x.iConnIO.MetaInfo()))
+			return
+		}
+		err = x.iConnIO.sendBytes2Conn(sendBytes)
+		if err != nil {
+			// nolint : forcetypeassert // I know the type is exactly here
+			ulog.Info("ConnHandler.send.failed", zap.Error(err), zap.Object("metaInfo", x.iConnIO.MetaInfo()))
+			return
 		}
 	}
 }

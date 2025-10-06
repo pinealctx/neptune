@@ -1,0 +1,88 @@
+ {
+    "terminal.integrated.defaultProfile.windows": "MSYS2 CLANG64 (zsh)",
+    "terminal.integrated.profiles.windows": {
+        "MSYS2 CLANG64 (zsh)": {
+            "path": "C:\\msys64\\usr\\bin\\zsh.exe",
+            "args": ["--login", "-i"],
+            "env": {
+                "MSYSTEM": "CLANG64",
+                "CHERE_INVOKING": "1",
+                "MSYS2_PATH_TYPE": "inherit"
+            },
+            "icon": "terminal-bash"
+        },
+        "MSYS2 MINGW64 (zsh)": {
+            "path": "C:\\msys64\\usr\\bin\\zsh.exe",
+            "args": ["--login", "-i"],
+            "env": {
+                "MSYSTEM": "MINGW64",
+                "CHERE_INVOKING": "1",
+                "MSYS2_PATH_TYPE": "inherit"
+            },
+            "icon": "terminal-bash"
+        },
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": [
+                "${env:windir}\\Sysnative\\cmd.exe",
+                "${env:windir}\\System32\\cmd.exe"
+            ],
+            "args": [],
+            "icon": "terminal-cmd"
+        }
+    },
+
+    "terminal.integrated.defaultProfile.osx": "bash",
+    "terminal.integrated.profiles.osx": {
+        "bash": {
+            "path": "/bin/bash",
+            "args": ["--login"],
+            "icon": "terminal-bash"
+        },
+        "zsh": {
+            "path": "/bin/zsh",
+            "args": ["--login"],
+            "icon": "terminal-bash"
+        }
+    },
+
+    "terminal.integrated.defaultProfile.linux": "zsh",
+    "terminal.integrated.profiles.linux": {
+        "zsh": {
+            "path": "/usr/bin/zsh",
+            "args": ["-l"],
+            "icon": "terminal-bash"
+        },
+        "bash": {
+            "path": "/bin/bash",
+            "args": ["-l"],
+            "icon": "terminal-bash"
+        }
+    },
+    
+    "terminal.integrated.env.windows": {
+        "TERM_PROGRAM": "vscode"
+    },
+    "terminal.integrated.env.osx": {
+        "TERM_PROGRAM": "vscode"
+    },
+    "terminal.integrated.env.linux": {
+        "TERM_PROGRAM": "vscode"
+    },
+
+    "terminal.integrated.shellIntegration.enabled": true,
+    "terminal.integrated.shellIntegration.decorationsEnabled": "both",
+    "terminal.integrated.shellIntegration.showCommandGuide": true,
+    "terminal.integrated.shellIntegration.history": 100,
+
+    "terminal.integrated.stickyScroll.enabled": true,
+    "terminal.integrated.suggest.enabled": true,
+
+    "terminal.integrated.commandNavigation.enabled": true,
+    
+    "go.gopath": "~/go",
+    "go.goroot": "/usr/local/go"
+}
