@@ -6,6 +6,49 @@ import (
 	"io"
 )
 
+// IntNSecure random generate int, read data from linux /dev/urandom
+// in range [0, n)
+func IntNSecure(n int) int {
+	if n <= 0 {
+		panic("invalid argument to IntN")
+	}
+
+	// Use rejection sampling for uniform distribution
+	mask := uint64(1)
+	for mask < uint64(n) {
+		mask <<= 1
+	}
+	mask--
+
+	for {
+		val := RandUint64Secure() & mask
+		if val < uint64(n) {
+			return int(val)
+		}
+	}
+}
+
+// IntRangeSecure returns a random int in [min, max) range
+// Convenient wrapper for common range operations
+func IntRangeSecure(_min, _max int) int {
+	if _min >= _max {
+		panic("invalid range: min must be less than max")
+	}
+	return _min + IntNSecure(_max-_min)
+}
+
+// IntBetweenSecure returns a random int in [min, max] range (inclusive)
+// Convenient wrapper for common range operations
+func IntBetweenSecure(_min, _max int) int {
+	if _min == _max {
+		return _min
+	}
+	if _min > _max {
+		panic("invalid range: min must be less than or equal to max")
+	}
+	return _min + IntNSecure(_max-_min+1)
+}
+
 // RandIntSecure random generate int, read data from linux /dev/urandom
 // actually, it's almost a random id
 func RandIntSecure() int {
@@ -64,6 +107,23 @@ func RandInt32Secure() int32 {
 		return RandInt32()
 	}
 	return int32(v)
+}
+
+// Float64RangeSecure returns a random float64 in [min, max) range
+// Uses linear transformation to maintain uniform distribution
+func Float64RangeSecure(_min, _max float64) float64 {
+	if _min >= _max {
+		panic("invalid range: min must be less than max")
+	}
+
+	return _min + Float64Secure()*(_max-_min)
+}
+
+// Float64Secure returns a float64 in [0, 1) range
+// Uses 53 bits for proper float64 precision
+func Float64Secure() float64 {
+	// Use 53 bits for float64 precision to avoid bias
+	return float64(RandUint64Secure()>>11) / (1 << 53)
 }
 
 // read from linux /dev/urandom to wrap a random uint64
